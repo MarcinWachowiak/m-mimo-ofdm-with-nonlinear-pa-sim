@@ -16,7 +16,7 @@ fig_width = fig_width_pt * inches_per_pt  # width in inches
 fig_height = fig_width * golden_mean  # height in inches
 fig_size = [fig_width, fig_height]
 
-params = {'backend': 'ps',
+params = {'backend': 'Qt5Agg',
           'axes.labelsize': 10,
           'font.size': 10,
           'legend.fontsize': 10,

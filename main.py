@@ -1,48 +1,58 @@
 # Experimental OFDM simulation
 # %%
 import matplotlib.pyplot as plt
-#import plot_settings
+
+import channels
+# import plot_settings
 import modulation
-import utilities
 import numpy as np
 
 
 # %%
+
 # generate random sequences of 0,1 of given length
-def gen_tx_bits(len):
-    return np.random.choice((0, 1), len)
+def gen_tx_bits(length):
+    return np.random.choice((0, 1), length)
+
+
+# compares two binary sequences and counts mismatches
+def count_mismatched_bits(tx_bits_arr, rx_bits_arr):
+    return np.bitwise_xor(tx_bits_arr, rx_bits_arr).sum()
+
 
 my_mod = modulation.QAMModem(16)
-my_mod.plot_constellation()
+my_chan = channels.SISOFlatChannel()
+my_chan.set_SNR_dB(40, 1, my_mod.avg_symbol_power)
+# my_mod.plot_constellation()
 
-tx_bits = gen_tx_bits(64)
-
-# fig1, ax1 = plt.subplots()
-# ax1.stem(dat_seq)
-# ax1.set_title("Binary sequence")
-# ax1.set_xlabel("Index")
-
+tx_bits = gen_tx_bits(64 * 4)
 tx_symb = my_mod.modulate(tx_bits)
 
-# # fig2, ax2 = plt.subplots()
-# # ax2.stem(symb_seq.real, label="I", linefmt='C0-', markerfmt='C0o')
-# # ax2.stem(symb_seq.imag, label="Q", linefmt='C1-', markerfmt='C1D')
-# # ax2.set_title("Symbol sequence")
-# # ax2.set_xlabel("Index")
-# # ax2.legend()
-# # plt.show()
+fig, ax = plt.subplots()
+ax.scatter(tx_symb.real, tx_symb.imag)
+plt.show()
 
-rx_bits = my_mod.demodulate(symb_seq)
+# OFDM params
+n_sub_carr = 64
+cyclic_prefix_len = int(64 * 0.25)
 
-print(tx_bits)
-print(rx_bits)
-# print(sym_seq.shape)
-# fft_size = 32
-# tx_seq = modulation.ofdm_tx(sym_seq, fft_size, fft_size, np.floor(0.2*fft_size))
-#
-# fig3, ax3 = plt.subplots()
-# ax3.plot(tx_seq)
-# ax3.set_title("OFDM signal")
-# plt.show()
+tx_ofdm_symbol = modulation.tx_ofdm_symbol(tx_symb, n_sub_carr, cyclic_prefix_len)
+
+rx_ofdm_symbol = my_chan.propagate(tx_ofdm_symbol)
+rx_symb = modulation.rx_ofdm_symbol(rx_ofdm_symbol, n_sub_carr, cyclic_prefix_len)
+
+fig, ax = plt.subplots()
+ax.scatter(rx_symb.real, rx_symb.imag)
+plt.show()
+
+fig, ax = plt.subplots()
+ax.plot(tx_ofdm_symbol)
+ax.plot(rx_ofdm_symbol)
+plt.show()
+
+rx_bits = my_mod.demodulate(rx_symb)
+
+n_bit_err = count_mismatched_bits(tx_bits, rx_bits)
+print("Number of bit errors: %d" % n_bit_err)
 
 print("Finished exectution!")
