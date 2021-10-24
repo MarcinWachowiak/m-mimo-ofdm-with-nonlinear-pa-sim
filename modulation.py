@@ -1,12 +1,7 @@
-from bisect import insort
-
 import matplotlib.pyplot as plt
-from numpy import arange, array, zeros, pi, sqrt, log2, argmin, \
-    hstack, repeat, tile, dot, shape, concatenate, exp, \
-    log, vectorize, empty, eye, kron, inf, full, abs, newaxis, minimum, clip, fromiter
+from numpy import arange, array, zeros, sqrt, log2, tile, shape, concatenate, exp, \
+    log, vectorize, abs, asarray, hstack
 from numpy.fft import fft, ifft
-from numpy.linalg import qr, norm
-from sympy.combinatorics.graycode import GrayCode
 
 from utilities import bitarray2dec, dec2bitarray, signal_power
 
@@ -16,10 +11,11 @@ class Modem:
     def __init__(self, constellation, reorder_as_gray=True):
 
         if reorder_as_gray:
-            m = log2(len(constellation))
-            gray_code_sequence = GrayCode(m).generate_gray()
-            gray_code_sequence_array = fromiter((int(g, 2) for g in gray_code_sequence), int, len(constellation))
-            self.constellation = array(constellation)[gray_code_sequence_array.argsort()]
+            constel_size = len(constellation)
+            # generate gray codes from linear arange
+            gray_codes = asarray([x ^ (x >> 1) for x in range(constel_size)])
+            # remap constellation based on gray code indices
+            self.constellation = array(constellation)[gray_codes.argsort()]
 
         else:
             self.constellation = constellation
@@ -27,9 +23,9 @@ class Modem:
     def modulate(self, input_bits):
 
         mapfunc = vectorize(lambda i:
-                            self._constellation[bitarray2dec(input_bits[i:i + self.num_bits_symbol])])
+                            self._constellation[bitarray2dec(input_bits[i:i + self.n_bits_per_symbol])])
 
-        baseband_symbols = mapfunc(arange(0, len(input_bits), self.num_bits_symbol))
+        baseband_symbols = mapfunc(arange(0, len(input_bits), self.n_bits_per_symbol))
 
         return baseband_symbols
 
@@ -37,13 +33,13 @@ class Modem:
 
         if demod_type == 'hard':
             index_list = abs(input_symbols - self._constellation[:, None]).argmin(0)
-            demod_bits = dec2bitarray(index_list, self.num_bits_symbol)
+            demod_bits = dec2bitarray(index_list, self.n_bits_per_symbol)
 
         elif demod_type == 'soft':
-            demod_bits = zeros(len(input_symbols) * self.num_bits_symbol)
+            demod_bits = zeros(len(input_symbols) * self.n_bits_per_symbol)
             for i in arange(len(input_symbols)):
                 current_symbol = input_symbols[i]
-                for bit_index in arange(self.num_bits_symbol):
+                for bit_index in arange(self.n_bits_per_symbol):
                     llr_num = 0
                     llr_den = 0
                     for bit_value, symbol in enumerate(self._constellation):
@@ -51,20 +47,19 @@ class Modem:
                             llr_num += exp((-abs(current_symbol - symbol) ** 2) / noise_var)
                         else:
                             llr_den += exp((-abs(current_symbol - symbol) ** 2) / noise_var)
-                    demod_bits[i * self.num_bits_symbol + self.num_bits_symbol - 1 - bit_index] = log(llr_num / llr_den)
+                    demod_bits[i * self.n_bits_per_symbol + self.n_bits_per_symbol - 1 - bit_index] = log(
+                        llr_num / llr_den)
         else:
             raise ValueError('demod_type must be "hard" or "soft"')
 
         return demod_bits
 
     def plot_constellation(self):
-        """ Plot the constellation """
         fig, ax = plt.subplots()
         ax.scatter(self.constellation.real, self.constellation.imag)
 
-        # for symb in self.constellation:
-        #     plt.text(symb.real + .2, symb.imag, self.demodulate(symb, 'hard'))
-        print(self.constellation)
+        for symbol in self.constellation:
+            ax.text(symbol.real + .2, symbol.imag, self.demodulate(symbol, 'hard'))
 
         ax.set_title('Constellation')
         ax.set_xlabel("I")
@@ -74,74 +69,35 @@ class Modem:
 
     @property
     def constellation(self):
-        """ Constellation of the modem. """
         return self._constellation
 
     @constellation.setter
     def constellation(self, value):
-        # Check value input
-        num_bits_symbol = log2(len(value))
-        if num_bits_symbol != int(num_bits_symbol):
+
+        n_bits_per_symbol = log2(len(value))
+        if n_bits_per_symbol != int(n_bits_per_symbol):
             raise ValueError('Constellation length must be a power of 2.')
 
-        # Set constellation as an array
         self._constellation = array(value)
 
-        # Update other attributes
-        self.Es = signal_power(self.constellation)
-        self.m = self._constellation.size
-        self.num_bits_symbol = int(num_bits_symbol)
+        self.avg_symbol_power = signal_power(self.constellation)
+        self.constellation_size = self._constellation.size
+        self.n_bits_per_symbol = int(n_bits_per_symbol)
 
 
 class QAMModem(Modem):
-    """ Creates a Quadrature Amplitude Modulation (QAM) Modem object.
 
-        Parameters
-        ----------
-        m : int
-            Size of the PSK constellation.
+    def __init__(self, constel_size):
+        # check if constellation size generates a square QAM
+        n_symb = sqrt(constel_size)
+        if n_symb != int(n_symb):
+            raise ValueError('Constellation size must be a power of 2, only square QAM supported.')
 
-        Attributes
-        ----------
-        constellation : 1D-ndarray of complex
-                        Modem constellation. If changed, the length of the new constellation must be a power of 2.
+        # generate centered around 0, equally spaced (by 2) PAM symbols, indexing from lower left corner
+        pam_symb = arange(-n_symb + 1, n_symb, 2)
+        # arrange into QAM
+        constellation = tile(hstack((pam_symb, pam_symb[::-1])), int(n_symb) // 2) * 1j + pam_symb.repeat(n_symb)
 
-        Es            : float
-                        Average energy per symbols.
-
-        m             : integer
-                        Constellation length.
-
-        num_bits_symb : integer
-                        Number of bits per symbol.
-
-        Raises
-        ------
-        ValueError
-                        If the constellation is changed to an array-like with length that is not a power of 2.
-                        If the parameter m would lead to an non-square QAM during initialization.
-    """
-
-    def __init__(self, m):
-        """ Creates a Quadrature Amplitude Modulation (QAM) Modem object.
-
-        Parameters
-        ----------
-        m : int
-            Size of the QAM constellation. Must lead to a square QAM (ie sqrt(m) is an integer).
-
-        Raises
-        ------
-        ValueError
-                        If m would lead to an non-square QAM.
-        """
-
-        num_symb_pam = sqrt(m)
-        if num_symb_pam != int(num_symb_pam):
-            raise ValueError('m must lead to a square QAM.')
-
-        pam = arange(-num_symb_pam + 1, num_symb_pam, 2)
-        constellation = tile(hstack((pam, pam[::-1])), int(num_symb_pam) // 2) * 1j + pam.repeat(num_symb_pam)
         super().__init__(constellation)
 
 
