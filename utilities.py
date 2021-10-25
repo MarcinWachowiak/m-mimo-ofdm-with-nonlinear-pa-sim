@@ -203,3 +203,13 @@ def signal_power(signal):
 
     P = np.mean(square_abs(signal))
     return P
+
+
+# generate random sequences of 0,1 of given length
+def gen_tx_bits(length):
+    return np.random.choice((0, 1), length)
+
+
+# compares two binary sequences and counts mismatches
+def count_mismatched_bits(tx_bits_arr, rx_bits_arr):
+    return np.bitwise_xor(tx_bits_arr, rx_bits_arr).sum()

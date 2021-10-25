@@ -85,7 +85,7 @@ class Modem:
         self.n_bits_per_symbol = int(n_bits_per_symbol)
 
 
-class QAMModem(Modem):
+class QamModem(Modem):
 
     def __init__(self, constel_size):
         # check if constellation size generates a square QAM
