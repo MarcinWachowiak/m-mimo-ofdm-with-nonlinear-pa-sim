@@ -213,3 +213,11 @@ def gen_tx_bits(length):
 # compares two binary sequences and counts mismatches
 def count_mismatched_bits(tx_bits_arr, rx_bits_arr):
     return np.bitwise_xor(tx_bits_arr, rx_bits_arr).sum()
+
+
+# converts from SNR to Eb/N0
+def ebn0_to_snr(snr, n_fft, n_sub_carr, constel_size):
+    return 10*np.log10(10 ** (snr/10) * n_fft * np.log2(constel_size) / n_sub_carr)
+
+def snr_to_ebn0(eb_per_n0, n_fft, n_sub_carr, constel_size):
+    return 10*np.log10(10**(eb_per_n0/10) * (n_sub_carr / (n_fft * np.log2(constel_size))))

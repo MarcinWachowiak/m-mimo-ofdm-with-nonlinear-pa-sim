@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 from numpy import arange, array, zeros, sqrt, log2, tile, exp, log, vectorize, \
-     abs, asarray, hstack
+     abs, asarray, hstack, concatenate
 from numpy.fft import fft, ifft
 
 from utilities import bitarray2dec, dec2bitarray, signal_power
@@ -62,8 +62,8 @@ class Modem:
             ax.text(symbol.real + .2, symbol.imag, self.demodulate(symbol, 'hard'))
 
         ax.set_title('Constellation')
-        ax.set_xlabel("I")
-        ax.set_ylabel("Q")
+        ax.set_xlabel("In-phase")
+        ax.set_ylabel("Quadrature")
         ax.grid()
         plt.show()
 
@@ -101,23 +101,26 @@ class QamModem(Modem):
         super().__init__(constellation)
 
 
-def tx_ofdm_symbol(mod_symbols, n_sub_carr, cp_length):
+def tx_ofdm_symbol(mod_symbols, n_fft: int, n_sub_carr: int, cp_length: int):
     # generate OFDM symbol block - size given by n_sub_carr size
-
     if len(mod_symbols) != n_sub_carr:
         raise ValueError('mod_symbols length must match n_sub_carr value')
 
-    ofdm_sym_time = ifft(mod_symbols)
+    # skip idx = 0 and fill the carriers from LR
+    ofdm_sym_freq = zeros(n_fft, dtype=complex)
+    ofdm_sym_freq[1:(n_sub_carr // 2) + 1] = mod_symbols[n_sub_carr // 2:]
+    ofdm_sym_freq[-(n_sub_carr // 2):] = mod_symbols[0:n_sub_carr // 2]
+    ofdm_sym_time = ifft(ofdm_sym_freq, norm="ortho")
     cyclic_prefix = ofdm_sym_time[-cp_length:]
     # add cyclic prefix
-    return hstack([cyclic_prefix, ofdm_sym_time])
+    return concatenate((cyclic_prefix, ofdm_sym_time))
 
 
-def rx_ofdm_symbol(ofdm_symbol, n_sub_carr, cp_length):
+def rx_ofdm_symbol(ofdm_symbol, n_fft: int, n_sub_carr: int, cp_length: int):
     # decode OFDM symbol block - size given by n_sub_carr size
 
-    if (len(ofdm_symbol)-cp_length) != n_sub_carr:
-        raise ValueError('(ofdm_symbol - cp_length)  length must match n_sub_carr value')
+    # skip cyclic prefix
+    ofdm_sym_freq = fft(ofdm_symbol[cp_length:], norm="ortho")
+    # extract and rearange data from LR boundaries
+    return concatenate((ofdm_sym_freq[-n_sub_carr // 2:], ofdm_sym_freq[1:(n_sub_carr // 2) + 1]))
 
-    #remove cyclic prefix and perform FFT
-    return fft(ofdm_symbol[cp_length:(cp_length+n_sub_carr)])
