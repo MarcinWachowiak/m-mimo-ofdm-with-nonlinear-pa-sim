@@ -111,7 +111,12 @@ def tx_ofdm_symbol(mod_symbols, n_fft: int, n_sub_carr: int, cp_length: int):
     ofdm_sym_freq[1:(n_sub_carr // 2) + 1] = mod_symbols[n_sub_carr // 2:]
     ofdm_sym_freq[-(n_sub_carr // 2):] = mod_symbols[0:n_sub_carr // 2]
     ofdm_sym_time = ifft(ofdm_sym_freq, norm="ortho")
-    cyclic_prefix = ofdm_sym_time[-cp_length:]
+
+    if cp_length != 0:
+        cyclic_prefix = ofdm_sym_time[-cp_length:]
+    else:
+        cyclic_prefix = []
+
     # add cyclic prefix
     return concatenate((cyclic_prefix, ofdm_sym_time))
 
