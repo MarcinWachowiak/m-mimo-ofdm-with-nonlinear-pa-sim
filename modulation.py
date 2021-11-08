@@ -1,9 +1,10 @@
 import matplotlib.pyplot as plt
 from numpy import arange, array, zeros, sqrt, log2, tile, exp, log, vectorize, \
      abs, asarray, hstack, concatenate
-from numpy.fft import fft, ifft
-
+from torch.fft import fft, ifft
+from torch import from_numpy
 from utilities import bitarray2dec, dec2bitarray, signal_power
+from speedup import jit
 
 
 class Modem:
@@ -100,7 +101,6 @@ class QamModem(Modem):
 
         super().__init__(constellation)
 
-
 def tx_ofdm_symbol(mod_symbols, n_fft: int, n_sub_carr: int, cp_length: int):
     # generate OFDM symbol block - size given by n_sub_carr size
     if len(mod_symbols) != n_sub_carr:
@@ -110,7 +110,7 @@ def tx_ofdm_symbol(mod_symbols, n_fft: int, n_sub_carr: int, cp_length: int):
     ofdm_sym_freq = zeros(n_fft, dtype=complex)
     ofdm_sym_freq[1:(n_sub_carr // 2) + 1] = mod_symbols[n_sub_carr // 2:]
     ofdm_sym_freq[-(n_sub_carr // 2):] = mod_symbols[0:n_sub_carr // 2]
-    ofdm_sym_time = ifft(ofdm_sym_freq, norm="ortho")
+    ofdm_sym_time = ifft(from_numpy(ofdm_sym_freq), norm="ortho").numpy()
 
     if cp_length != 0:
         cyclic_prefix = ofdm_sym_time[-cp_length:]
@@ -120,12 +120,11 @@ def tx_ofdm_symbol(mod_symbols, n_fft: int, n_sub_carr: int, cp_length: int):
     # add cyclic prefix
     return concatenate((cyclic_prefix, ofdm_sym_time))
 
-
 def rx_ofdm_symbol(ofdm_symbol, n_fft: int, n_sub_carr: int, cp_length: int):
     # decode OFDM symbol block - size given by n_sub_carr size
 
     # skip cyclic prefix
-    ofdm_sym_freq = fft(ofdm_symbol[cp_length:], norm="ortho")
+    ofdm_sym_freq = fft(from_numpy(ofdm_symbol[cp_length:]), norm="ortho").numpy()
     # extract and rearange data from LR boundaries
     return concatenate((ofdm_sym_freq[-n_sub_carr // 2:], ofdm_sym_freq[1:(n_sub_carr // 2) + 1]))
 

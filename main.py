@@ -8,8 +8,11 @@ import channels
 import modulation
 import numpy as np
 from numpy import log2
+import time
 
 # %%
+start_time = time.time()
+
 constel_size = 16
 n_sub_carr = 800
 n_fft = 1024
@@ -26,7 +29,7 @@ print("SNR array:", snrs)
 bers = np.zeros([len(snrs)])
 ofdm_symbols = int(tot_bits / n_bits_per_ofdm_sym)
 
-plot_psd = True
+plot_psd = False
 
 for idx, snr in enumerate(snrs):
     n_err = 0
@@ -57,6 +60,7 @@ for idx, snr in enumerate(snrs):
     bers[idx] = n_err / tot_bits
 
 # %%
+print("--- Computation time: %f ---" % (time.time() - start_time))
 
 print("BER arr:", bers)
 eb_per_n0_arr = snr_to_ebn0(snrs, n_fft, n_sub_carr, constel_size)
@@ -73,5 +77,5 @@ for idx, ebn0_val in enumerate(snrs):
 ax.grid()
 ax.legend()
 plt.show()
-
 print("Finished exectution!")
+
