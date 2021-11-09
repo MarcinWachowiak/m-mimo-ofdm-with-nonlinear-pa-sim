@@ -26,6 +26,8 @@ __all__ = ['dec2bitarray', 'decimal2bitarray', 'bitarray2dec', 'hamming_dist', '
 
 vectorized_binary_repr = np.vectorize(np.binary_repr)
 
+from speedup import jit
+
 
 def dec2bitarray(in_number, bit_width):
     """
@@ -217,8 +219,13 @@ def count_mismatched_bits(tx_bits_arr, rx_bits_arr):
 
 # converts from SNR to Eb/N0
 def ebn0_to_snr(eb_per_n0, n_fft, n_sub_carr, constel_size):
-    return 10 * np.log10(10 ** (eb_per_n0 / 10) * n_sub_carr * np.log2(constel_size) / n_fft )
+    return 10 * np.log10(10 ** (eb_per_n0 / 10) * n_sub_carr * np.log2(constel_size) / n_fft)
 
 
 def snr_to_ebn0(snr, n_fft, n_sub_carr, constel_size):
     return 10 * np.log10(10 ** (snr / 10) * (n_fft / (n_sub_carr * np.log2(constel_size))))
+
+
+@jit(nopython=True)
+def to_db(samples):
+    return 10 * np.log10(samples)

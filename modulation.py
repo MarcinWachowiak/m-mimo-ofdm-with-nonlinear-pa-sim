@@ -6,7 +6,6 @@ from torch import from_numpy
 from utilities import bitarray2dec, dec2bitarray, signal_power
 from speedup import jit
 
-
 class Modem:
 
     def __init__(self, constellation, reorder_as_gray=True):

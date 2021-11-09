@@ -3,12 +3,13 @@
 import matplotlib.pyplot as plt
 import plot_settings
 
-from utilities import gen_tx_bits, count_mismatched_bits, snr_to_ebn0, ebn0_to_snr
+from utilities import gen_tx_bits, count_mismatched_bits, snr_to_ebn0, ebn0_to_snr, to_db
 import channels
 import modulation
 import numpy as np
 from numpy import log2
 import time
+from scipy.signal import welch
 
 # %%
 start_time = time.time()
@@ -29,7 +30,11 @@ print("SNR array:", snrs)
 bers = np.zeros([len(snrs)])
 ofdm_symbols = int(tot_bits / n_bits_per_ofdm_sym)
 
-plot_psd = False
+plot_psd = True
+n_colected_snapshots = 200
+tx_sig_arr_for_psd = []
+rx_sig_arr_for_psd = []
+snapshot_counter = 0
 
 for idx, snr in enumerate(snrs):
     n_err = 0
@@ -41,15 +46,10 @@ for idx, snr in enumerate(snrs):
 
         rx_ofdm_symbol = my_chan.propagate(tx_ofdm_symbol, my_mod.avg_symbol_power, n_sub_carr, n_fft)
 
-        if plot_psd:
-            fig, (ax0, ax1) = plt.subplots(2, 1)
-            ax0.psd(tx_ofdm_symbol, 1024)
-            ax0.set_title("Before propagation")
-            ax1.psd(rx_ofdm_symbol, 1024)
-            ax1.set_title("After propagation")
-            plt.show()
-
-            plot_psd = False
+        if plot_psd and snapshot_counter < n_colected_snapshots:
+            tx_sig_arr_for_psd.append(tx_ofdm_symbol)
+            rx_sig_arr_for_psd.append(rx_ofdm_symbol)
+            snapshot_counter += 1
 
         rx_symb = modulation.rx_ofdm_symbol(rx_ofdm_symbol, n_fft, n_sub_carr, cyclic_prefix_len)
         rx_bits = my_mod.demodulate(rx_symb)
@@ -61,21 +61,49 @@ for idx, snr in enumerate(snrs):
 
 # %%
 print("--- Computation time: %f ---" % (time.time() - start_time))
+flat_tx_sig_for_psd = np.concatenate(tx_sig_arr_for_psd).ravel()
+flat_rx_sig_for_psd = np.concatenate(rx_sig_arr_for_psd).ravel()
 
-print("BER arr:", bers)
-eb_per_n0_arr = snr_to_ebn0(snrs, n_fft, n_sub_carr, constel_size)
-print("EB/N0 arr:", eb_per_n0_arr)
-fig, ax = plt.subplots()
-ax.set_yscale('log')
-ax.scatter(eb_per_n0_arr, bers, label='QAM')
-#fix log scaling
-ax.set_ylim([1e-8, 1])
-ax.set_xlabel('Eb/N0 [dB]')
-ax.set_ylabel("BER")
-for idx, ebn0_val in enumerate(snrs):
-    ax.text(ebn0_val, bers[idx], "{:.5e}".format(bers[idx]))
-ax.grid()
-ax.legend()
+psd_nfft = 1024
+n_samp_per_seg = 512
+
+tx_freq_arr, tx_psd_arr = welch(flat_tx_sig_for_psd, fs=psd_nfft, nfft=psd_nfft, nperseg=n_samp_per_seg, return_onesided=False)
+tx_freqs, tx_sig_psd = zip(*sorted(zip(tx_freq_arr, tx_psd_arr)))
+
+rx_freq_arr, rx_psd_arr = welch(flat_rx_sig_for_psd, fs=psd_nfft, nfft=psd_nfft, nperseg=n_samp_per_seg, return_onesided=False)
+rx_freqs, rx_sig_psd = zip(*sorted(zip(rx_freq_arr, rx_psd_arr)))
+
+fig1, (ax0, ax1) = plt.subplots(2, 1)
+print(tx_freqs)
+print(rx_sig_psd)
+ax0.plot(tx_freqs, to_db(np.array(tx_sig_psd)))
+ax0.set_title("Before propagation")
+ax0.set_xlabel("Subcarrier index [-]")
+ax0.set_ylabel("Power [dB]")
+ax0.grid()
+
+
+ax1.plot(rx_freqs, to_db(np.array(rx_sig_psd)))
+ax1.set_title("After propagation")
+ax1.set_xlabel("Subcarrier index [-]")
+ax1.set_ylabel("Power [dB]")
+ax1.grid()
+
 plt.show()
-print("Finished exectution!")
 
+# print("BER arr:", bers)
+# eb_per_n0_arr = snr_to_ebn0(snrs, n_fft, n_sub_carr, constel_size)
+# print("EB/N0 arr:", eb_per_n0_arr)
+# fig2, ax = plt.subplots()
+# ax.set_yscale('log')
+# ax.scatter(eb_per_n0_arr, bers, label='QAM')
+# # fix log scaling
+# ax.set_ylim([1e-8, 1])
+# ax.set_xlabel('Eb/N0 [dB]')
+# ax.set_ylabel("BER")
+# for idx, ebn0_val in enumerate(snrs):
+#     ax.text(ebn0_val, bers[idx], "{:.5e}".format(bers[idx]))
+# ax.grid()
+# ax.legend()
+# plt.show()
+print("Finished exectution!")
