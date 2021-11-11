@@ -1,6 +1,8 @@
 # Experimental OFDM simulation
 # %%
 import matplotlib.pyplot as plt
+
+import impairments
 import plot_settings
 
 from utilities import gen_tx_bits, count_mismatched_bits, snr_to_ebn0, ebn0_to_snr, to_db
@@ -24,6 +26,17 @@ tot_bits = n_bits_per_ofdm_sym * 1000
 tot_err = 0
 
 my_mod = modulation.QamModem(constel_size)
+
+my_limiter1 = impairments.SoftLimiter(-1, my_mod.avg_symbol_power)
+my_limiter1.plot_characteristics()
+
+my_limiter2 = impairments.Rapp(-1, my_mod.avg_symbol_power, 5)
+my_limiter2.plot_characteristics()
+
+my_limiter3 = impairments.ThirdOrderNonLin(20, my_mod.avg_symbol_power)
+my_limiter3.plot_characteristics()
+print(my_limiter3.cubic_dist_coeff)
+
 my_chan = channels.AwgnChannel(0, True, 1234)
 snrs = ebn0_to_snr(np.arange(0, 21, 2), n_fft, n_sub_carr, constel_size)
 print("SNR array:", snrs)
@@ -31,11 +44,13 @@ bers = np.zeros([len(snrs)])
 ofdm_symbols = int(tot_bits / n_bits_per_ofdm_sym)
 
 plot_psd = True
-n_colected_snapshots = 200
+n_colected_snapshots = 100
 tx_sig_arr_for_psd = []
 rx_sig_arr_for_psd = []
+
 snapshot_counter = 0
 
+# %%
 for idx, snr in enumerate(snrs):
     n_err = 0
     for _ in range(ofdm_symbols):
@@ -73,21 +88,17 @@ tx_freqs, tx_sig_psd = zip(*sorted(zip(tx_freq_arr, tx_psd_arr)))
 rx_freq_arr, rx_psd_arr = welch(flat_rx_sig_for_psd, fs=psd_nfft, nfft=psd_nfft, nperseg=n_samp_per_seg, return_onesided=False)
 rx_freqs, rx_sig_psd = zip(*sorted(zip(rx_freq_arr, rx_psd_arr)))
 
-fig1, (ax0, ax1) = plt.subplots(2, 1)
-print(tx_freqs)
-print(rx_sig_psd)
+fig1, ax0 = plt.subplots(1, 1)
 ax0.plot(tx_freqs, to_db(np.array(tx_sig_psd)))
 ax0.set_title("Before propagation")
 ax0.set_xlabel("Subcarrier index [-]")
 ax0.set_ylabel("Power [dB]")
+
+ax0.plot(rx_freqs, to_db(np.array(rx_sig_psd)))
+ax0.set_title("After propagation")
+ax0.set_xlabel("Subcarrier index [-]")
+ax0.set_ylabel("Power [dB]")
 ax0.grid()
-
-
-ax1.plot(rx_freqs, to_db(np.array(rx_sig_psd)))
-ax1.set_title("After propagation")
-ax1.set_xlabel("Subcarrier index [-]")
-ax1.set_ylabel("Power [dB]")
-ax1.grid()
 
 plt.show()
 
