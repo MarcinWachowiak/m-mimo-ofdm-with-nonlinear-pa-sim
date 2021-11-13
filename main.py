@@ -27,11 +27,11 @@ tot_err = 0
 
 my_mod = modulation.QamModem(constel_size)
 
-my_limiter1 = impairments.SoftLimiter(-1, my_mod.avg_symbol_power)
-my_limiter1.plot_characteristics()
-
-my_limiter2 = impairments.Rapp(-1, my_mod.avg_symbol_power, 5)
-my_limiter2.plot_characteristics()
+# my_limiter1 = impairments.SoftLimiter(-1, my_mod.avg_symbol_power)
+# my_limiter1.plot_characteristics()
+#
+# my_limiter2 = impairments.Rapp(-1, my_mod.avg_symbol_power, 5)
+# my_limiter2.plot_characteristics()
 
 my_limiter3 = impairments.ThirdOrderNonLin(20, my_mod.avg_symbol_power)
 my_limiter3.plot_characteristics()
@@ -50,29 +50,29 @@ rx_sig_arr_for_psd = []
 
 snapshot_counter = 0
 
-# %%
-for idx, snr in enumerate(snrs):
-    n_err = 0
-    for _ in range(ofdm_symbols):
-        my_chan.set_snr(snr)
-        tx_bits = gen_tx_bits(n_bits_per_ofdm_sym)
-        tx_symb = my_mod.modulate(tx_bits)
-        tx_ofdm_symbol = modulation.tx_ofdm_symbol(tx_symb, n_fft, n_sub_carr, cyclic_prefix_len)
-
-        rx_ofdm_symbol = my_chan.propagate(tx_ofdm_symbol, my_mod.avg_symbol_power, n_sub_carr, n_fft)
-
-        if plot_psd and snapshot_counter < n_colected_snapshots:
-            tx_sig_arr_for_psd.append(tx_ofdm_symbol)
-            rx_sig_arr_for_psd.append(rx_ofdm_symbol)
-            snapshot_counter += 1
-
-        rx_symb = modulation.rx_ofdm_symbol(rx_ofdm_symbol, n_fft, n_sub_carr, cyclic_prefix_len)
-        rx_bits = my_mod.demodulate(rx_symb)
-        n_bit_err = count_mismatched_bits(tx_bits, rx_bits)
-
-        n_err += n_bit_err
-
-    bers[idx] = n_err / tot_bits
+# # %%
+# for idx, snr in enumerate(snrs):
+#     n_err = 0
+#     for _ in range(ofdm_symbols):
+#         my_chan.set_snr(snr)
+#         tx_bits = gen_tx_bits(n_bits_per_ofdm_sym)
+#         tx_symb = my_mod.modulate(tx_bits)
+#         tx_ofdm_symbol = modulation.tx_ofdm_symbol(tx_symb, n_fft, n_sub_carr, cyclic_prefix_len)
+#
+#         rx_ofdm_symbol = my_chan.propagate(tx_ofdm_symbol, my_mod.avg_symbol_power, n_sub_carr, n_fft)
+#
+#         if plot_psd and snapshot_counter < n_colected_snapshots:
+#             tx_sig_arr_for_psd.append(tx_ofdm_symbol)
+#             rx_sig_arr_for_psd.append(rx_ofdm_symbol)
+#             snapshot_counter += 1
+#
+#         rx_symb = modulation.rx_ofdm_symbol(rx_ofdm_symbol, n_fft, n_sub_carr, cyclic_prefix_len)
+#         rx_bits = my_mod.demodulate(rx_symb)
+#         n_bit_err = count_mismatched_bits(tx_bits, rx_bits)
+#
+#         n_err += n_bit_err
+#
+#     bers[idx] = n_err / tot_bits
 
 # %%
 print("--- Computation time: %f ---" % (time.time() - start_time))
