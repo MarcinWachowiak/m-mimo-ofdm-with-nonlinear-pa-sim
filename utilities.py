@@ -1,24 +1,4 @@
-# Authors: CommPy contributors
-# License: BSD 3-Clause
-
-"""
-============================================
-Utilities (:mod:`commpy.utilities`)
-============================================
-
-.. autosummary::
-   :toctree: generated/
-
-   dec2bitarray         -- Integer or array-like of integers to binary (bit array).
-   decimal2bitarray     -- Specialized version for one integer to binary (bit array).
-   bitarray2dec         -- Binary (bit array) to integer.
-   hamming_dist         -- Hamming distance.
-   euclid_dist          -- Squared Euclidean distance.
-   upsample             -- Upsample by an integral factor (zero inserAtion).
-   signal_power         -- Compute the power of a discrete time signal.
-"""
 import functools
-
 import numpy as np
 
 __all__ = ['dec2bitarray', 'decimal2bitarray', 'bitarray2dec', 'hamming_dist', 'euclid_dist', 'upsample',
@@ -183,45 +163,28 @@ def upsample(x, n):
 
     return y
 
-
+@jit(nopython=True)
 def signal_power(signal):
-    """
-    Compute the power of a discrete time signal.
-
-    Parameters
-    ----------
-    signal : 1D ndarray
-             Input signal.
-
-    Returns
-    -------
-    P : float
-        Power of the input signal.
-    """
-
-    @np.vectorize
     def square_abs(s):
-        return abs(s) ** 2
+        return np.abs(s) ** 2
 
-    P = np.mean(square_abs(signal))
-    return P
+    sig_power = np.mean(square_abs(signal))
+    return sig_power
 
 
-# generate random sequences of 0,1 of given length
 def gen_tx_bits(length):
     return np.random.choice((0, 1), length)
 
-
-# compares two binary sequences and counts mismatches
+@jit(nopython=True)
 def count_mismatched_bits(tx_bits_arr, rx_bits_arr):
     return np.bitwise_xor(tx_bits_arr, rx_bits_arr).sum()
 
 
-# converts from SNR to Eb/N0
+@jit(nopython=True)
 def ebn0_to_snr(eb_per_n0, n_fft, n_sub_carr, constel_size):
     return 10 * np.log10(10 ** (eb_per_n0 / 10) * n_sub_carr * np.log2(constel_size) / n_fft)
 
-
+@jit(nopython=True)
 def snr_to_ebn0(snr, n_fft, n_sub_carr, constel_size):
     return 10 * np.log10(10 ** (snr / 10) * (n_fft / (n_sub_carr * np.log2(constel_size))))
 
