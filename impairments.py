@@ -6,7 +6,7 @@ from utilities import to_db
 
 @jit(nopython=True)
 def _process_soft_lim(sat_pow, in_sig):
-    return np.where(np.abs(in_sig) <= sat_pow, in_sig, in_sig * np.divide(sat_pow, np.abs(np.where(in_sig != 0, in_sig, 1))))
+    return np.where(np.power(np.abs(in_sig), 2) <= sat_pow, in_sig, in_sig * np.sqrt(np.divide(sat_pow, np.power(np.abs(np.where(in_sig != 0, in_sig, 1)), 2))))
 
 
 class SoftLimiter:
@@ -41,7 +41,7 @@ class SoftLimiter:
 
 @jit(nopython=True)
 def _process_rapp(sat_pow, p_hardness, in_sig):
-    return in_sig / (np.power(1 + np.power(np.abs(in_sig) / sat_pow, 2 * p_hardness), 1 / (2 * p_hardness)))
+    return in_sig / (np.power(1 + np.power(np.abs(in_sig) / np.sqrt(sat_pow), 2 * p_hardness), 1 / (2 * p_hardness)))
 
 
 class Rapp:
