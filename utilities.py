@@ -171,10 +171,6 @@ def signal_power(signal):
     sig_power = np.mean(square_abs(signal))
     return sig_power
 
-
-def gen_tx_bits(length):
-    return np.random.choice((0, 1), length)
-
 @jit(nopython=True)
 def count_mismatched_bits(tx_bits_arr, rx_bits_arr):
     return np.bitwise_xor(tx_bits_arr, rx_bits_arr).sum()

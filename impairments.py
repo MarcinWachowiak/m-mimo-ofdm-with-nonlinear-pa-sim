@@ -31,6 +31,8 @@ class SoftLimiter:
         ax.set_ylabel("Output signal amplitude [V]")
         ax.legend(title="IBO [dB]")
         ax.grid()
+        plt.tight_layout()
+        #plt.savefig("figs/soft_lim_tf.pdf", dpi=600, bbox_inches='tight')
         plt.show()
 
     def process(self, in_sig):
@@ -68,6 +70,8 @@ class Rapp:
         ax.set_ylabel("Output signal amplitude [V]")
         ax.legend(title="IBO [dB]")
         ax.grid()
+        plt.tight_layout()
+        #plt.savefig("figs/rapp_lim_tf.pdf", dpi=600, bbox_inches='tight')
         plt.show()
 
     def process(self, in_sig):
@@ -105,6 +109,8 @@ class ThirdOrderNonLin:
         ax.set_ylabel("Output signal amplitude [V]")
         ax.legend(title="TOI [dB]")
         ax.grid()
+        plt.tight_layout()
+        #plt.savefig("figs/toi_tf.pdf", dpi=600, bbox_inches='tight')
         plt.show()
 
     def process(self, in_sig):
