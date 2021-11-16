@@ -22,19 +22,15 @@ cyclic_prefix_len = int(0.15 * n_fft)
 n_bits_per_ofdm_sym = int(np.log2(constel_size) * n_sub_carr)
 
 my_mod = modulation.QamModem(constel_size)
-print("Avg symbol power:", my_mod.avg_symbol_power)
 # my_mod.plot_constellation()
 my_chan = channels.AwgnChannel(0, True, 1234)
 bit_rng = np.random.default_rng(4321)
 
 my_limiter1 = impairments.SoftLimiter(0, my_mod.avg_symbol_power)
-my_distortion = impairments.Rapp(0, my_mod.avg_symbol_power, 5)
+my_limiter2 = impairments.Rapp(0, my_mod.avg_symbol_power, 5)
 
-print("Saturation power:", my_distortion.sat_pow)
-tx_ofdm_symbol = my_distortion.process(np.array([5+5j, 5+7j, 7+5j, 7+7j]))
-print(tx_ofdm_symbol)
-my_limiter3 = impairments.ThirdOrderNonLin(15, my_mod.avg_symbol_power)
-my_distortion.plot_characteristics(-18, 18, 0.1)
+my_distortion = impairments.ThirdOrderNonLin(20, my_mod.avg_symbol_power)
+my_distortion.plot_characteristics(-10, 10, 0.1)
 
 ebn0_arr = np.arange(0, 21, 2)
 print("Eb/n0 values:", ebn0_arr)
@@ -49,7 +45,7 @@ bits_sent_max = int(1e6)
 n_err_min = 1000
 
 # %%
-dist_vals_db = np.arange(5, -1, -1)
+dist_vals_db = np.arange(20, 4, -5)
 
 include_clean_run = True
 clean_run_flag = include_clean_run
@@ -65,7 +61,7 @@ constel_snapshot = []
 start_time = time.time()
 for dist_val_db in dist_vals_db:
     snapshot_counter = 0
-    my_distortion.set_ibo(dist_val_db)
+    my_distortion.set_toi(dist_val_db)
     clean_ofdm_for_psd = []
     tx_ofm_for_psd = []
     bers = np.zeros([len(snr_arr)])
@@ -146,7 +142,7 @@ ax1.legend(title="IBO [dB]")
 ax1.grid()
 
 plt.tight_layout()
-#plt.savefig("figs/psd_toi.pdf", dpi=600, bbox_inches='tight')
+plt.savefig("figs/psd_toi.pdf", dpi=600, bbox_inches='tight')
 plt.show()
 
 # %%
@@ -165,7 +161,7 @@ ax2.grid()
 ax2.legend(title="IBO [dB]")
 
 plt.tight_layout()
-#plt.savefig("figs/ber_toi.pdf", dpi=600, bbox_inches='tight')
+plt.savefig("figs/ber_toi.pdf", dpi=600, bbox_inches='tight')
 plt.show()
 
 print("Finished exectution!")
