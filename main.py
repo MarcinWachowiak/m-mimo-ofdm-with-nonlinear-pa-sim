@@ -22,7 +22,11 @@ cyclic_prefix_len = int(0.15 * n_fft)
 n_bits_per_ofdm_sym = int(np.log2(constel_size) * n_sub_carr)
 
 my_mod = modulation.QamModem(constel_size)
-# my_mod.plot_constellation()
+#my_mod.plot_constellation()
+my_demod = modulation.QamModem(constel_size)
+#my_demod.correct_constellation(0)
+#my_demod.plot_constellation()
+
 my_chan = channels.AwgnChannel(0, True, 1234)
 bit_rng = np.random.default_rng(4321)
 avg_ofdm_sample_pow = ofdm_avg_sample_pow(my_mod.avg_symbol_power, n_sub_carr, n_fft)
@@ -30,7 +34,7 @@ avg_ofdm_sample_pow = ofdm_avg_sample_pow(my_mod.avg_symbol_power, n_sub_carr, n
 my_limiter1 = impairments.SoftLimiter(0, avg_ofdm_sample_pow)
 my_limiter2 = impairments.Rapp(0, avg_ofdm_sample_pow, 5)
 my_distortion = impairments.ThirdOrderNonLin(10, avg_ofdm_sample_pow)
-my_distortion.plot_characteristics(0.01, 10, 0.01)
+#my_distortion.plot_characteristics(0.01, 10, 0.01)
 
 ebn0_arr = np.arange(0, 21, 2)
 print("Eb/n0 values:", ebn0_arr)
@@ -59,7 +63,11 @@ sample_constellation = True
 constel_snapshot = []
 
 start_time = time.time()
-for dist_val_db in dist_vals_db:
+for dist_idx, dist_val_db in enumerate(dist_vals_db):
+
+    # if dist_idx == 1:
+    #     my_demod.correct_constellation(dist_val_db)
+
     snapshot_counter = 0
     my_distortion.set_toi(dist_val_db)
     clean_ofdm_for_psd = []
@@ -89,7 +97,7 @@ for dist_val_db in dist_vals_db:
                 snapshot_counter += 1
 
             rx_symb = modulation.rx_ofdm_symbol(rx_ofdm_symbol, n_fft, n_sub_carr, cyclic_prefix_len)
-            rx_bits = my_mod.demodulate(rx_symb)
+            rx_bits = my_demod.demodulate(rx_symb)
             n_bit_err = count_mismatched_bits(tx_bits, rx_bits)
 
             # if sample_constellation:
