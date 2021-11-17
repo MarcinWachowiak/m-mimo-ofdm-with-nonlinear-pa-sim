@@ -87,22 +87,21 @@ class ThirdOrderNonLin:
 
     def __init__(self, toi_db, avg_symb_pow):
         self.toi_db = toi_db
-        self.avg_symb_pow = avg_symb_pow
-        self.cubic_dist_coeff = 1 / (avg_symb_pow * np.power(10, (toi_db / 10)))
+        self.cubic_dist_coeff = 1 / (np.power(10, (toi_db / 10)))
 
     def set_toi(self, toi_db):
         self.toi_db = toi_db
-        self.cubic_dist_coeff = 1 / (self.avg_symb_pow * np.power(10, (toi_db / 10)))
+        self.cubic_dist_coeff = 1 / (np.power(10, (toi_db / 10)))
 
     def plot_characteristics(self, in_ampl_min=-10, in_ampl_max=10, step=0.1):
         in_sig_ampl = np.arange(in_ampl_min, in_ampl_max + step, step)
         out_sig_ampl = self.process(in_sig_ampl)
 
         fig, ax = plt.subplots(1, 1)
-        ax.plot(in_sig_ampl, out_sig_ampl, label=self.toi_db)
-        # ax.plot(to_db(in_sig_ampl**2), to_db(out_sig_ampl**2), label=self.toi_db)
-        # ax.plot(to_db(in_sig_ampl**2), to_db(in_sig_ampl**2) - to_db(out_sig_ampl**2), label="Difference")
-        # ax.plot(to_db(in_sig_ampl**2), to_db(in_sig_ampl**2), label="Linear")
+        #ax.plot(in_sig_ampl, out_sig_ampl, label=self.toi_db)
+        ax.plot(to_db(in_sig_ampl**2), to_db(out_sig_ampl**2), label=self.toi_db)
+        ax.plot(to_db(in_sig_ampl**2), to_db(in_sig_ampl**2) - to_db(out_sig_ampl**2), label="Difference")
+        ax.plot(to_db(in_sig_ampl**2), to_db(in_sig_ampl**2), label="Linear")
 
         ax.set_title("Third order distortion transfer characteristic")
         ax.set_xlabel("Input signal amplitude [V]")

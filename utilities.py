@@ -2,7 +2,7 @@ import functools
 import numpy as np
 
 __all__ = ['dec2bitarray', 'decimal2bitarray', 'bitarray2dec', 'hamming_dist', 'euclid_dist', 'upsample',
-           'signal_power', 'gen_tx_bits', 'count_mismatched_bits', 'snr_to_ebn0', 'ebn0_to_snr']
+           'signal_power', 'count_mismatched_bits', 'snr_to_ebn0', 'ebn0_to_snr', 'to_db', 'ofdm_avg_sample_pow']
 
 vectorized_binary_repr = np.vectorize(np.binary_repr)
 
@@ -163,6 +163,7 @@ def upsample(x, n):
 
     return y
 
+
 @jit(nopython=True)
 def signal_power(signal):
     def square_abs(s):
@@ -170,6 +171,7 @@ def signal_power(signal):
 
     sig_power = np.mean(square_abs(signal))
     return sig_power
+
 
 @jit(nopython=True)
 def count_mismatched_bits(tx_bits_arr, rx_bits_arr):
@@ -180,6 +182,7 @@ def count_mismatched_bits(tx_bits_arr, rx_bits_arr):
 def ebn0_to_snr(eb_per_n0, n_fft, n_sub_carr, constel_size):
     return 10 * np.log10(10 ** (eb_per_n0 / 10) * n_sub_carr * np.log2(constel_size) / n_fft)
 
+
 @jit(nopython=True)
 def snr_to_ebn0(snr, n_fft, n_sub_carr, constel_size):
     return 10 * np.log10(10 ** (snr / 10) * (n_fft / (n_sub_carr * np.log2(constel_size))))
@@ -188,3 +191,8 @@ def snr_to_ebn0(snr, n_fft, n_sub_carr, constel_size):
 @jit(nopython=True)
 def to_db(samples):
     return 10 * np.log10(samples)
+
+
+@jit(nopython=True)
+def ofdm_avg_sample_pow(avg_symb_pow, n_sub_carr, n_fft):
+    return avg_symb_pow * (n_sub_carr / n_fft)

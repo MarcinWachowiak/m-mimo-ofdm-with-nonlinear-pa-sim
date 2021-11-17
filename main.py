@@ -5,7 +5,7 @@ import numpy as np
 from scipy.signal import welch
 import time
 
-from utilities import count_mismatched_bits, snr_to_ebn0, ebn0_to_snr, to_db
+from utilities import count_mismatched_bits, snr_to_ebn0, ebn0_to_snr, to_db, ofdm_avg_sample_pow
 import channels
 import modulation
 import impairments
@@ -25,12 +25,12 @@ my_mod = modulation.QamModem(constel_size)
 # my_mod.plot_constellation()
 my_chan = channels.AwgnChannel(0, True, 1234)
 bit_rng = np.random.default_rng(4321)
+avg_ofdm_sample_pow = ofdm_avg_sample_pow(my_mod.avg_symbol_power, n_sub_carr, n_fft)
 
-my_limiter1 = impairments.SoftLimiter(0, my_mod.avg_symbol_power)
-my_limiter2 = impairments.Rapp(0, my_mod.avg_symbol_power, 5)
-
-my_distortion = impairments.ThirdOrderNonLin(20, my_mod.avg_symbol_power)
-my_distortion.plot_characteristics(-10, 10, 0.1)
+my_limiter1 = impairments.SoftLimiter(0, avg_ofdm_sample_pow)
+my_limiter2 = impairments.Rapp(0, avg_ofdm_sample_pow, 5)
+my_distortion = impairments.ThirdOrderNonLin(10, avg_ofdm_sample_pow)
+my_distortion.plot_characteristics(0.01, 10, 0.01)
 
 ebn0_arr = np.arange(0, 21, 2)
 print("Eb/n0 values:", ebn0_arr)
@@ -45,7 +45,7 @@ bits_sent_max = int(1e6)
 n_err_min = 1000
 
 # %%
-dist_vals_db = np.arange(20, 4, -5)
+dist_vals_db = np.arange(30, 9, -5)
 
 include_clean_run = True
 clean_run_flag = include_clean_run
@@ -57,7 +57,7 @@ ber_per_dist, freq_arr, clean_ofdm_psd, tx_ofdm_psd = ([] for i in range(4))
 
 sample_constellation = True
 constel_snapshot = []
-# %%
+
 start_time = time.time()
 for dist_val_db in dist_vals_db:
     snapshot_counter = 0
@@ -70,6 +70,7 @@ for dist_val_db in dist_vals_db:
         my_chan.set_snr(snr)
         n_err = 0
         bits_sent = 0
+        avg_ofdm_sample_pow = ofdm_avg_sample_pow(my_mod.avg_symbol_power, n_sub_carr, n_fft)
         while bits_sent < bits_sent_max and n_err < n_err_min:
             tx_bits = bit_rng.choice((0, 1), n_bits_per_ofdm_sym)
             tx_symb = my_mod.modulate(tx_bits)
@@ -80,7 +81,7 @@ for dist_val_db in dist_vals_db:
             else:
                 tx_ofdm_symbol = clean_ofdm_symbol
 
-            rx_ofdm_symbol = my_chan.propagate(tx_ofdm_symbol, my_mod.avg_symbol_power, n_sub_carr, n_fft)
+            rx_ofdm_symbol = my_chan.propagate(tx_ofdm_symbol, avg_ofdm_sample_pow)
 
             if plot_psd and snapshot_counter < n_collected_snapshots:
                 clean_ofdm_for_psd.append(clean_ofdm_symbol)
@@ -165,3 +166,4 @@ plt.savefig("figs/ber_toi.pdf", dpi=600, bbox_inches='tight')
 plt.show()
 
 print("Finished exectution!")
+#%%
