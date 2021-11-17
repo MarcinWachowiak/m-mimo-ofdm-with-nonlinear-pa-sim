@@ -34,7 +34,7 @@ avg_ofdm_sample_pow = ofdm_avg_sample_pow(my_mod.avg_symbol_power, n_sub_carr, n
 my_limiter1 = impairments.SoftLimiter(0, avg_ofdm_sample_pow)
 my_limiter2 = impairments.Rapp(0, avg_ofdm_sample_pow, 5)
 my_distortion = impairments.ThirdOrderNonLin(10, avg_ofdm_sample_pow)
-#my_distortion.plot_characteristics(0.01, 10, 0.01)
+my_distortion.plot_characteristics(0.01, 10, 0.01)
 
 ebn0_arr = np.arange(0, 21, 2)
 print("Eb/n0 values:", ebn0_arr)
