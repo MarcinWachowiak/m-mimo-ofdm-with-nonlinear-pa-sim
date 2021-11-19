@@ -25,6 +25,8 @@ def _demodulate(constellation, n_bits_per_symbol, input_symbols):
 class Modem:
 
     def __init__(self, constellation, reorder_as_gray=True):
+        # constellation correcting coefficient - alpha
+        self.alpha = 1
 
         if reorder_as_gray:
             constel_size = len(constellation)
@@ -57,9 +59,10 @@ class Modem:
 
     def correct_constellation(self, ibo_db):
         gamma = np.power(10, ibo_db / 10)
-        alfa = 1 - np.exp(-np.power(gamma, 2)) + (np.sqrt(np.pi) * gamma/ 2) * scp.special.erfc(gamma)
+        alpha = 1 - np.exp(-np.power(gamma, 2)) + (np.sqrt(np.pi) * gamma/ 2) * scp.special.erfc(gamma)
         #scale constellation
-        self._constellation = alfa * self._constellation
+        self.alpha = alpha
+        self._constellation = alpha * self._constellation
 
     @property
     def constellation(self):
