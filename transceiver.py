@@ -7,10 +7,13 @@ import impairments
 
 
 class Transceiver:
-    def __init__(self, modem, impairment=None):
-
+    def __init__(self, modem, impairment=None, cord_x=0, cord_y=0, cord_z=0):
         self.modem = modem
         self.impairment = impairment
+        # position of transceiver/antenna
+        self.cord_x = cord_x
+        self.cord_y = cord_y
+        self.cord_z = cord_z
 
     def transmit(self, in_bits, skip_dist=False, return_both=False):
         clean_symb = self.modem.modulate(in_bits)
@@ -24,3 +27,8 @@ class Transceiver:
 
     def receive(self, in_symb):
         return self.modem.demodulate(in_symb)
+
+    def set_position(self, cord_x, cord_y, cord_z):
+        self.cord_x = cord_x
+        self.cord_y = cord_y
+        self.cord_z = cord_z

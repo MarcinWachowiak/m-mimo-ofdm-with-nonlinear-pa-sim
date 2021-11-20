@@ -191,3 +191,7 @@ def snr_to_ebn0(snr, n_fft, n_sub_carr, constel_size):
 @jit(nopython=True)
 def to_db(samples):
     return 10 * np.log10(samples)
+
+
+def points_on_circumference(r, n=100):
+    return [(np.cos(2 * np.pi / n * x) * r, np.sin(2 * np.pi / n * x) * r) for x in range(0, n)]

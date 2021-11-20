@@ -173,5 +173,5 @@ plt.tight_layout()
 plt.savefig("figs/ber_toi.pdf", dpi=600, bbox_inches='tight')
 plt.show()
 
-print("Finished exectution!")
+print("Finished execution!")
 #%%

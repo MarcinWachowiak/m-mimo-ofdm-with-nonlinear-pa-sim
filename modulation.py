@@ -126,27 +126,29 @@ def _rx_ofdm_symbol(ofdm_symbol, n_fft: int, n_sub_carr: int, cp_length: int):
     return np.concatenate((ofdm_sym_freq[-n_sub_carr // 2:], ofdm_sym_freq[1:(n_sub_carr // 2) + 1]))
 
 
-class OfdmQamModem(Modem):
+class OfdmQamModem(QamModem):
 
     def __init__(self, constel_size: int, n_fft: int, n_sub_carr: int, cp_len: int):
+        super().__init__(constel_size)
+
         self.n_fft = n_fft
         self.n_sub_carr = n_sub_carr
         self.cp_len = cp_len
         self.n_bits_per_ofdm_sym = int(np.log2(constel_size) * n_sub_carr)
-        # check if constellation size generates a square QAM
-        n_symb = np.sqrt(constel_size)
-        if n_symb != int(n_symb):
-            raise ValueError('Constellation size must be a power of 2, only square QAM supported.')
+        self.avg_sample_power = self.ofdm_avg_sample_pow()
+        self.precoding_vec = None
 
-        # generate centered around 0, equally spaced (by 2) PAM symbols, indexing from lower left corner
-        pam_symb = np.arange(-n_symb + 1, n_symb, 2)
-        # arrange into QAM
-        constellation = np.tile(np.hstack((pam_symb, pam_symb[::-1])), int(n_symb) // 2) * 1j + pam_symb.repeat(n_symb)
-
-        super().__init__(constellation)
+    def set_precoding_vec(self, precoding_vec):
+        self.precoding_vec = precoding_vec
 
     def modulate(self, input_bits):
-        baseband_symbols = _modulate(self._constellation, self.n_bits_per_symbol, input_bits)
+        modulated_symbols = _modulate(self._constellation, self.n_bits_per_symbol, input_bits)
+        #apply precoding if any
+        if self.precoding_vec is not None:
+            baseband_symbols = np.multiply(modulated_symbols, self.precoding_vec)
+        else:
+            baseband_symbols = modulated_symbols
+
         return _tx_ofdm_symbol(baseband_symbols, self.n_fft, self.n_sub_carr, self.cp_len)
 
     def demodulate(self, ofdm_symbol):

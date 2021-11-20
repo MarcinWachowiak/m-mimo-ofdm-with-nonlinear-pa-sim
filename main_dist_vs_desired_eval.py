@@ -19,7 +19,7 @@ set_latex_plot_style()
 
 my_mod = modulation.OfdmQamModem(constel_size=16, n_fft=4096, n_sub_carr=1024, cp_len=256)
 my_distortion = impairments.SoftLimiter(3, my_mod.ofdm_avg_sample_pow())
-my_tx= transceiver.Transceiver(my_mod, my_distortion)
+my_tx = transceiver.Transceiver(my_mod, my_distortion)
 my_tx.impairment.plot_characteristics()
 
 my_demod = modulation.OfdmQamModem(constel_size=16, n_fft=4096, n_sub_carr=1024, cp_len=256)
@@ -72,14 +72,14 @@ for dist_idx, dist_val_db in enumerate(dist_vals_db):
         n_err = 0
         bits_sent = 0
         while bits_sent < bits_sent_max and n_err < n_err_min:
-            tx_bits = bit_rng.choice((0, 1), my_mod.n_bits_per_ofdm_sym)
+            tx_bits = bit_rng.choice((0, 1), my_tx.modem.n_bits_per_ofdm_sym)
             tx_ofdm_symbol, clean_ofdm_symbol = my_tx.transmit(tx_bits, return_both=True)
 
             rx_ofdm_symbol = my_chan.propagate(tx_ofdm_symbol, my_mod.ofdm_avg_sample_pow())
 
             if plot_psd and snapshot_counter < n_collected_snapshots:
                 clean_ofdm_for_psd.append(clean_ofdm_symbol)
-                distortion_for_psd.append(tx_ofdm_symbol - my_demod.alpha * clean_ofdm_symbol)
+                distortion_for_psd.append(tx_ofdm_symbol - my_rx.modem.alpha * clean_ofdm_symbol)
                 snapshot_counter += 1
 
             rx_bits = my_rx.receive(rx_ofdm_symbol)
@@ -168,5 +168,5 @@ plt.tight_layout()
 plt.savefig("figs/ber_soft_lim.pdf", dpi=600, bbox_inches='tight')
 plt.show()
 
-print("Finished exectution!")
+print("Finished execution!")
 # %%
