@@ -7,6 +7,7 @@ from speedup import jit
 from numba import objmode, types
 
 
+# @jit(nopython=True)
 def _modulate(constellation, n_bits_per_symbol, input_bits):
     mapfunc = np.vectorize(lambda i:
                            constellation[bitarray2dec(input_bits[i:i + n_bits_per_symbol])])
@@ -15,6 +16,7 @@ def _modulate(constellation, n_bits_per_symbol, input_bits):
     return baseband_symbols
 
 
+# @jit(nopython=True)
 def _demodulate(constellation, n_bits_per_symbol, input_symbols):
     index_list = np.abs(input_symbols - constellation[:, None]).argmin(0)
     demod_bits = dec2bitarray(index_list, n_bits_per_symbol)
@@ -27,11 +29,11 @@ class Modem:
     def __init__(self, constellation, reorder_as_gray=True):
         # constellation correcting coefficient - alpha
         self.alpha = 1
+        self.constel_size = len(constellation)
 
         if reorder_as_gray:
-            constel_size = len(constellation)
             # generate gray codes from linear arange
-            gray_codes = np.asarray([x ^ (x >> 1) for x in range(constel_size)])
+            gray_codes = np.asarray([x ^ (x >> 1) for x in range(self.constel_size)])
             # remap constellation based on gray code indices
             self.constellation = np.array(constellation)[gray_codes.argsort()]
 
@@ -59,8 +61,8 @@ class Modem:
 
     def correct_constellation(self, ibo_db):
         gamma = np.power(10, ibo_db / 10)
-        alpha = 1 - np.exp(-np.power(gamma, 2)) + (np.sqrt(np.pi) * gamma/ 2) * scp.special.erfc(gamma)
-        #scale constellation
+        alpha = 1 - np.exp(-np.power(gamma, 2)) + (np.sqrt(np.pi) * gamma / 2) * scp.special.erfc(gamma)
+        # scale constellation
         self.alpha = alpha
         self._constellation = alpha * self._constellation
 
@@ -98,7 +100,7 @@ class QamModem(Modem):
 
 
 @jit(nopython=True)
-def tx_ofdm_symbol(mod_symbols, n_fft: int, n_sub_carr: int, cp_length: int):
+def _tx_ofdm_symbol(mod_symbols, n_fft: int, n_sub_carr: int, cp_length: int):
     # generate OFDM symbol block - size given by n_sub_carr size
     if len(mod_symbols) != n_sub_carr:
         raise ValueError('mod_symbols length must match n_sub_carr value')
@@ -114,8 +116,9 @@ def tx_ofdm_symbol(mod_symbols, n_fft: int, n_sub_carr: int, cp_length: int):
     # add cyclic prefix
     return np.concatenate((ofdm_sym_time[-cp_length:], ofdm_sym_time))
 
+
 @jit(nopython=True)
-def rx_ofdm_symbol(ofdm_symbol, n_fft: int, n_sub_carr: int, cp_length: int):
+def _rx_ofdm_symbol(ofdm_symbol, n_fft: int, n_sub_carr: int, cp_length: int):
     # decode OFDM symbol block - size given by n_sub_carr size
     with objmode(ofdm_sym_freq='complex128[:]'):
         # skip cyclic prefix
@@ -123,3 +126,35 @@ def rx_ofdm_symbol(ofdm_symbol, n_fft: int, n_sub_carr: int, cp_length: int):
 
     # extract and rearange data from LR boundaries
     return np.concatenate((ofdm_sym_freq[-n_sub_carr // 2:], ofdm_sym_freq[1:(n_sub_carr // 2) + 1]))
+
+
+class OfdmQamModem(Modem):
+
+    def __init__(self, constel_size: int, n_fft: int, n_sub_carr: int, cp_len: int):
+        self.n_fft = n_fft
+        self.n_sub_carr = n_sub_carr
+        self.cp_len = cp_len
+        self.n_bits_per_ofdm_sym = int(np.log2(constel_size) * n_sub_carr)
+        # check if constellation size generates a square QAM
+        n_symb = np.sqrt(constel_size)
+        if n_symb != int(n_symb):
+            raise ValueError('Constellation size must be a power of 2, only square QAM supported.')
+
+        # generate centered around 0, equally spaced (by 2) PAM symbols, indexing from lower left corner
+        pam_symb = np.arange(-n_symb + 1, n_symb, 2)
+        # arrange into QAM
+        constellation = np.tile(np.hstack((pam_symb, pam_symb[::-1])), int(n_symb) // 2) * 1j + pam_symb.repeat(n_symb)
+
+        super().__init__(constellation)
+
+    def modulate(self, input_bits):
+        baseband_symbols = _modulate(self._constellation, self.n_bits_per_symbol, input_bits)
+        return _tx_ofdm_symbol(baseband_symbols, self.n_fft, self.n_sub_carr, self.cp_len)
+
+    def demodulate(self, ofdm_symbol):
+        baseband_symbols = _rx_ofdm_symbol(ofdm_symbol, self.n_fft, self.n_sub_carr, self.cp_len)
+        return _demodulate(self._constellation, self.n_bits_per_symbol, baseband_symbols)
+
+    def ofdm_avg_sample_pow(self):
+        return self.avg_symbol_power * (self.n_sub_carr / self.n_fft)
+

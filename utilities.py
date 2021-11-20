@@ -2,7 +2,7 @@ import functools
 import numpy as np
 
 __all__ = ['dec2bitarray', 'decimal2bitarray', 'bitarray2dec', 'hamming_dist', 'euclid_dist', 'upsample',
-           'signal_power', 'count_mismatched_bits', 'snr_to_ebn0', 'ebn0_to_snr', 'to_db', 'ofdm_avg_sample_pow']
+           'signal_power', 'count_mismatched_bits', 'snr_to_ebn0', 'ebn0_to_snr', 'to_db']
 
 vectorized_binary_repr = np.vectorize(np.binary_repr)
 
@@ -191,8 +191,3 @@ def snr_to_ebn0(snr, n_fft, n_sub_carr, constel_size):
 @jit(nopython=True)
 def to_db(samples):
     return 10 * np.log10(samples)
-
-
-@jit(nopython=True)
-def ofdm_avg_sample_pow(avg_symb_pow, n_sub_carr, n_fft):
-    return avg_symb_pow * (n_sub_carr / n_fft)
