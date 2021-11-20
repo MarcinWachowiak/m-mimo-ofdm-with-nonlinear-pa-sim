@@ -12,13 +12,15 @@ class Transceiver:
         self.modem = modem
         self.impairment = impairment
 
-    def transmit(self, in_bits, skip_dist=False):
-        tx_symb = self.modem.modulate(in_bits)
+    def transmit(self, in_bits, skip_dist=False, return_both=False):
+        clean_symb = self.modem.modulate(in_bits)
 
-        if self.impairment is not None and skip_dist is not True:
-            return self.impairment.process(tx_symb)
-        else:
-            return tx_symb
+        if skip_dist:
+            return clean_symb
+        elif return_both and self.impairment is not None:
+            return self.impairment.process(clean_symb), clean_symb
+        elif self.impairment is not None:
+            return self.impairment.process(clean_symb)
 
     def receive(self, in_symb):
         return self.modem.demodulate(in_symb)

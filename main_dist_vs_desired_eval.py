@@ -73,12 +73,7 @@ for dist_idx, dist_val_db in enumerate(dist_vals_db):
         bits_sent = 0
         while bits_sent < bits_sent_max and n_err < n_err_min:
             tx_bits = bit_rng.choice((0, 1), my_mod.n_bits_per_ofdm_sym)
-            clean_ofdm_symbol = my_tx.transmit(tx_bits, skip_dist=True)
-
-            if not clean_run_flag:
-                tx_ofdm_symbol = my_tx.transmit(tx_bits)
-            else:
-                tx_ofdm_symbol = clean_ofdm_symbol
+            tx_ofdm_symbol, clean_ofdm_symbol = my_tx.transmit(tx_bits, return_both=True)
 
             rx_ofdm_symbol = my_chan.propagate(tx_ofdm_symbol, my_mod.ofdm_avg_sample_pow())
 
