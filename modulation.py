@@ -12,7 +12,6 @@ def _modulate(constellation, n_bits_per_symbol, input_bits):
     mapfunc = np.vectorize(lambda i:
                            constellation[bitarray2dec(input_bits[i:i + n_bits_per_symbol])])
     baseband_symbols = mapfunc(np.arange(0, len(input_bits), n_bits_per_symbol))
-
     return baseband_symbols
 
 
@@ -20,7 +19,6 @@ def _modulate(constellation, n_bits_per_symbol, input_bits):
 def _demodulate(constellation, n_bits_per_symbol, input_symbols):
     index_list = np.abs(input_symbols - constellation[:, None]).argmin(0)
     demod_bits = dec2bitarray(index_list, n_bits_per_symbol)
-
     return demod_bits
 
 

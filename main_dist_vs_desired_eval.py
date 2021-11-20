@@ -9,22 +9,25 @@ from utilities import count_mismatched_bits, snr_to_ebn0, ebn0_to_snr, to_db
 import channels
 import modulation
 import impairments
+import transceiver
 
 from plot_settings import set_latex_plot_style
 
 set_latex_plot_style()
 
 # %%
+
 my_mod = modulation.OfdmQamModem(constel_size=16, n_fft=4096, n_sub_carr=1024, cp_len=256)
+my_distortion = impairments.SoftLimiter(3, my_mod.ofdm_avg_sample_pow())
+my_tx= transceiver.Transceiver(my_mod, my_distortion)
+my_tx.impairment.plot_characteristics()
+
 my_demod = modulation.OfdmQamModem(constel_size=16, n_fft=4096, n_sub_carr=1024, cp_len=256)
+my_rx = transceiver.Transceiver(my_demod)
 
 my_chan = channels.AwgnChannel(0, True, 1234)
 bit_rng = np.random.default_rng(4321)
 
-my_distortion = impairments.SoftLimiter(3, my_mod.ofdm_avg_sample_pow())
-my_limiter2 = impairments.Rapp(0, my_mod.ofdm_avg_sample_pow(), 5)
-my_limiter3 = impairments.ThirdOrderNonLin(10, my_mod.ofdm_avg_sample_pow())
-my_distortion.plot_characteristics()
 
 ebn0_arr = np.arange(0, 21, 2)
 print("Eb/n0 values:", ebn0_arr)
@@ -56,8 +59,8 @@ start_time = time.time()
 for dist_idx, dist_val_db in enumerate(dist_vals_db):
 
     # if dist_idx == 1:
-    my_demod.correct_constellation(dist_val_db)
-    my_distortion.set_ibo(dist_val_db)
+    my_rx.modem.correct_constellation(dist_val_db)
+    my_tx.impairment.set_ibo(dist_val_db)
 
     snapshot_counter = 0
     clean_ofdm_for_psd = []
@@ -70,10 +73,10 @@ for dist_idx, dist_val_db in enumerate(dist_vals_db):
         bits_sent = 0
         while bits_sent < bits_sent_max and n_err < n_err_min:
             tx_bits = bit_rng.choice((0, 1), my_mod.n_bits_per_ofdm_sym)
-            clean_ofdm_symbol = my_mod.modulate(tx_bits)
+            clean_ofdm_symbol = my_tx.transmit(tx_bits, skip_dist=True)
 
             if not clean_run_flag:
-                tx_ofdm_symbol = my_distortion.process(clean_ofdm_symbol)
+                tx_ofdm_symbol = my_tx.transmit(tx_bits)
             else:
                 tx_ofdm_symbol = clean_ofdm_symbol
 
@@ -84,7 +87,7 @@ for dist_idx, dist_val_db in enumerate(dist_vals_db):
                 distortion_for_psd.append(tx_ofdm_symbol - my_demod.alpha * clean_ofdm_symbol)
                 snapshot_counter += 1
 
-            rx_bits = my_demod.demodulate(rx_ofdm_symbol)
+            rx_bits = my_rx.receive(rx_ofdm_symbol)
             n_bit_err = count_mismatched_bits(tx_bits, rx_bits)
 
             # if sample_constellation:
