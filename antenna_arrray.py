@@ -14,6 +14,9 @@ class LinearArray:
         self.center_freq = center_freq
         self.wav_len_spacing = wav_len_spacing
         self.array_elements = []
+        self.array_center_x = 0
+        self.array_center_y = 0
+        self.array_center_z = 0
 
         if isinstance(self.transceiver, list) and len(self.transceiver) == self.n_elements and len(
                 self.transceiver) == self.n_elements:
@@ -65,20 +68,25 @@ class LinearArray:
     def set_precoding_single_point(self, rx_transceiver, exact=False):
 
         for idx, tx_transceiver in enumerate(self.array_elements):
-            ifft_freqs = torch.fft.fftfreq(tx_transceiver.modem.n_fft)
-            sub_carr_freqs = np.concatenate((ifft_freqs[-tx_transceiver.modem.n_sub_carr // 2:],
-                                             ifft_freqs[1:(tx_transceiver.modem.n_sub_carr // 2) + 1]))
-            distance = np.sqrt(np.power(tx_transceiver.cord_x - rx_transceiver.cord_x, 2) + np.power(
-                tx_transceiver.cord_y - rx_transceiver.cord_y, 2) + np.power(
-                tx_transceiver.cord_z - rx_transceiver.cord_z, 2))
-
+            # Leave subcarrier dependent precoding for more advanced filter model - for now all freqs delayed the same
+            # ifft_freqs = torch.fft.fftfreq(tx_transceiver.modem.n_fft)
+            # sub_carr_freqs = np.concatenate((ifft_freqs[-tx_transceiver.modem.n_sub_carr // 2:],
+            #                                  ifft_freqs[1:(tx_transceiver.modem.n_sub_carr // 2) + 1]))
             # what about speed of light?
             c_constant = 1
+
             if exact:
-                precoding_vec = np.exp(-2j * np.pi * distance * sub_carr_freqs / c_constant)
-                tx_transceiver.modem.set_precoding_vec(precoding_vec)
+                # distance to each TX
+                distance_tx = np.sqrt(np.power(tx_transceiver.cord_x - rx_transceiver.cord_x, 2) + np.power(
+                    tx_transceiver.cord_y - rx_transceiver.cord_y, 2) + np.power(
+                    tx_transceiver.cord_z - rx_transceiver.cord_z, 2))
+                precoding_vec = np.exp(2j * np.pi * distance_tx)
             else:
-                #simplified array geometry, precoding based on angle
-                precoding_vec = np.exp(-2j * np.pi * ((self.n_elements - 1) / 2 - idx) * self.wav_len_spacing * sub_carr_freqs / c_constant * np.cos(
-                    (rx_transceiver.cord_x - tx_transceiver.cord_x) / distance))
-                tx_transceiver.modem.set_precoding_vec(precoding_vec)
+                # distance to center of array
+                distance_center = np.sqrt(np.power(self.array_center_x - rx_transceiver.cord_x, 2) + np.power(
+                    self.array_center_y - rx_transceiver.cord_y, 2) + np.power(
+                    self.array_center_z - rx_transceiver.cord_z, 2))
+                # simplified array geometry, precoding based on angle
+                precoding_vec = np.exp(2j * np.pi * ((self.n_elements - 1) / 2 - idx) * self.wav_len_spacing
+                                       * ((rx_transceiver.cord_x - self.array_center_x) / distance_center))
+            tx_transceiver.modem.set_precoding_vec(precoding_vec)

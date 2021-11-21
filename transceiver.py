@@ -18,7 +18,7 @@ class Transceiver:
     def transmit(self, in_bits, skip_dist=False, return_both=False):
         clean_symb = self.modem.modulate(in_bits)
 
-        if skip_dist:
+        if skip_dist or self.impairment is None:
             return clean_symb
         elif return_both and self.impairment is not None:
             return self.impairment.process(clean_symb), clean_symb

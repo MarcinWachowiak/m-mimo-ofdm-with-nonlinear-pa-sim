@@ -2,11 +2,12 @@ import functools
 import numpy as np
 
 __all__ = ['dec2bitarray', 'decimal2bitarray', 'bitarray2dec', 'hamming_dist', 'euclid_dist', 'upsample',
-           'signal_power', 'count_mismatched_bits', 'snr_to_ebn0', 'ebn0_to_snr', 'to_db']
+           'signal_power', 'count_mismatched_bits', 'snr_to_ebn0', 'ebn0_to_snr', 'to_db', 'plot_configuration']
 
 vectorized_binary_repr = np.vectorize(np.binary_repr)
 
 from speedup import jit
+import matplotlib.pyplot as plt
 
 
 def dec2bitarray(in_number, bit_width):
@@ -192,6 +193,25 @@ def snr_to_ebn0(snr, n_fft, n_sub_carr, constel_size):
 def to_db(samples):
     return 10 * np.log10(samples)
 
-
+# points start from X=r Y=0 and then proceed anticlockwise
 def points_on_circumference(r, n=100):
-    return [(np.cos(2 * np.pi / n * x) * r, np.sin(2 * np.pi / n * x) * r) for x in range(0, n)]
+    return [(np.cos(2 * np.pi / n * x) * r, np.sin(2 * np.pi / n * x) * r) for x in range(0, n + 1)]
+
+
+def plot_configuration(ant_array, rx_transceiver):
+    fig, ax = plt.subplots()
+    tx_cord_x = []
+    tx_cord_y = []
+    for transceiver in ant_array.array_elements:
+        tx_cord_x.append(transceiver.cord_x)
+        tx_cord_y.append(transceiver.cord_y)
+    ax.scatter(tx_cord_x, tx_cord_y, color="C0", marker='^', label="TX")
+    ax.scatter(rx_transceiver.cord_x, rx_transceiver.cord_y, color="C1", marker='o', label="RX")
+    ax.set_title('Spatial configuration TX - RX')
+    ax.set_xlabel("X plane [$\lambda$]")
+    ax.set_ylabel("Y plane [$\lambda$]")
+    ax.grid()
+    ax.legend()
+    ax.set_axisbelow(True)
+    plt.tight_layout()
+    plt.show()
