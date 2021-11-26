@@ -105,8 +105,9 @@ def _tx_ofdm_symbol(mod_symbols, n_fft: int, n_sub_carr: int, cp_length: int):
 
     # skip idx = 0 and fill the carriers from LR
     ofdm_sym_freq = np.zeros(n_fft, dtype=np.complex128)
-    ofdm_sym_freq[1:(n_sub_carr // 2) + 1] = mod_symbols[n_sub_carr // 2:]
+
     ofdm_sym_freq[-(n_sub_carr // 2):] = mod_symbols[0:n_sub_carr // 2]
+    ofdm_sym_freq[1:(n_sub_carr // 2) + 1] = mod_symbols[n_sub_carr // 2:]
 
     with objmode(ofdm_sym_time='complex128[:]'):
         ofdm_sym_time = torch.fft.ifft(torch.from_numpy(ofdm_sym_freq), norm="ortho").numpy()
@@ -114,7 +115,7 @@ def _tx_ofdm_symbol(mod_symbols, n_fft: int, n_sub_carr: int, cp_length: int):
     # add cyclic prefix
     return np.concatenate((ofdm_sym_time[-cp_length:], ofdm_sym_time))
 
-
+# TODO: add input signal domain flag freq/time to skip fft
 @jit(nopython=True)
 def _rx_ofdm_symbol(ofdm_symbol, n_fft: int, n_sub_carr: int, cp_length: int):
     # decode OFDM symbol block - size given by n_sub_carr size

@@ -7,9 +7,11 @@ import impairments
 
 
 class Transceiver:
-    def __init__(self, modem, impairment=None, cord_x=0, cord_y=0, cord_z=0):
+    def __init__(self, modem, center_freq=None, carrier_spacing=None, impairment=None, cord_x=0, cord_y=0, cord_z=0):
         self.modem = modem
         self.impairment = impairment
+        self.center_freq = center_freq
+        self.carrier_spacing = carrier_spacing
         # position of transceiver/antenna
         self.cord_x = cord_x
         self.cord_y = cord_y
