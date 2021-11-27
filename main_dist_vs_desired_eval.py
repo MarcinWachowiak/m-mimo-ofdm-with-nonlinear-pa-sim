@@ -1,31 +1,31 @@
 # Experimental OFDM simulation
 # %%
+import time
+
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import welch
-import time
 
-from utilities import count_mismatched_bits, snr_to_ebn0, ebn0_to_snr, to_db
 import channels
-import modulation
 import impairments
+import modulation
 import transceiver
-
 from plot_settings import set_latex_plot_style
+from utilities import count_mismatched_bits, ebn0_to_snr, to_db
 
 set_latex_plot_style()
 
 # %%
 
 my_mod = modulation.OfdmQamModem(constel_size=16, n_fft=4096, n_sub_carr=1024, cp_len=256)
-my_distortion = impairments.SoftLimiter(3, my_mod.ofdm_avg_sample_pow())
-my_tx = transceiver.Transceiver(my_mod, my_distortion)
+my_distortion = impairments.SoftLimiter(3, my_mod.avg_sample_power)
+my_tx = transceiver.Transceiver(modem=my_mod, impairment=my_distortion)
 my_tx.impairment.plot_characteristics()
 
 my_demod = modulation.OfdmQamModem(constel_size=16, n_fft=4096, n_sub_carr=1024, cp_len=256)
 my_rx = transceiver.Transceiver(my_demod)
 
-my_chan = channels.AwgnChannel(0, True, 1234)
+my_chan = channels.Awgn(0, True, 1234)
 bit_rng = np.random.default_rng(4321)
 
 
@@ -75,7 +75,7 @@ for dist_idx, dist_val_db in enumerate(dist_vals_db):
             tx_bits = bit_rng.choice((0, 1), my_tx.modem.n_bits_per_ofdm_sym)
             tx_ofdm_symbol, clean_ofdm_symbol = my_tx.transmit(tx_bits, return_both=True)
 
-            rx_ofdm_symbol = my_chan.propagate(tx_ofdm_symbol, my_mod.ofdm_avg_sample_pow())
+            rx_ofdm_symbol = my_chan.propagate(tx_ofdm_symbol, my_mod.avg_sample_power)
 
             if plot_psd and snapshot_counter < n_collected_snapshots:
                 clean_ofdm_for_psd.append(clean_ofdm_symbol)

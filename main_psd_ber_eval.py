@@ -1,44 +1,37 @@
 # Experimental OFDM simulation
 # %%
+import time
+
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import welch
-import time
 
-from utilities import count_mismatched_bits, snr_to_ebn0, ebn0_to_snr, to_db, ofdm_avg_sample_pow
 import channels
-import modulation
 import impairments
-
+import modulation
 from plot_settings import set_latex_plot_style
+from utilities import count_mismatched_bits, ebn0_to_snr, to_db
 
 set_latex_plot_style()
 
 # %%
-constel_size = 16
-n_sub_carr = 1024
-n_fft = 4096
-cyclic_prefix_len = int(0.15 * n_fft)
-n_bits_per_ofdm_sym = int(np.log2(constel_size) * n_sub_carr)
+my_mod = modulation.OfdmQamModem(constel_size=16, n_fft=4096, n_sub_carr=1024, cp_len=256)
+# my_mod.plot_constellation()
+my_demod = modulation.OfdmQamModem(constel_size=16, n_fft=4096, n_sub_carr=1024, cp_len=256)
+# my_demod.correct_constellation()
+# my_demod.plot_constellation()
 
-my_mod = modulation.QamModem(constel_size)
-#my_mod.plot_constellation()
-my_demod = modulation.QamModem(constel_size)
-#my_demod.correct_constellation(0)
-#my_demod.plot_constellation()
-
-my_chan = channels.AwgnChannel(0, True, 1234)
+my_chan = channels.Awgn(0, True, 1234)
 bit_rng = np.random.default_rng(4321)
-avg_ofdm_sample_pow = ofdm_avg_sample_pow(my_mod.avg_symbol_power, n_sub_carr, n_fft)
 
-my_limiter1 = impairments.SoftLimiter(0, avg_ofdm_sample_pow)
-my_limiter2 = impairments.Rapp(0, avg_ofdm_sample_pow, 5)
-my_distortion = impairments.ThirdOrderNonLin(10, avg_ofdm_sample_pow)
+my_limiter1 = impairments.SoftLimiter(0, my_mod.avg_symbol_power)
+my_limiter2 = impairments.Rapp(0, my_mod.avg_sample_power, 5)
+my_distortion = impairments.ThirdOrderNonLin(10, my_mod.avg_sample_power)
 my_distortion.plot_characteristics(0.01, 10, 0.01)
 
 ebn0_arr = np.arange(0, 21, 2)
 print("Eb/n0 values:", ebn0_arr)
-snr_arr = ebn0_to_snr(ebn0_arr, n_fft, n_sub_carr, constel_size)
+snr_arr = ebn0_to_snr(ebn0_arr, my_mod.n_fft, my_mod.n_sub_carr, my_mod.constel_size)
 
 plot_psd = True
 n_collected_snapshots = 100
@@ -78,26 +71,23 @@ for dist_idx, dist_val_db in enumerate(dist_vals_db):
         my_chan.set_snr(snr)
         n_err = 0
         bits_sent = 0
-        avg_ofdm_sample_pow = ofdm_avg_sample_pow(my_mod.avg_symbol_power, n_sub_carr, n_fft)
         while bits_sent < bits_sent_max and n_err < n_err_min:
-            tx_bits = bit_rng.choice((0, 1), n_bits_per_ofdm_sym)
-            tx_symb = my_mod.modulate(tx_bits)
-            clean_ofdm_symbol = modulation.tx_ofdm_symbol(tx_symb, n_fft, n_sub_carr, cyclic_prefix_len)
+            tx_bits = bit_rng.choice((0, 1), my_mod.n_bits_per_ofdm_sym)
+            clean_ofdm_symbol = my_mod.modulate(tx_bits)
 
             if not clean_run_flag:
                 tx_ofdm_symbol = my_distortion.process(clean_ofdm_symbol)
             else:
                 tx_ofdm_symbol = clean_ofdm_symbol
 
-            rx_ofdm_symbol = my_chan.propagate(tx_ofdm_symbol, avg_ofdm_sample_pow)
+            rx_ofdm_symbol = my_chan.propagate(tx_ofdm_symbol, my_mod.avg_sample_power)
 
             if plot_psd and snapshot_counter < n_collected_snapshots:
                 clean_ofdm_for_psd.append(clean_ofdm_symbol)
                 tx_ofm_for_psd.append(tx_ofdm_symbol)
                 snapshot_counter += 1
 
-            rx_symb = modulation.rx_ofdm_symbol(rx_ofdm_symbol, n_fft, n_sub_carr, cyclic_prefix_len)
-            rx_bits = my_demod.demodulate(rx_symb)
+            rx_bits = my_demod.demodulate(rx_ofdm_symbol)
             n_bit_err = count_mismatched_bits(tx_bits, rx_bits)
 
             # if sample_constellation:
@@ -105,7 +95,7 @@ for dist_idx, dist_val_db in enumerate(dist_vals_db):
             #     constel_snapshot.append(rx_symb)
             #     sample_constellation = False
 
-            bits_sent += n_bits_per_ofdm_sym
+            bits_sent += my_mod.n_bits_per_ofdm_sym
             n_err += n_bit_err
         bers[idx] = n_err / bits_sent
     ber_per_dist.append(bers)

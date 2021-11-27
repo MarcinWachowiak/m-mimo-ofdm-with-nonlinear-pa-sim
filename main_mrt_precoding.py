@@ -6,7 +6,7 @@ from scipy.signal import welch
 import time
 
 import utilities
-from utilities import count_mismatched_bits, snr_to_ebn0, ebn0_to_snr, to_db, points_on_circumference, signal_power
+from utilities import count_mismatched_bits, snr_to_ebn0, ebn0_to_snr, to_db, pts_on_circum, signal_power
 import channels
 import modulation
 import impairments
@@ -45,7 +45,7 @@ my_array.set_precoding_single_point(rx_transceiver=my_rx, exact=True)
 # my_array.plot_configuration(plot_3d=True)
 # utilities.plot_configuration(my_array, my_rx)
 
-my_miso_chan = channels.AwgnMisoPhysical(n_inputs=3, snr_db=10, is_complex=True)
+my_miso_chan = channels.AwgnMiso(n_inputs=3, snr_db=10, is_complex=True)
 
 
 # bit_rng = np.random.default_rng(4321) tx_bits = bit_rng.choice((0, 1), my_tx.modem.n_bits_per_ofdm_sym) arr_tx_sig
@@ -56,7 +56,7 @@ my_miso_chan = channels.AwgnMisoPhysical(n_inputs=3, snr_db=10, is_complex=True)
 #%%
 # for a single carrier frequency plot the TX characteristics
 n_points = 360
-rx_points = points_on_circumference(r=100, n=n_points)
+rx_points = pts_on_circum(r=100, n=n_points)
 radian_vals = np.radians(np.linspace(0, 360, n_points+1))
 psd_at_angle_desired = np.empty(radian_vals.shape)
 psd_at_angle_dist = np.empty(radian_vals.shape)

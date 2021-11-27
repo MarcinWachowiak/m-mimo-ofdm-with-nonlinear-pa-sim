@@ -6,7 +6,8 @@ from utilities import to_db
 
 @jit(nopython=True)
 def _process_soft_lim(sat_pow, in_sig):
-    return np.where(np.power(np.abs(in_sig), 2) <= sat_pow, in_sig, in_sig * np.sqrt(np.divide(sat_pow, np.power(np.abs(np.where(in_sig != 0, in_sig, 1)), 2))))
+    return np.where(np.power(np.abs(in_sig), 2) <= sat_pow, in_sig,
+                    in_sig * np.sqrt(np.divide(sat_pow, np.power(np.abs(np.where(in_sig != 0, in_sig, 1)), 2))))
 
 
 class SoftLimiter:
@@ -83,6 +84,7 @@ def _process_toi(cubic_dist_coeff, in_sig):
     return in_sig - cubic_dist_coeff * np.power(in_sig, 3)
 
 
+# TODO: verify proper third order coefficient calculation
 class ThirdOrderNonLin:
 
     def __init__(self, toi_db, avg_symb_pow):
@@ -98,10 +100,10 @@ class ThirdOrderNonLin:
         out_sig_ampl = self.process(in_sig_ampl)
 
         fig, ax = plt.subplots(1, 1)
-        #ax.plot(in_sig_ampl, out_sig_ampl, label=self.toi_db)
-        ax.plot(to_db(in_sig_ampl**2), to_db(out_sig_ampl**2), label=self.toi_db)
-        ax.plot(to_db(in_sig_ampl**2), to_db(in_sig_ampl**2) - to_db(out_sig_ampl**2), label="Difference")
-        ax.plot(to_db(in_sig_ampl**2), to_db(in_sig_ampl**2), label="Linear")
+        # ax.plot(in_sig_ampl, out_sig_ampl, label=self.toi_db)
+        ax.plot(to_db(in_sig_ampl ** 2), to_db(out_sig_ampl ** 2), label=self.toi_db)
+        ax.plot(to_db(in_sig_ampl ** 2), to_db(in_sig_ampl ** 2) - to_db(out_sig_ampl ** 2), label="Difference")
+        ax.plot(to_db(in_sig_ampl ** 2), to_db(in_sig_ampl ** 2), label="Linear")
 
         ax.set_title("Third order distortion transfer characteristic")
         ax.set_xlabel("Input signal amplitude [V]")

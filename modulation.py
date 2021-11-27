@@ -57,6 +57,7 @@ class Modem:
         ax.grid()
         plt.show()
 
+    # correct constellation shrinking in RX (soft limiter case)
     def correct_constellation(self, ibo_db):
         gamma = np.power(10, ibo_db / 10)
         alpha = 1 - np.exp(-np.power(gamma, 2)) + (np.sqrt(np.pi) * gamma / 2) * scp.special.erfc(gamma)
@@ -144,7 +145,7 @@ class OfdmQamModem(QamModem):
 
     def modulate(self, input_bits):
         modulated_symbols = _modulate(self._constellation, self.n_bits_per_symbol, input_bits)
-        #apply precoding if any
+        # apply precoding if any
         if self.precoding_vec is not None:
             baseband_symbols = np.multiply(modulated_symbols, self.precoding_vec)
         else:

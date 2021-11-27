@@ -2,13 +2,15 @@ import functools
 import numpy as np
 
 __all__ = ['dec2bitarray', 'decimal2bitarray', 'bitarray2dec', 'hamming_dist', 'euclid_dist', 'upsample',
-           'signal_power', 'count_mismatched_bits', 'snr_to_ebn0', 'ebn0_to_snr', 'to_db', 'plot_configuration']
+           'signal_power', 'count_mismatched_bits', 'snr_to_ebn0', 'ebn0_to_snr', 'to_db', 'plot_spatial_config']
 
 vectorized_binary_repr = np.vectorize(np.binary_repr)
 
 from speedup import jit
 import matplotlib.pyplot as plt
 
+# TODO: Inspect faster ways of dec to bin, bin to dec conversion
+# TODO: Add code documentation
 
 def dec2bitarray(in_number, bit_width):
     """
@@ -194,11 +196,11 @@ def to_db(samples):
     return 10 * np.log10(samples)
 
 # points start from X=r Y=0 and then proceed anticlockwise
-def points_on_circumference(r, n=100):
+def pts_on_circum(r, n=100):
     return [(np.cos(2 * np.pi / n * x) * r, np.sin(2 * np.pi / n * x) * r) for x in range(0, n + 1)]
 
 
-def plot_configuration(ant_array, rx_transceiver):
+def plot_spatial_config(ant_array, rx_transceiver):
     fig, ax = plt.subplots()
     tx_cord_x = []
     tx_cord_y = []

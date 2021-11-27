@@ -24,8 +24,9 @@ class Awgn:
     def __init__(self, snr_db, is_complex, seed=None):
         self.snr_db = snr_db
         self.is_complex = is_complex
-        self.seed = seed
-        self.rng_gen = np.random.default_rng(seed)
+        if seed is not None:
+            self.seed = seed
+            self.rng_gen = np.random.default_rng(seed)
 
     def set_snr(self, snr_db):
         self.snr_db = snr_db
@@ -36,55 +37,13 @@ class Awgn:
 
 class AwgnMiso:
 
-    def __init__(self, n_inputs, snr_db, is_complex, seeds=None):
-        self.snr_db = snr_db
-        self.is_complex = is_complex
-        self.n_inputs = n_inputs
-        self.seeds = seeds
-        self.awgn_chan_lst = []
-
-        if isinstance(self.seeds, list) and len(self.seeds) == self.n_inputs:
-            # custom list of seeds
-            for idx, seed in enumerate(self.seeds):
-                self.awgn_chan_lst.append(Awgn(self.snr_db, self.is_complex, seed))
-        else:
-            # rng seed generator
-            rng_seed_gen = np.random.default_rng(9876)
-            for idx in range(self.n_inputs):
-                # generate random seed
-                self.awgn_chan_lst.append(
-                    Awgn(self.snr_db, self.is_complex, rng_seed_gen.integers(0, np.iinfo(np.int64).max)))
-
-    def set_snr(self, snr_db):
-        # update snr in every subchannel
-        for chan in self.awgn_chan_lst:
-            chan.set_snr(snr_db)
-
-    def propagate(self, tx_transceivers, rx_transceiver, in_sig, skip_noise=False):
-
-        out_sig_mat = np.empty(in_sig.shape, dtype=np.complex128)
-        for idx, tx_transceiver in enumerate(tx_transceivers):
-            if not skip_noise:
-                out_sig = self.awgn_chan_lst[idx].propagate(in_sig[idx, :], tx_transceiver.modem.avg_sample_power)
-            else:
-                out_sig = in_sig[idx, :]
-
-            distance = np.sqrt(np.power(tx_transceiver.cord_x - rx_transceiver.cord_x, 2) + np.power(
-                tx_transceiver.cord_y - rx_transceiver.cord_y, 2) + np.power(
-                tx_transceiver.cord_z - rx_transceiver.cord_z, 2))
-            phase_shift = np.exp(-2j * np.pi * distance)
-            out_sig_mat[idx:] = out_sig * phase_shift
-
-        return np.sum(out_sig_mat, axis=0)
-
-
-class AwgnMisoPhysical:
-
     def __init__(self, n_inputs, snr_db, is_complex, seed=None):
         self.snr_db = snr_db
         self.is_complex = is_complex
         self.n_inputs = n_inputs
-        self.seed = seed
+        if seed is not None:
+            self.seed = seed
+            self.rng_gen = np.random.default_rng(seed)
 
     def set_snr(self, snr_db):
         self.snr_db = snr_db
