@@ -48,7 +48,7 @@ class AwgnMiso:
     def set_snr(self, snr_db):
         self.snr_db = snr_db
 
-    def propagate(self, tx_transceivers, rx_transceiver, in_sig_mat, skip_noise=False):
+    def propagate(self, tx_transceivers, rx_transceiver, in_sig_mat, skip_noise=False, skip_attenuation=False):
         # channel in frequency domain
         # remove cp from in sig matrix
         no_cp_td_sig_mat = in_sig_mat[:, tx_transceivers[0].modem.cp_len:]
@@ -56,6 +56,7 @@ class AwgnMiso:
         no_cp_fd_sig_mat = torch.fft.fft(torch.from_numpy(no_cp_td_sig_mat), norm="ortho").numpy()
         # for each tx get distance
         td_ph_shift_mat = np.empty(no_cp_td_sig_mat.shape, dtype=np.complex128)
+        fd_freq_att_mat = np.empty(no_cp_td_sig_mat.shape, dtype=np.complex128)
         for idx, tx_transceiver in enumerate(tx_transceivers):
             tx_rx_distance = np.sqrt(np.power(tx_transceiver.cord_x - rx_transceiver.cord_x, 2) + np.power(
                 tx_transceiver.cord_y - rx_transceiver.cord_y, 2) + np.power(
@@ -63,12 +64,22 @@ class AwgnMiso:
             sig_freq_vals = torch.fft.fftfreq(tx_transceivers[idx].modem.n_fft,
                                               d=1 / tx_transceivers[idx].modem.n_fft).numpy() * tx_transceivers[
                                 idx].carrier_spacing + tx_transceivers[idx].center_freq
+
             td_ph_shift_mat[idx, :] = np.exp(2j * np.pi * tx_rx_distance * sig_freq_vals / scp.constants.c)
+            fd_freq_att_mat[idx, :] = np.sqrt(np.power(10, (tx_transceiver.tx_ant_gain_db + rx_transceiver.rx_ant_gain_db)/10)) \
+                                      * (scp.constants.c/(4 * np.pi * tx_rx_distance * sig_freq_vals))
+        # multiply fd signals by attenuation matrix
+        if not skip_attenuation:
+            no_cp_fd_sig_mat = np.multiply(no_cp_fd_sig_mat, fd_freq_att_mat)
 
         fd_ph_shift_mat = torch.fft.fft(torch.from_numpy(td_ph_shift_mat), norm="ortho").numpy()
-        # normalize not to introduce attenuation
+        # normalize not to introduce additional attenuation
         fd_ph_shift_mat = fd_ph_shift_mat / np.abs(fd_ph_shift_mat)
         sig_at_point_mat = np.multiply(no_cp_fd_sig_mat, fd_ph_shift_mat)
-        # TODO: add noise
+
+        # TODO: add noise based on RX noise floor
+        if not skip_noise:
+            pass
+
         # sum columns
         return np.sum(sig_at_point_mat, axis=0)

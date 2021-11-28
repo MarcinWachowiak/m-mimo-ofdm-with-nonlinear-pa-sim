@@ -9,11 +9,17 @@ class Transceiver:
         self.cord_x = cord_x
         self.cord_y = cord_y
         self.cord_z = cord_z
+        self.tx_ant_gain_db = 0
+        self.rx_ant_gain_db = 0
 
     def set_position(self, cord_x, cord_y, cord_z):
         self.cord_x = cord_x
         self.cord_y = cord_y
         self.cord_z = cord_z
+
+    def set_ant_gains(self, tx_ant_gain_db, rx_ant_gain_db):
+        self.tx_ant_gain_db = tx_ant_gain_db
+        self.rx_ant_gain_db = rx_ant_gain_db
 
     def transmit(self, in_bits, skip_dist=False, return_both=False):
         clean_symb = self.modem.modulate(in_bits)

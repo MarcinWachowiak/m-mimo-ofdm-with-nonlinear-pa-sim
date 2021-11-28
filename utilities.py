@@ -204,11 +204,16 @@ def plot_spatial_config(ant_array, rx_transceiver):
     fig, ax = plt.subplots()
     tx_cord_x = []
     tx_cord_y = []
+    #plot line form array center to rx
+    ax.plot([ant_array.cord_x, rx_transceiver.cord_x], [ant_array.cord_y, rx_transceiver.cord_y], color="gray", linestyle='--')
+
     for transceiver in ant_array.array_elements:
         tx_cord_x.append(transceiver.cord_x)
         tx_cord_y.append(transceiver.cord_y)
+
     ax.scatter(tx_cord_x, tx_cord_y, color="C0", marker='^', label="TX")
     ax.scatter(rx_transceiver.cord_x, rx_transceiver.cord_y, color="C1", marker='o', label="RX")
+    ax.set_aspect('equal', 'box')
     ax.set_title('Spatial configuration TX - RX')
     ax.set_xlabel("X plane [m]")
     ax.set_ylabel("Y plane [m]")
@@ -216,4 +221,5 @@ def plot_spatial_config(ant_array, rx_transceiver):
     ax.legend()
     ax.set_axisbelow(True)
     plt.tight_layout()
+    plt.savefig("figs/spatial_rx_tx_config.png", dpi=600, bbox_inches='tight')
     plt.show()

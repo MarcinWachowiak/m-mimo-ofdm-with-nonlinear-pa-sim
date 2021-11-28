@@ -14,9 +14,9 @@ class LinearArray:
         self.center_freq = center_freq
         self.wav_len_spacing = wav_len_spacing
         self.array_elements = []
-        self.array_center_x = 0
-        self.array_center_y = 0
-        self.array_center_z = 0
+        self.cord_x = 0
+        self.cord_y = 0
+        self.cord_z = 0
 
         if isinstance(self.transceiver, list) and len(self.transceiver) == self.n_elements and len(
                 self.transceiver) == self.n_elements:
@@ -95,10 +95,10 @@ class LinearArray:
                 precoding_vec = np.exp(-2j * np.pi * distance_tx * carr_freqs /scp.constants.c)
             else:
                 # distance to center of array
-                distance_center = np.sqrt(np.power(self.array_center_x - rx_transceiver.cord_x, 2) + np.power(
-                    self.array_center_y - rx_transceiver.cord_y, 2) + np.power(
-                    self.array_center_z - rx_transceiver.cord_z, 2))
+                distance_center = np.sqrt(np.power(self.cord_x - rx_transceiver.cord_x, 2) + np.power(
+                    self.cord_y - rx_transceiver.cord_y, 2) + np.power(
+                    self.cord_z - rx_transceiver.cord_z, 2))
                 # simplified array geometry, precoding based on angle
                 precoding_vec = np.exp(-2j * np.pi * ((self.n_elements - 1) / 2 - idx) * self.wav_len_spacing
-                                       * ((rx_transceiver.cord_x - self.array_center_x) / distance_center))
+                                       * carr_freqs / self.center_freq * ((rx_transceiver.cord_x - self.cord_x) / distance_center))
             tx_transceiver.modem.set_precoding_vec(precoding_vec)
