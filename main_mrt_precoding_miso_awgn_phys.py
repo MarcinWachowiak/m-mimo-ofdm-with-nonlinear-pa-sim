@@ -28,11 +28,11 @@ bit_rng = np.random.default_rng(4321)
 
 #for run_idx in range(1):
 my_mod = modulation.OfdmQamModem(constel_size=4, n_fft=4096, n_sub_carr=1024, cp_len=128)
-ibo_db = 3
+ibo_db = 5
 my_distortion = impairments.SoftLimiter(ibo_db=ibo_db, avg_symb_pow=my_mod.ofdm_avg_sample_pow())
-my_tx = transceiver.Transceiver(modem=my_mod, impairment=my_distortion, center_freq=int(3.5e9), carrier_spacing=int(1e6))
-my_array = antenna_arrray.LinearArray(n_elements=8, transceiver=my_tx, center_freq=int(3.5e9), wav_len_spacing=0.5)
-my_rx = transceiver.Transceiver(modem=my_mod, impairment=None, cord_x=100, cord_y=100)
+my_tx = transceiver.Transceiver(modem=my_mod, impairment=my_distortion, center_freq=int(3.5e9), carrier_spacing=int(15e3))
+my_array = antenna_arrray.LinearArray(n_elements=8, transceiver=my_tx, center_freq=int(3.5e9), wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
+my_rx = transceiver.Transceiver(modem=my_mod, impairment=None, cord_x=10, cord_y=10, cord_z=1.5)
 my_rx.modem.correct_constellation(ibo_db=ibo_db)
 
 #if run_idx == 0:
@@ -40,7 +40,7 @@ my_array.set_precoding_single_point(rx_transceiver=my_rx, exact=True)
 #else:
 # my_array.set_precoding_single_point(rx_transceiver=my_rx, exact=False)
 # my_array.plot_configuration(plot_3d=True)
-# utilities.plot_spatial_config(my_array, my_rx)
+utilities.plot_spatial_config(my_array, my_rx)
 
 my_miso_chan = channels.AwgnMiso(n_inputs=3, snr_db=10, is_complex=True)
 
@@ -69,7 +69,7 @@ rx_sig_at_point_full = []
 
 for pt_idx, point in enumerate(rx_points):
     (x_cord, y_cord) = point
-    my_rx.set_position(cord_x=x_cord, cord_y=y_cord, cord_z=0)
+    my_rx.set_position(cord_x=x_cord, cord_y=y_cord, cord_z=1.5)
     rx_sig_accum = []
     clean_rx_sig_accum = []
     for snap_idx in range(n_snapshots):
@@ -121,22 +121,37 @@ psd_at_angle_lst.append(psd_at_angle_dist)
 print("--- Computation time: %f ---" % (time.time() - start_time))
 
 #%%
+# fig1, ax1 = plt.subplots(subplot_kw={'projection': 'polar'})
+# plt.tight_layout()
+# ax1.set_theta_zero_location("E")
+# #normalize psd at angle to get antenna gain
+# #ant_gain = to_db(psd_at_angle/np.max(psd_at_angle))
+# for res_idx in range(2):
+#     if res_idx==0:
+#         ax1.plot(radian_vals, psd_at_angle_lst[res_idx], label="Desired")
+#     else:
+#         ax1.plot(radian_vals, psd_at_angle_lst[res_idx], label="Distortion")
+# ax1.set_title("Power spectral density at angle [dB]")
+# ax1.set_thetalim(-np.pi, np.pi)
+# ax1.set_xticks(np.pi/180. * np.linspace(180, -180, 24, endpoint=False))
+# ax1.grid(True)
+# ax1.legend(title="IBO = 3dB, Signal:", loc='lower left')
+# plt.savefig("figs/desired_vs_dist_beamplot_ntx_%d.png" % my_array.n_elements, dpi=600, bbox_inches='tight')
+# plt.show()
+
+#%%
 fig1, ax1 = plt.subplots(subplot_kw={'projection': 'polar'})
 plt.tight_layout()
 ax1.set_theta_zero_location("E")
 #normalize psd at angle to get antenna gain
 #ant_gain = to_db(psd_at_angle/np.max(psd_at_angle))
-for res_idx in range(2):
-    if res_idx==0:
-        ax1.plot(radian_vals, psd_at_angle_lst[res_idx], label="Desired")
-    else:
-        ax1.plot(radian_vals, psd_at_angle_lst[res_idx], label="Distortion")
-ax1.set_title("Power spectral density at angle [dB]")
+ax1.plot(radian_vals, psd_at_angle_lst[0] - psd_at_angle_lst[1], label="SDR")
+ax1.set_title("Signal to distortion ratio at angle [dB]")
 ax1.set_thetalim(-np.pi, np.pi)
 ax1.set_xticks(np.pi/180. * np.linspace(180, -180, 24, endpoint=False))
 ax1.grid(True)
-ax1.legend(title="IBO = 3dB, Signal:", loc='lower left')
-plt.savefig("figs/desired_vs_dist_beamplot_ntx_%d_df_1M.png" % my_array.n_elements, dpi=600, bbox_inches='tight')
+ax1.legend(title="IBO = %d dB, Signal:" % ibo_db, loc='lower left')
+plt.savefig("figs/signal_to_dist_beamplot_ntx_%d.png" % my_array.n_elements, dpi=600, bbox_inches='tight')
 plt.show()
 
 print("Finished processing!")
@@ -153,10 +168,10 @@ ax1.plot(np.array(sorted_dist_rx_at_point_freq_arr), to_db(np.array(sorted_dist_
 ax1.set_title("Power spectral density at angle %d$\degree$" % point_idx_psd)
 ax1.set_xlabel("Subcarrier index [-]")
 ax1.set_ylabel("Power [dB]")
-ax1.legend(title="IBO = 3 dB")
+ax1.legend(title="IBO = %db dB" %ibo_db)
 ax1.grid()
 plt.tight_layout()
-plt.savefig("figs/psd_at_angle_%d_deg_df_1M.png" % point_idx_psd, dpi=600, bbox_inches='tight')
+plt.savefig("figs/psd_at_angle_%d_deg.png" % point_idx_psd, dpi=600, bbox_inches='tight')
 plt.show()
 
 

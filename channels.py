@@ -83,3 +83,68 @@ class AwgnMiso:
 
         # sum columns
         return np.sum(fd_signal_at_point, axis=0)
+
+class RayleighMISO:
+    def __init__(self, n_inputs, fd_samp_size, snr_db, is_complex, seed=None):
+        self.snr_db = snr_db
+        self.is_complex = is_complex
+        self.n_inputs = n_inputs
+        self.fd_samp_size = fd_samp_size
+        if seed is not None:
+            self.seed = seed
+            self.rng_gen = np.random.default_rng(seed)
+        else:
+            # generate seed based on something
+            # TODO: add seed generation routine
+            pass
+
+        self.set_channel_coeffs()
+
+    def set_snr(self, snr_db):
+        self.snr_db = snr_db
+
+    def set_channel_coeffs(self, fd_chan_mat=None, avg=0, sigma=1):
+        if fd_chan_mat is None:
+            # generate rayleigh channel coefficients
+            self.fd_chan_mat = self.rng_gen.normal(avg, sigma, size=(self.n_inputs, self.fd_samp_size * 2)).view(dtype=np.complex128)
+        else:
+            self.fd_chan_mat = fd_chan_mat
+
+    def get_channel_coeffs(self):
+        return self.fd_chan_mat
+
+
+    def reroll_channel_coeffs(self, avg=0, sigma=1):
+        self.fd_chan_mat = self.rng_gen.normal(avg, sigma, size=(self.n_inputs, self.fd_samp_size * 2)).view(dtype=np.complex128)
+
+    def propagate(self, tx_transceivers, rx_transceiver, in_sig_mat, skip_noise=False, skip_attenuation=False):
+        # channel in frequency domain
+        # remove cp from in sig matrix
+        no_cp_td_sig_mat = in_sig_mat[:, tx_transceivers[0].modem.cp_len:]
+        # perform fft row wise
+        no_cp_fd_sig_mat = torch.fft.fft(torch.from_numpy(no_cp_td_sig_mat), norm="ortho").numpy()
+
+        #multiply signal by rayleigh channel coefficients in frequency domain
+        fd_sigmat_after_chan = np.multiply(no_cp_fd_sig_mat, self.fd_chan_mat)
+
+        # multiply fd signals by attenuation matrix
+        if not skip_attenuation:
+            fd_freq_att_mat = np.empty(no_cp_fd_sig_mat.shape, dtype=np.complex128)
+            for idx, tx_transceiver in enumerate(tx_transceivers):
+                tx_rx_distance = np.sqrt(np.power(tx_transceiver.cord_x - rx_transceiver.cord_x, 2) + np.power(
+                    tx_transceiver.cord_y - rx_transceiver.cord_y, 2) + np.power(
+                    tx_transceiver.cord_z - rx_transceiver.cord_z, 2))
+                sig_freq_vals = torch.fft.fftfreq(tx_transceivers[idx].modem.n_fft,
+                                                  d=1 / tx_transceivers[idx].modem.n_fft).numpy() * tx_transceivers[
+                                    idx].carrier_spacing + tx_transceivers[idx].center_freq
+                fd_freq_att_mat[idx, :] = np.sqrt(
+                    np.power(10, (tx_transceiver.tx_ant_gain_db + rx_transceiver.rx_ant_gain_db) / 10)) \
+                                          * (scp.constants.c / (4 * np.pi * tx_rx_distance * sig_freq_vals))
+            fd_sigmat_after_chan = np.multiply(fd_sigmat_after_chan, fd_freq_att_mat)
+
+        # TODO: add noise based on RX noise floor
+        if not skip_noise:
+            pass
+
+        # sum columns
+        return np.sum(fd_sigmat_after_chan, axis=0)

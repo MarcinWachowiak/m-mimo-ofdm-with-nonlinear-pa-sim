@@ -8,7 +8,7 @@ vectorized_binary_repr = np.vectorize(np.binary_repr)
 
 from speedup import jit
 import matplotlib.pyplot as plt
-
+from matplotlib import colors
 # TODO: Inspect faster ways of dec to bin, bin to dec conversion
 # TODO: Add code documentation
 
@@ -200,26 +200,62 @@ def pts_on_circum(r, n=100):
     return [(np.cos(2 * np.pi / n * x) * r, np.sin(2 * np.pi / n * x) * r) for x in range(0, n + 1)]
 
 
-def plot_spatial_config(ant_array, rx_transceiver):
-    fig, ax = plt.subplots()
-    tx_cord_x = []
-    tx_cord_y = []
-    #plot line form array center to rx
-    ax.plot([ant_array.cord_x, rx_transceiver.cord_x], [ant_array.cord_y, rx_transceiver.cord_y], color="gray", linestyle='--')
+def plot_spatial_config(ant_array, rx_transceiver, plot_3d=True):
+    if plot_3d:
+        fig = plt.figure()
+        ax = fig.add_subplot(projection='3d')
 
-    for transceiver in ant_array.array_elements:
-        tx_cord_x.append(transceiver.cord_x)
-        tx_cord_y.append(transceiver.cord_y)
 
-    ax.scatter(tx_cord_x, tx_cord_y, color="C0", marker='^', label="TX")
-    ax.scatter(rx_transceiver.cord_x, rx_transceiver.cord_y, color="C1", marker='o', label="RX")
-    ax.set_aspect('equal', 'box')
-    ax.set_title('Spatial configuration TX - RX')
-    ax.set_xlabel("X plane [m]")
-    ax.set_ylabel("Y plane [m]")
-    ax.grid()
-    ax.legend()
-    ax.set_axisbelow(True)
-    plt.tight_layout()
-    plt.savefig("figs/spatial_rx_tx_config.png", dpi=600, bbox_inches='tight')
-    plt.show()
+        tx_cord_x = []
+        tx_cord_y = []
+        tx_cord_z = []
+        for transceiver in ant_array.array_elements:
+            tx_cord_x.append(transceiver.cord_x)
+            tx_cord_y.append(transceiver.cord_y)
+            tx_cord_z.append(transceiver.cord_z)
+
+        # plot line form array center to rx
+        ax.plot([ant_array.cord_x, rx_transceiver.cord_x], [ant_array.cord_y, rx_transceiver.cord_y], [ant_array.cord_z, rx_transceiver.cord_z], color="C2",
+                linestyle='--', label="LOS")
+
+        ax.scatter(tx_cord_x, tx_cord_y, tx_cord_z, color="C0", marker='^', label="TX")
+        ax.scatter(rx_transceiver.cord_x, rx_transceiver.cord_y, rx_transceiver.cord_z, color="C1", marker='o', label="RX")
+
+        #color ground surface
+        ax.zaxis.set_pane_color(colors.to_rgba("gray"))
+
+        ax.set_title('TX RX spatial configuration')
+        ax.set_xlabel("X plane [m]")
+        ax.set_ylabel("Y plane [m]")
+        ax.set_zlabel("Z plane [m]")
+        ax.legend()
+        ax.grid()
+        ax.set_axisbelow(True)
+        plt.tight_layout()
+        plt.savefig("figs/spatial_rx_tx_config_3d.png", dpi=600, bbox_inches='tight')
+        plt.show()
+    else:
+        fig, ax = plt.subplots()
+        tx_cord_x = []
+        tx_cord_y = []
+        #plot line form array center to rx
+        ax.plot([ant_array.cord_x, rx_transceiver.cord_x], [ant_array.cord_y, rx_transceiver.cord_y], color="C2", linestyle='--')
+
+        for transceiver in ant_array.array_elements:
+            tx_cord_x.append(transceiver.cord_x)
+            tx_cord_y.append(transceiver.cord_y)
+
+        ax.scatter(tx_cord_x, tx_cord_y, color="C0", marker='^', label="TX")
+        ax.scatter(rx_transceiver.cord_x, rx_transceiver.cord_y, color="C1", marker='o', label="RX")
+
+        ax.plot_surface()
+        ax.set_aspect('equal', 'box')
+        ax.set_title('Spatial configuration TX - RX')
+        ax.set_xlabel("X plane [m]")
+        ax.set_ylabel("Y plane [m]")
+        ax.grid()
+        ax.legend()
+        ax.set_axisbelow(True)
+        plt.tight_layout()
+        plt.savefig("figs/spatial_rx_tx_config_2d.png", dpi=600, bbox_inches='tight')
+        plt.show()
