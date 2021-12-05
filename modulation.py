@@ -99,7 +99,7 @@ class QamModem(Modem):
 
 
 @jit(nopython=True)
-def _tx_ofdm_symbol(mod_symbols, n_fft: int, n_sub_carr: int, cp_length: int):
+def _tx_ofdm_symbol(mod_symbols, n_fft: int, n_sub_carr: int, cp_length: int, precoding_vec=None):
     # generate OFDM symbol block - size given by n_sub_carr size
     if len(mod_symbols) != n_sub_carr:
         raise ValueError('mod_symbols length must match n_sub_carr value')
@@ -110,8 +110,14 @@ def _tx_ofdm_symbol(mod_symbols, n_fft: int, n_sub_carr: int, cp_length: int):
     ofdm_sym_freq[-(n_sub_carr // 2):] = mod_symbols[0:n_sub_carr // 2]
     ofdm_sym_freq[1:(n_sub_carr // 2) + 1] = mod_symbols[n_sub_carr // 2:]
 
+    # apply precoding if any
+    if precoding_vec is not None:
+        ofdm_sym_freq_postprocessed = np.multiply(ofdm_sym_freq, precoding_vec)
+    else:
+        ofdm_sym_freq_postprocessed = ofdm_sym_freq
+
     with objmode(ofdm_sym_time='complex128[:]'):
-        ofdm_sym_time = torch.fft.ifft(torch.from_numpy(ofdm_sym_freq), norm="ortho").numpy()
+        ofdm_sym_time = torch.fft.ifft(torch.from_numpy(ofdm_sym_freq_postprocessed), norm="ortho").numpy()
 
     # add cyclic prefix
     return np.concatenate((ofdm_sym_time[-cp_length:], ofdm_sym_time))
@@ -145,13 +151,7 @@ class OfdmQamModem(QamModem):
 
     def modulate(self, input_bits):
         modulated_symbols = _modulate(self._constellation, self.n_bits_per_symbol, input_bits)
-        # apply precoding if any
-        if self.precoding_vec is not None:
-            baseband_symbols = np.multiply(modulated_symbols, self.precoding_vec)
-        else:
-            baseband_symbols = modulated_symbols
-
-        return _tx_ofdm_symbol(baseband_symbols, self.n_fft, self.n_sub_carr, self.cp_len)
+        return _tx_ofdm_symbol(modulated_symbols, self.n_fft, self.n_sub_carr, self.cp_len, self.precoding_vec)
 
     def demodulate(self, ofdm_symbol):
         baseband_symbols = _rx_ofdm_symbol(ofdm_symbol, self.n_fft, self.n_sub_carr, self.cp_len)

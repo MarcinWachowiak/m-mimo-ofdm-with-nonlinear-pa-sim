@@ -62,10 +62,12 @@ class LinearArray:
             plt.show()
 
     def transmit(self, in_bits, return_both=False):
-        out_sig_mat = np.empty([self.n_elements, len(in_bits) + self.transceiver.modem.cp_len], dtype=np.complex128)
+        out_sig_mat = np.empty([self.n_elements, self.transceiver.modem.n_fft + self.transceiver.modem.cp_len],
+                               dtype=np.complex128)
 
         if return_both:
-            clean_sig_mat = np.empty([self.n_elements, len(in_bits) + self.transceiver.modem.cp_len], dtype=np.complex128)
+            clean_sig_mat = np.empty([self.n_elements, self.transceiver.modem.n_fft + self.transceiver.modem.cp_len],
+                                     dtype=np.complex128)
             for idx, transceiver in enumerate(self.array_elements):
                 out_sig_mat[idx, :], clean_sig_mat[idx, :] = transceiver.transmit(in_bits, return_both=True)
 
@@ -78,27 +80,34 @@ class LinearArray:
     def set_precoding_single_point(self, rx_transceiver, exact=False):
 
         for idx, tx_transceiver in enumerate(self.array_elements):
-            # Leave subcarrier dependent precoding for more advanced filter model - for now all freqs delayed the same
-            # ifft_freqs = torch.fft.fftfreq(tx_transceiver.modem.n_fft)
-            # sub_carr_freqs = np.concatenate((ifft_freqs[-tx_transceiver.modem.n_sub_carr // 2:],
-            #                                  ifft_freqs[1:(tx_transceiver.modem.n_sub_carr // 2) + 1]))
-
-            carr_freqs = (torch.fft.fftfreq(self.array_elements[idx].modem.n_sub_carr+1,
-                                            d=1 / (self.array_elements[idx].modem.n_sub_carr+1)).numpy() *
-                                            self.array_elements[idx].carrier_spacing + self.array_elements[idx].center_freq)[1:]
+            # get frequency of each subcarrier
+            sig_freq_vals = (torch.fft.fftfreq(self.array_elements[idx].modem.n_fft,
+                                               d=1 / self.array_elements[idx].modem.n_fft).numpy() *
+                             self.array_elements[idx].carrier_spacing + self.array_elements[idx].center_freq)
 
             if exact:
                 # distance to each TX
                 distance_tx = np.sqrt(np.power(tx_transceiver.cord_x - rx_transceiver.cord_x, 2) + np.power(
                     tx_transceiver.cord_y - rx_transceiver.cord_y, 2) + np.power(
                     tx_transceiver.cord_z - rx_transceiver.cord_z, 2))
-                precoding_vec = np.exp(-2j * np.pi * distance_tx * carr_freqs /scp.constants.c)
+                channel_vec_fd = np.exp(2j * np.pi * distance_tx * (sig_freq_vals / scp.constants.c))
+
             else:
                 # distance to center of array
                 distance_center = np.sqrt(np.power(self.cord_x - rx_transceiver.cord_x, 2) + np.power(
                     self.cord_y - rx_transceiver.cord_y, 2) + np.power(
                     self.cord_z - rx_transceiver.cord_z, 2))
                 # simplified array geometry, precoding based on angle
-                precoding_vec = np.exp(-2j * np.pi * ((self.n_elements - 1) / 2 - idx) * self.wav_len_spacing
-                                       * carr_freqs / self.center_freq * ((rx_transceiver.cord_x - self.cord_x) / distance_center))
+                channel_vec_fd = np.exp(2j * np.pi * ((self.n_elements - 1) / 2 - idx) * self.wav_len_spacing
+                                        * sig_freq_vals / self.center_freq * (
+                                                    (rx_transceiver.cord_x - self.cord_x) / distance_center))
+
+            precoding_vec_fd = np.conjugate(channel_vec_fd)
+
+            # select coefficients on carrier frequencies
+            tx_n_sc = tx_transceiver.modem.n_sub_carr
+            precoding_vec = np.ones(tx_transceiver.modem.n_fft, dtype=np.complex128)
+            precoding_vec[1:(tx_n_sc // 2) + 1] = precoding_vec_fd[1:(tx_n_sc // 2) + 1]
+            precoding_vec[-tx_n_sc // 2:] = precoding_vec_fd[-tx_n_sc // 2:]
+
             tx_transceiver.modem.set_precoding_vec(precoding_vec)
