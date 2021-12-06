@@ -42,7 +42,7 @@ my_array.set_precoding_single_point(rx_transceiver=my_rx, exact=True)
 # my_array.plot_configuration(plot_3d=True)
 utilities.plot_spatial_config(my_array, my_rx)
 
-my_miso_chan = channels.AwgnMiso(n_inputs=3, snr_db=10, is_complex=True)
+my_miso_chan = channels.AwgnMisoLos(n_inputs=3, snr_db=10, is_complex=True)
 
 # bit_rng = np.random.default_rng(4321) tx_bits = bit_rng.choice((0, 1), my_tx.modem.n_bits_per_ofdm_sym) arr_tx_sig
 # my_array.transmit(in_bits=tx_bits) rx_sig = my_miso_chan.propagate(tx_transceivers=my_array.array_elements,

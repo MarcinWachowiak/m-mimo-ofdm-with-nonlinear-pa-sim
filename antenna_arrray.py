@@ -79,40 +79,78 @@ class LinearArray:
                 out_sig_mat[idx, :] = transceiver.transmit(in_bits, return_both=return_both)
             return out_sig_mat
 
-    def set_precoding_single_point(self, rx_transceiver, channel_fd_mat=None, exact=False):
+    def set_precoding_single_point(self, rx_transceiver, channel_fd_mat=None, exact=False, two_path=False):
         if channel_fd_mat is None:
-            for idx, tx_transceiver in enumerate(self.array_elements):
-                # get frequency of each subcarrier
-                sig_freq_vals = (torch.fft.fftfreq(self.array_elements[idx].modem.n_fft,
-                                                   d=1 / self.array_elements[idx].modem.n_fft).numpy() *
-                                 self.array_elements[idx].carrier_spacing + self.array_elements[idx].center_freq)
+            if two_path:
+                for idx, tx_transceiver in enumerate(self.array_elements):
+                    # get frequency of each subcarrier
+                    sig_freq_vals = (torch.fft.fftfreq(self.array_elements[idx].modem.n_fft,
+                                                       d=1 / self.array_elements[idx].modem.n_fft).numpy() *
+                                     self.array_elements[idx].carrier_spacing + self.array_elements[idx].center_freq)
 
-                if exact:
-                    # distance to each TX
-                    distance_tx = np.sqrt(np.power(tx_transceiver.cord_x - rx_transceiver.cord_x, 2) + np.power(
+                    los_distance = np.sqrt(np.power(tx_transceiver.cord_x - rx_transceiver.cord_x, 2) + np.power(
                         tx_transceiver.cord_y - rx_transceiver.cord_y, 2) + np.power(
                         tx_transceiver.cord_z - rx_transceiver.cord_z, 2))
-                    channel_vec_fd = np.exp(2j * np.pi * distance_tx * (sig_freq_vals / scp.constants.c))
 
-                else:
-                    # distance to center of array
-                    distance_center = np.sqrt(np.power(self.cord_x - rx_transceiver.cord_x, 2) + np.power(
-                        self.cord_y - rx_transceiver.cord_y, 2) + np.power(
-                        self.cord_z - rx_transceiver.cord_z, 2))
-                    # simplified array geometry, precoding based on angle
-                    channel_vec_fd = np.exp(2j * np.pi * ((self.n_elements - 1) / 2 - idx) * self.wav_len_spacing
-                                            * sig_freq_vals / self.center_freq * (
-                                                        (rx_transceiver.cord_x - self.cord_x) / distance_center))
+                    los_fd_shift_mat = np.exp(2j * np.pi * los_distance * (sig_freq_vals / scp.constants.c))
 
-                precoding_vec_fd = np.conjugate(channel_vec_fd)
+                    dim_ratio = (tx_transceiver.cord_z + rx_transceiver.cord_z) / (
+                        np.sqrt(np.power(tx_transceiver.cord_x - rx_transceiver.cord_x, 2) + np.power(
+                            tx_transceiver.cord_y - rx_transceiver.cord_y, 2)))
+                    # angle of elevation (angle in relation to the ground plane) = 90 deg - angle of incidence
+                    angle_of_elev_rad = np.arctan(dim_ratio)
 
-                # select coefficients on carrier frequencies
-                tx_n_sc = tx_transceiver.modem.n_sub_carr
-                precoding_vec = np.ones(tx_transceiver.modem.n_fft, dtype=np.complex128)
-                precoding_vec[1:(tx_n_sc // 2) + 1] = precoding_vec_fd[1:(tx_n_sc // 2) + 1]
-                precoding_vec[-tx_n_sc // 2:] = precoding_vec_fd[-tx_n_sc // 2:]
+                    second_path_len = rx_transceiver.cord_z / np.sin(angle_of_elev_rad)
+                    first_path_len = tx_transceiver.cord_z / np.sin(angle_of_elev_rad)
+                    # Change of phase, att at reflection point?
+                    sec_fd_shift_mat = np.exp(2j * np.pi * (first_path_len + second_path_len) * (sig_freq_vals / scp.constants.c))
+                    combinded_fd_chan = np.add(los_fd_shift_mat, sec_fd_shift_mat)
 
-                tx_transceiver.modem.set_precoding_vec(precoding_vec)
+                    precoding_vec_fd = np.conjugate(combinded_fd_chan)
+
+                    #normalize to exclude attenuation
+                    precoding_vec_fd_normalized = np.exp(1j*np.angle(precoding_vec_fd))
+
+                    # select coefficients on carrier frequencies
+                    tx_n_sc = tx_transceiver.modem.n_sub_carr
+                    precoding_vec = np.ones(tx_transceiver.modem.n_fft, dtype=np.complex128)
+                    precoding_vec[1:(tx_n_sc // 2) + 1] = precoding_vec_fd_normalized[1:(tx_n_sc // 2) + 1]
+                    precoding_vec[-tx_n_sc // 2:] = precoding_vec_fd_normalized[-tx_n_sc // 2:]
+
+                    tx_transceiver.modem.set_precoding_vec(precoding_vec)
+            else:
+                for idx, tx_transceiver in enumerate(self.array_elements):
+                    # get frequency of each subcarrier
+                    sig_freq_vals = (torch.fft.fftfreq(self.array_elements[idx].modem.n_fft,
+                                                       d=1 / self.array_elements[idx].modem.n_fft).numpy() *
+                                     self.array_elements[idx].carrier_spacing + self.array_elements[idx].center_freq)
+
+                    if exact:
+                        # distance to each TX
+                        distance_tx = np.sqrt(np.power(tx_transceiver.cord_x - rx_transceiver.cord_x, 2) + np.power(
+                            tx_transceiver.cord_y - rx_transceiver.cord_y, 2) + np.power(
+                            tx_transceiver.cord_z - rx_transceiver.cord_z, 2))
+                        channel_vec_fd = np.exp(2j * np.pi * distance_tx * (sig_freq_vals / scp.constants.c))
+
+                    else:
+                        # distance to center of array
+                        distance_center = np.sqrt(np.power(self.cord_x - rx_transceiver.cord_x, 2) + np.power(
+                            self.cord_y - rx_transceiver.cord_y, 2) + np.power(
+                            self.cord_z - rx_transceiver.cord_z, 2))
+                        # simplified array geometry, precoding based on angle
+                        channel_vec_fd = np.exp(2j * np.pi * ((self.n_elements - 1) / 2 - idx) * self.wav_len_spacing
+                                                * sig_freq_vals / self.center_freq * (
+                                                            (rx_transceiver.cord_x - self.cord_x) / distance_center))
+
+                    precoding_vec_fd = np.conjugate(channel_vec_fd)
+
+                    # select coefficients on carrier frequencies
+                    tx_n_sc = tx_transceiver.modem.n_sub_carr
+                    precoding_vec = np.ones(tx_transceiver.modem.n_fft, dtype=np.complex128)
+                    precoding_vec[1:(tx_n_sc // 2) + 1] = precoding_vec_fd[1:(tx_n_sc // 2) + 1]
+                    precoding_vec[-tx_n_sc // 2:] = precoding_vec_fd[-tx_n_sc // 2:]
+
+                    tx_transceiver.modem.set_precoding_vec(precoding_vec)
         # set precoding vector based on channel coefficients
         else:
             precoding_mat_fd = np.conjugate(channel_fd_mat)

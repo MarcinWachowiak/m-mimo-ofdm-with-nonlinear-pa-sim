@@ -36,7 +36,7 @@ class Awgn:
         return _propagate_awgn(self.is_complex, self.snr_db, self.rng_gen, in_sig, avg_sample_pow)
 
 
-class AwgnMiso:
+class AwgnMisoLos:
 
     def __init__(self, n_inputs, snr_db, is_complex, seed=None):
         self.snr_db = snr_db
@@ -84,7 +84,7 @@ class AwgnMiso:
         # sum columns
         return np.sum(fd_signal_at_point, axis=0)
 
-class RayleighMISO:
+class RayleighMiso:
     def __init__(self, n_inputs, fd_samp_size, snr_db, is_complex, seed=None):
         self.snr_db = snr_db
         self.is_complex = is_complex
@@ -112,7 +112,6 @@ class RayleighMISO:
 
     def get_channel_coeffs(self):
         return self.fd_chan_mat
-
 
     def reroll_channel_coeffs(self, avg=0, sigma=1):
         self.fd_chan_mat = self.rng_gen.normal(avg, sigma, size=(self.n_inputs, self.fd_samp_size * 2)).view(dtype=np.complex128)
@@ -148,3 +147,73 @@ class RayleighMISO:
 
         # sum columns
         return np.sum(fd_sigmat_after_chan, axis=0)
+
+
+class AwgnMisoTwoPath:
+
+    def __init__(self, n_inputs, snr_db, is_complex, seed=None):
+        self.snr_db = snr_db
+        self.is_complex = is_complex
+        self.n_inputs = n_inputs
+        if seed is not None:
+            self.seed = seed
+            self.rng_gen = np.random.default_rng(seed)
+
+    def set_snr(self, snr_db):
+        self.snr_db = snr_db
+
+    def propagate(self, tx_transceivers, rx_transceiver, in_sig_mat, skip_noise=False, skip_attenuation=False):
+        # channel in frequency domain
+        # remove cp from in sig matrix
+        no_cp_td_sig_mat = in_sig_mat[:, tx_transceivers[0].modem.cp_len:]
+        # perform fft row wise
+        no_cp_fd_sig_mat = torch.fft.fft(torch.from_numpy(no_cp_td_sig_mat), norm="ortho").numpy()
+        #LOS path
+        los_fd_shift_mat = np.empty(no_cp_fd_sig_mat.shape, dtype=np.complex128)
+        los_fd_att_mat = np.empty(no_cp_fd_sig_mat.shape, dtype=np.complex128)
+        #Second path
+        sec_fd_shift_mat = np.empty(no_cp_fd_sig_mat.shape, dtype=np.complex128)
+        sec_fd_att_mat = np.empty(no_cp_fd_sig_mat.shape, dtype=np.complex128)
+
+        for idx, tx_transceiver in enumerate(tx_transceivers):
+            sig_freq_vals = torch.fft.fftfreq(tx_transceivers[idx].modem.n_fft,
+                                              d=1 / tx_transceivers[idx].modem.n_fft).numpy() * tx_transceivers[
+                                idx].carrier_spacing + tx_transceivers[idx].center_freq
+
+            los_distance = np.sqrt(np.power(tx_transceiver.cord_x - rx_transceiver.cord_x, 2) + np.power(
+                tx_transceiver.cord_y - rx_transceiver.cord_y, 2) + np.power(
+                tx_transceiver.cord_z - rx_transceiver.cord_z, 2))
+
+            los_fd_shift_mat[idx, :] = np.exp(2j * np.pi * los_distance * (sig_freq_vals / scp.constants.c))
+            los_fd_att_mat[idx, :] = np.sqrt(np.power(10, (tx_transceiver.tx_ant_gain_db + rx_transceiver.rx_ant_gain_db)/10)) \
+                                        * (scp.constants.c/(4 * np.pi * los_distance * sig_freq_vals))
+
+
+            dim_ratio = (tx_transceiver.cord_z+rx_transceiver.cord_z)/(np.sqrt(np.power(tx_transceiver.cord_x - rx_transceiver.cord_x, 2) + np.power(
+                tx_transceiver.cord_y - rx_transceiver.cord_y, 2)))
+            # angle of elevation (angle in relation to the ground plane) = 90 deg - angle of incidence
+            angle_of_elev_rad = np.arctan(dim_ratio)
+
+            second_path_len = rx_transceiver.cord_z/np.sin(angle_of_elev_rad)
+            first_path_len = tx_transceiver.cord_z/np.sin(angle_of_elev_rad)
+            # Change of phase, att at reflection point?
+            sec_fd_shift_mat[idx, :] = np.exp(2j * np.pi * (first_path_len+second_path_len) * (sig_freq_vals / scp.constants.c))
+            #total path 1 + 2 attenuation
+            sec_fd_att_mat[idx, :] = np.sqrt(np.power(10, (tx_transceiver.tx_ant_gain_db + rx_transceiver.rx_ant_gain_db) / 10)) \
+                                     * (scp.constants.c / (4 * np.pi * (first_path_len+second_path_len) * sig_freq_vals))
+
+        #shift phases of carriers accordingly to spatial relations
+        if not skip_attenuation:
+            los_fd_shift_mat = np.multiply(los_fd_shift_mat, los_fd_att_mat)
+            sec_fd_shift_mat = np.multiply(sec_fd_shift_mat, sec_fd_att_mat)
+
+        combinded_fd_chan = np.add(los_fd_shift_mat, sec_fd_shift_mat)
+
+        combinded_fd_sig = np.multiply(no_cp_fd_sig_mat, combinded_fd_chan)
+
+        # TODO: add noise based on RX noise floor
+        if not skip_noise:
+            pass
+
+        # sum columns
+        return np.sum(combinded_fd_sig, axis=0)

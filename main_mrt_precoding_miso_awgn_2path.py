@@ -30,13 +30,14 @@ bit_rng = np.random.default_rng(4321)
 my_mod = modulation.OfdmQamModem(constel_size=4, n_fft=4096, n_sub_carr=1024, cp_len=128)
 ibo_db = 5
 my_distortion = impairments.SoftLimiter(ibo_db=ibo_db, avg_symb_pow=my_mod.ofdm_avg_sample_pow())
-my_tx = transceiver.Transceiver(modem=my_mod, impairment=my_distortion, center_freq=int(3.5e9), carrier_spacing=int(15e3))
+my_tx = transceiver.Transceiver(modem=my_mod, impairment=my_distortion, center_freq=int(3.5e9), carrier_spacing=int(150e3))
 my_array = antenna_arrray.LinearArray(n_elements=8, transceiver=my_tx, center_freq=int(3.5e9), wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
-my_rx = transceiver.Transceiver(modem=my_mod, impairment=None, cord_x=10, cord_y=10, cord_z=1.5)
+my_rx = transceiver.Transceiver(modem=my_mod, impairment=None, cord_x=15, cord_y=15, cord_z=1.5)
 my_rx.modem.correct_constellation(ibo_db=ibo_db)
 
-my_miso_chan = channels.RayleighMiso(n_inputs=my_array.n_elements, fd_samp_size=my_tx.modem.n_fft, snr_db=10, is_complex=True, seed=1234)
-
+my_miso_chan = channels.AwgnMisoTwoPath(n_inputs=my_array.n_elements, snr_db=10, is_complex=True, seed=1234)
+my_array.set_precoding_single_point(rx_transceiver=my_rx, exact=True, two_path=True)
+utilities.plot_spatial_config(ant_array=my_array,rx_transceiver=my_rx)
 #if run_idx == 0:
 #else:
 # my_array.set_precoding_single_point(rx_transceiver=my_rx, exact=False)
@@ -51,7 +52,7 @@ my_miso_chan = channels.RayleighMiso(n_inputs=my_array.n_elements, fd_samp_size=
 #%%
 # for a single carrier frequency plot the TX characteristics
 n_points = 360
-rx_points = pts_on_circum(r=100, n=n_points)
+rx_points = pts_on_circum(r=22, n=n_points)
 radian_vals = np.radians(np.linspace(0, 360, n_points+1))
 psd_at_angle_desired = np.empty(radian_vals.shape)
 psd_at_angle_dist = np.empty(radian_vals.shape)
@@ -67,17 +68,10 @@ precoding_point_idx = 45
 rx_sig_at_point_clean = []
 rx_sig_at_point_full = []
 
-chan_mat_at_point = my_miso_chan.get_channel_coeffs()
-my_array.set_precoding_single_point(rx_transceiver=my_rx, channel_fd_mat=chan_mat_at_point)
 
 for pt_idx, point in enumerate(rx_points):
     # generate different channel for each point
     # precode only for single known point
-    if pt_idx == precoding_point_idx:
-        my_miso_chan.set_channel_coeffs(chan_mat_at_point)
-    else:
-        my_miso_chan.reroll_channel_coeffs()
-
 
     (x_cord, y_cord) = point
     my_rx.set_position(cord_x=x_cord, cord_y=y_cord, cord_z=1.5)
@@ -146,7 +140,7 @@ ax1.set_thetalim(-np.pi, np.pi)
 ax1.set_xticks(np.pi/180. * np.linspace(180, -180, 24, endpoint=False))
 ax1.grid(True)
 ax1.legend(title="IBO = 3dB, Signal:", loc='lower left')
-plt.savefig("figs/desired_vs_dist_beamplot_ntx_%d_ibo_%d.png" % (my_array.n_elements, ibo_db), dpi=600, bbox_inches='tight')
+plt.savefig("figs/desired_vs_dist_beamplot_ntx_%d_ibo_%d_scspac_%dkHz.png" % (my_array.n_elements, ibo_db, int(my_tx.carrier_spacing/1e3)), dpi=600, bbox_inches='tight')
 plt.show()
 
 #%%
@@ -161,7 +155,7 @@ ax1.set_thetalim(-np.pi, np.pi)
 ax1.set_xticks(np.pi/180. * np.linspace(180, -180, 24, endpoint=False))
 ax1.grid(True)
 ax1.legend(title="IBO = %d dB, Signal:" % ibo_db, loc='lower left')
-plt.savefig("figs/signal_to_dist_beamplot_ntx_%d_ibo_%d.png" % (my_array.n_elements, ibo_db), dpi=600, bbox_inches='tight')
+plt.savefig("figs/signal_to_dist_beamplot_ntx_%d_ibo_%d_scspac_%dkHz.png" % (my_array.n_elements, ibo_db, int(my_tx.carrier_spacing/1e3)), dpi=600, bbox_inches='tight')
 plt.show()
 
 print("Finished processing!")
@@ -181,7 +175,7 @@ ax1.set_ylabel("Power [dB]")
 ax1.legend(title="IBO = %d db dB" %ibo_db)
 ax1.grid()
 plt.tight_layout()
-plt.savefig("figs/psd_at_angle_%d_deg_ibo_%d.png" % (point_idx_psd, ibo_db), dpi=600, bbox_inches='tight')
+plt.savefig("figs/psd_at_angle_%d_deg_ibo_%d_scspac_%dkHz.png" % (point_idx_psd, ibo_db, int(my_tx.carrier_spacing/1e3)), dpi=600, bbox_inches='tight')
 plt.show()
 
 
