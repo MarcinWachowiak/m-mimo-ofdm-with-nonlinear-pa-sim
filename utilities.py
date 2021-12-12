@@ -1,16 +1,19 @@
-import functools
 import numpy as np
 
 __all__ = ['dec2bitarray', 'decimal2bitarray', 'bitarray2dec', 'hamming_dist', 'euclid_dist', 'upsample',
-           'signal_power', 'count_mismatched_bits', 'snr_to_ebn0', 'ebn0_to_snr', 'to_db', 'plot_spatial_config']
+           'signal_power', 'count_mismatched_bits', 'snr_to_ebn0', 'ebn0_to_snr', 'to_db', 'plot_spatial_config',
+           'pts_on_semicircum']
 
 vectorized_binary_repr = np.vectorize(np.binary_repr)
 
 from speedup import jit
 import matplotlib.pyplot as plt
 from matplotlib import colors
+
+
 # TODO: Inspect faster ways of dec to bin, bin to dec conversion
 # TODO: Add code documentation
+
 
 def dec2bitarray(in_number, bit_width):
     """
@@ -40,7 +43,6 @@ def dec2bitarray(in_number, bit_width):
     return result
 
 
-@functools.lru_cache(maxsize=128, typed=False)
 def decimal2bitarray(number, bit_width):
     """
     Converts a positive integer to NumPy array of the specified size containing bits (0 and 1). This version is slightly
@@ -195,16 +197,20 @@ def snr_to_ebn0(snr, n_fft, n_sub_carr, constel_size):
 def to_db(samples):
     return 10 * np.log10(samples)
 
+
 # points start from X=r Y=0 and then proceed anticlockwise
 def pts_on_circum(r, n=100):
     return [(np.cos(2 * np.pi / n * x) * r, np.sin(2 * np.pi / n * x) * r) for x in range(0, n + 1)]
+
+
+def pts_on_semicircum(r, n=100):
+    return [(np.cos(np.pi / n * x) * r, np.sin(np.pi / n * x) * r) for x in range(0, n + 1)]
 
 
 def plot_spatial_config(ant_array, rx_transceiver, plot_3d=True):
     if plot_3d:
         fig = plt.figure()
         ax = fig.add_subplot(projection='3d')
-
 
         tx_cord_x = []
         tx_cord_y = []
@@ -215,13 +221,15 @@ def plot_spatial_config(ant_array, rx_transceiver, plot_3d=True):
             tx_cord_z.append(transceiver.cord_z)
 
         # plot line form array center to rx
-        ax.plot([ant_array.cord_x, rx_transceiver.cord_x], [ant_array.cord_y, rx_transceiver.cord_y], [ant_array.cord_z, rx_transceiver.cord_z], color="C2",
+        ax.plot([ant_array.cord_x, rx_transceiver.cord_x], [ant_array.cord_y, rx_transceiver.cord_y],
+                [ant_array.cord_z, rx_transceiver.cord_z], color="C2",
                 linestyle='--', label="LOS")
 
         ax.scatter(tx_cord_x, tx_cord_y, tx_cord_z, color="C0", marker='^', label="TX")
-        ax.scatter(rx_transceiver.cord_x, rx_transceiver.cord_y, rx_transceiver.cord_z, color="C1", marker='o', label="RX")
+        ax.scatter(rx_transceiver.cord_x, rx_transceiver.cord_y, rx_transceiver.cord_z, color="C1", marker='o',
+                   label="RX")
 
-        #color ground surface
+        # color ground surface
         ax.zaxis.set_pane_color(colors.to_rgba("gray"))
 
         ax.set_title('TX RX spatial configuration')
@@ -238,8 +246,9 @@ def plot_spatial_config(ant_array, rx_transceiver, plot_3d=True):
         fig, ax = plt.subplots()
         tx_cord_x = []
         tx_cord_y = []
-        #plot line form array center to rx
-        ax.plot([ant_array.cord_x, rx_transceiver.cord_x], [ant_array.cord_y, rx_transceiver.cord_y], color="C2", linestyle='--')
+        # plot line form array center to rx
+        ax.plot([ant_array.cord_x, rx_transceiver.cord_x], [ant_array.cord_y, rx_transceiver.cord_y], color="C2",
+                linestyle='--')
 
         for transceiver in ant_array.array_elements:
             tx_cord_x.append(transceiver.cord_x)
@@ -258,4 +267,31 @@ def plot_spatial_config(ant_array, rx_transceiver, plot_3d=True):
         ax.set_axisbelow(True)
         plt.tight_layout()
         plt.savefig("figs/spatial_rx_tx_config_2d.png", dpi=600, bbox_inches='tight')
+        plt.show()
+
+
+def plot_array_config(ant_array, plot_3d=False):
+    if plot_3d:
+        fig = plt.figure()
+        ax = fig.add_subplot(projection='3d')
+        for transceiver in ant_array.array_elements:
+            ax.scatter(transceiver.cord_x, transceiver.cord_y, transceiver.cord_z, color="C0", marker='^')
+
+        ax.set_title('Antenna array')
+        ax.set_xlabel("X plane [m]")
+        ax.set_ylabel("Y plane [m]")
+        ax.set_zlabel("Z plane [m]")
+        ax.grid()
+        ax.set_axisbelow(True)
+        plt.show()
+    else:
+        fig, ax = plt.subplots()
+        for transceiver in ant_array.array_elements:
+            ax.scatter(transceiver.cord_x, transceiver.cord_y, color="C0", marker='^')
+        ax.set_title('Antenna array')
+        ax.set_xlabel("X plane [m]")
+        ax.set_ylabel("Y plane [m]")
+        ax.grid()
+        ax.set_axisbelow(True)
+        plt.tight_layout()
         plt.show()

@@ -1,7 +1,7 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+
 from speedup import jit
-from utilities import to_db
 
 
 @jit(nopython=True)
@@ -33,7 +33,7 @@ class SoftLimiter:
         ax.legend(title="IBO [dB]")
         ax.grid()
         plt.tight_layout()
-        plt.savefig("figs/soft_lim_tf.pdf", dpi=600, bbox_inches='tight')
+        plt.savefig("figs/soft_lim_tf_ibo%d.png" % self.ibo_db, dpi=600, bbox_inches='tight')
         plt.show()
 
     def process(self, in_sig):
@@ -72,7 +72,7 @@ class Rapp:
         ax.legend(title="IBO [dB]")
         ax.grid()
         plt.tight_layout()
-        plt.savefig("figs/rapp_lim_tf.pdf", dpi=600, bbox_inches='tight')
+        plt.savefig("figs/rapp_lim_tf_ibo%d.png" % self.ibo_db, dpi=600, bbox_inches='tight')
         plt.show()
 
     def process(self, in_sig):
@@ -101,9 +101,9 @@ class ThirdOrderNonLin:
 
         fig, ax = plt.subplots(1, 1)
         # ax.plot(in_sig_ampl, out_sig_ampl, label=self.toi_db)
-        ax.plot(to_db(in_sig_ampl ** 2), to_db(out_sig_ampl ** 2), label=self.toi_db)
-        ax.plot(to_db(in_sig_ampl ** 2), to_db(in_sig_ampl ** 2) - to_db(out_sig_ampl ** 2), label="Difference")
-        ax.plot(to_db(in_sig_ampl ** 2), to_db(in_sig_ampl ** 2), label="Linear")
+        ax.plot(in_sig_ampl, out_sig_ampl, label=self.toi_db)
+        # ax.plot(to_db(in_sig_ampl ** 2), to_db(in_sig_ampl ** 2) - to_db(out_sig_ampl ** 2), label="Difference")
+        # ax.plot(to_db(in_sig_ampl ** 2), to_db(in_sig_ampl ** 2), label="Linear")
 
         ax.set_title("Third order distortion transfer characteristic")
         ax.set_xlabel("Input signal amplitude [V]")
@@ -111,7 +111,7 @@ class ThirdOrderNonLin:
         ax.legend(title="TOI [dB]")
         ax.grid()
         plt.tight_layout()
-        plt.savefig("figs/toi_tf.pdf", dpi=600, bbox_inches='tight')
+        plt.savefig("figs/toi_tf_toi%d.png" % self.toi_db, dpi=600, bbox_inches='tight')
         plt.show()
 
     def process(self, in_sig):

@@ -1,4 +1,3 @@
-
 class Transceiver:
     def __init__(self, modem, center_freq=None, carrier_spacing=None, impairment=None, cord_x=0, cord_y=0, cord_z=0):
         self.modem = modem

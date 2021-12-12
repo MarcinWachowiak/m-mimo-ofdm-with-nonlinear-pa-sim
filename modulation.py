@@ -2,9 +2,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy as scp
 import torch
-from utilities import bitarray2dec, dec2bitarray, signal_power
+from numba import objmode
+
 from speedup import jit
-from numba import objmode, types
+from utilities import bitarray2dec, dec2bitarray, signal_power
 
 
 # @jit(nopython=True)
@@ -122,6 +123,7 @@ def _tx_ofdm_symbol(mod_symbols, n_fft: int, n_sub_carr: int, cp_length: int, pr
     # add cyclic prefix
     return np.concatenate((ofdm_sym_time[-cp_length:], ofdm_sym_time))
 
+
 # TODO: add input signal domain flag freq/time to skip fft
 @jit(nopython=True)
 def _rx_ofdm_symbol(ofdm_symbol, n_fft: int, n_sub_carr: int, cp_length: int):
@@ -159,4 +161,3 @@ class OfdmQamModem(QamModem):
 
     def ofdm_avg_sample_pow(self):
         return self.avg_symbol_power * (self.n_sub_carr / self.n_fft)
-

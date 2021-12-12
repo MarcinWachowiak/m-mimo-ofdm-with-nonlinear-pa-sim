@@ -1,5 +1,6 @@
-from matplotlib import rcParams, cycler
 from math import sqrt
+
+from matplotlib import rcParams, cycler
 
 
 def set_latex_plot_style():
