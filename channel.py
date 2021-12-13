@@ -4,6 +4,8 @@ import numpy as np
 import scipy as scp
 import torch
 
+from utilities import to_db, signal_power
+
 
 class Channel(metaclass=abc.ABCMeta):
     def __init__(self, snr_db, is_complex, seed=None):
@@ -48,7 +50,7 @@ class AwgnMisoLosTdFd(Channel):
         self.n_inputs = n_inputs
         super().__init__(snr_db, is_complex, seed)
 
-    def propagate(self, tx_transceivers, rx_transceiver, in_sig_mat, skip_noise=False, skip_attenuation=False):
+    def propagate(self, tx_transceivers, rx_transceiver, in_sig_mat, avg_sample_pow = None, skip_noise=False, skip_attenuation=False):
         # channel in frequency domain
         # remove cp from in sig matrix
         no_cp_td_sig_mat = in_sig_mat[:, rx_transceiver.modem.cp_len:]
@@ -78,13 +80,24 @@ class AwgnMisoLosTdFd(Channel):
 
         # shift phases of carriers accordingly to spatial relations
         fd_signal_at_point = np.multiply(no_cp_fd_sig_mat, fd_ph_shift_mat)
+        # sum columns
+        fd_signal_at_point = np.sum(fd_signal_at_point, axis=0)
 
         # TODO: add noise based on RX noise floor
         if not skip_noise:
-            pass
+            n_sampl = len(in_sig_mat)
+            noise_std = np.complex128(np.sqrt((int(self.is_complex) + 1) * avg_sample_pow / (10 ** (self.snr_db / 10))))
+            if self.is_complex:
+                noise = self.rng_gen.standard_normal((n_sampl, 2)).view(np.complex128)[:, 0] * noise_std * 0.5
+            else:
+                noise = self.rng_gen.standard_normal(n_sampl) * noise_std
 
-        # sum columns
-        return np.sum(fd_signal_at_point, axis=0)
+            # check resultant SNR
+            # print("SNR: ", to_db(signal_power(in_sig_mat)/signal_power(noise)))
+
+            fd_signal_at_point = np.sum(fd_signal_at_point, noise)
+
+        return fd_signal_at_point
 
 
 # TODO: Should Rayleigh channel include antenna gains?

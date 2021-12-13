@@ -45,6 +45,15 @@ class Modem:
     def demodulate(self, input_symbols):
         return _demodulate(self._constellation, self.n_bits_per_symbol, input_symbols)
 
+    # TODO: optimize symbol detection
+    def symbol_detection(self, input_symbols):
+        index_list = np.abs(input_symbols - self.constellation[:, None]).argmin(0)
+        demod_bits = dec2bitarray(index_list, self.n_bits_per_symbol)
+        mapfunc = np.vectorize(lambda i:
+                               self.constellation[bitarray2dec(demod_bits[i:i + self.n_bits_per_symbol])])
+        baseband_symbols = mapfunc(np.arange(0, len(demod_bits), self.n_bits_per_symbol))
+        return baseband_symbols
+
     def plot_constellation(self):
         fig, ax = plt.subplots()
         ax.scatter(self.constellation.real, self.constellation.imag)
@@ -60,11 +69,14 @@ class Modem:
 
     # correct constellation shrinking in RX (soft limiter case)
     def correct_constellation(self, ibo_db):
+        self.alpha = self.calc_alpha(ibo_db)
+        self._constellation = self.alpha * self._constellation
+
+    def calc_alpha(self, ibo_db):
         gamma = np.power(10, ibo_db / 10)
         alpha = 1 - np.exp(-np.power(gamma, 2)) + (np.sqrt(np.pi) * gamma / 2) * scp.special.erfc(gamma)
         # scale constellation
-        self.alpha = alpha
-        self._constellation = alpha * self._constellation
+        return alpha
 
     @property
     def constellation(self):
@@ -151,13 +163,22 @@ class OfdmQamModem(QamModem):
     def set_precoding_vec(self, precoding_vec):
         self.precoding_vec = precoding_vec
 
-    def modulate(self, input_bits):
+    def modulate(self, input_bits, get_symbols_only=False):
         modulated_symbols = _modulate(self._constellation, self.n_bits_per_symbol, input_bits)
-        return _tx_ofdm_symbol(modulated_symbols, self.n_fft, self.n_sub_carr, self.cp_len, self.precoding_vec)
+        if get_symbols_only:
+            return modulated_symbols
+        else:
+            return _tx_ofdm_symbol(modulated_symbols, self.n_fft, self.n_sub_carr, self.cp_len, self.precoding_vec)
 
-    def demodulate(self, ofdm_symbol):
+    def demodulate(self, ofdm_symbol, get_symbols_only=False):
         baseband_symbols = _rx_ofdm_symbol(ofdm_symbol, self.n_fft, self.n_sub_carr, self.cp_len)
-        return _demodulate(self._constellation, self.n_bits_per_symbol, baseband_symbols)
+        if get_symbols_only:
+            return baseband_symbols
+        else:
+            return _demodulate(self._constellation, self.n_bits_per_symbol, baseband_symbols)
+
+    def symbols_to_bits(self, input_symbols):
+        return _demodulate(self._constellation, self.n_bits_per_symbol, input_symbols)
 
     def ofdm_avg_sample_pow(self):
         return self.avg_symbol_power * (self.n_sub_carr / self.n_fft)
