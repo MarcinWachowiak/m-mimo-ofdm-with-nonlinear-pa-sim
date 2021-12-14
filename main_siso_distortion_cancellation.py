@@ -49,7 +49,7 @@ n_err_min = 1000
 # %%
 dist_vals_db = [5, 5]
 # TODO: Debug why for some num of iteration the correction fails
-cnc_n_iters = 3
+cnc_n_iters = 5
 cnc_n_upsamp = 4
 
 include_clean_run = True

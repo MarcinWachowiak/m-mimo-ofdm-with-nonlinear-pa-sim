@@ -180,7 +180,9 @@ class AwgnMisoTwoPathTdFd(Channel):
             sec_distances[idx] = incident_path_len + reflected_path_len
 
         los_fd_shift_mat = np.exp(2j * np.pi * np.outer(los_distances, sig_freq_vals) / scp.constants.c)
-        sec_fd_shift_mat = np.exp(2j * np.pi * np.outer(sec_distances, sig_freq_vals) / scp.constants.c)
+        # TODO: include detailed calculation of reflection coefficient
+        reflection_coeff = -1.0
+        sec_fd_shift_mat = reflection_coeff * np.exp(2j * np.pi * np.outer(sec_distances, sig_freq_vals) / scp.constants.c)
 
         if not skip_attenuation:
             los_fd_att_mat = np.sqrt(np.power(10, (tx_ant_gains[:, np.newaxis] + rx_transceiver.rx_ant_gain_db) / 10)) \

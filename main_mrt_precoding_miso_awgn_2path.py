@@ -15,6 +15,7 @@ import modulation
 import transceiver
 from plot_settings import set_latex_plot_style
 from utilities import to_db, pts_on_circum, pts_on_semicircum
+from matplotlib.ticker import MaxNLocator
 
 set_latex_plot_style()
 # %%
@@ -29,7 +30,7 @@ my_mod = modulation.OfdmQamModem(constel_size=64, n_fft=4096, n_sub_carr=1024, c
 my_distortion = impairment.SoftLimiter(ibo_db=5, avg_symb_pow=my_mod.ofdm_avg_sample_pow())
 my_tx = transceiver.Transceiver(modem=my_mod, impairment=my_distortion, center_freq=int(3.5e9),
                                 carrier_spacing=int(15e3))
-my_rx = transceiver.Transceiver(modem=my_mod, impairment=None, cord_x=150, cord_y=150, cord_z=1.5,
+my_rx = transceiver.Transceiver(modem=my_mod, impairment=None, cord_x=212, cord_y=212, cord_z=1.5,
                                 center_freq=int(3.5e9), carrier_spacing=int(15e3))
 my_rx.modem.correct_constellation(ibo_db=my_tx.impairment.ibo_db)
 
@@ -38,10 +39,10 @@ plot_full_circle = False
 
 if plot_full_circle:
     n_points = 360
-    rx_points = pts_on_circum(r=100, n=n_points)
+    rx_points = pts_on_circum(r=300, n=n_points)
 else:
     n_points = 180
-    rx_points = pts_on_semicircum(r=100, n=n_points)
+    rx_points = pts_on_semicircum(r=300, n=n_points)
 
 radian_vals = np.radians(np.linspace(0, n_points, n_points + 1))
 
@@ -52,7 +53,7 @@ n_snapshots = 10
 # %%
 # plot PSD for chosen point/angle
 point_idx_psd = 78
-n_ant_vec = [1, 2, 4, 8]
+n_ant_vec = [16, 32, 64, 128]
 
 desired_psd_at_angle_lst = []
 distortion_psd_at_angle_lst = []
@@ -67,7 +68,7 @@ for n_ant in n_ant_vec:
                                           wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
     my_miso_chan = channel.AwgnMisoTwoPathTdFd(n_inputs=my_array.n_elements, snr_db=10, is_complex=True, seed=1234)
 
-    my_rx.set_position(cord_x=150, cord_y=150, cord_z=1.5)
+    my_rx.set_position(cord_x=212, cord_y=212, cord_z=1.5)
     my_array.set_precoding_single_point(rx_transceiver=my_rx, exact=True, two_path=True)
 
     psd_at_angle_desired = np.empty(radian_vals.shape)
@@ -144,7 +145,8 @@ for idx, n_ant in enumerate(n_ant_vec):
 ax1.set_title("Desired signal PSD at angle [dB]")
 ax1.legend(title="N antennas:", ncol=len(n_ant_vec), loc='lower center')
 ax1.grid(True)
-plt.savefig("figs/desired_signal_beampattern_ibo%d.png" % my_tx.impairment.ibo_db, dpi=600, bbox_inches='tight')
+# ax1.xaxis.set_major_locator(MaxNLocator(6))
+plt.savefig("figs/desired_signal_beampattern_ibo%d_%dto%dant_sweep.png" %(my_tx.impairment.ibo_db, np.min(n_ant_vec), np.max(n_ant_vec)), dpi=600, bbox_inches='tight')
 plt.show()
 
 # %%
@@ -165,7 +167,7 @@ for idx, n_ant in enumerate(n_ant_vec):
 ax2.set_title("Distortion signal PSD at angle [dB]")
 ax2.legend(title="N antennas:", ncol=len(n_ant_vec), loc='lower center')
 ax2.grid(True)
-plt.savefig("figs/distortion_signal_beampattern_ibo%d.png" % my_tx.impairment.ibo_db, dpi=600, bbox_inches='tight')
+plt.savefig("figs/distortion_signal_beampattern_ibo%d_%dto%dant_sweep.png" %(my_tx.impairment.ibo_db, np.min(n_ant_vec), np.max(n_ant_vec)), dpi=600, bbox_inches='tight')
 plt.show()
 
 # %%
@@ -188,7 +190,7 @@ ax3.plot(radian_vals, distortion_psd_at_angle_lst[sel_idx], label="Distortion", 
 ax3.set_title("Power spectral density at angle [dB]")
 ax3.legend(title="N antennas = %d, signals:" % n_ant_vec[sel_idx], ncol=2, loc='lower center')
 ax3.grid(True)
-plt.savefig("figs/desired_vs_distortion_beampattern_ibo%d.png" % my_tx.impairment.ibo_db, dpi=600, bbox_inches='tight')
+plt.savefig("figs/desired_vs_distortion_beampattern_ibo%d_%dant.png" %(my_tx.impairment.ibo_db, np.max(n_ant_vec)), dpi=600, bbox_inches='tight')
 plt.show()
 
 # %%
@@ -208,7 +210,7 @@ for idx, n_ant in enumerate(n_ant_vec):
 ax4.set_title("Signal to distortion ratio at angle [dB]")
 ax4.legend(title="N antennas:", ncol=len(n_ant_vec), loc='lower center')
 ax4.grid(True)
-plt.savefig("figs/sdr_at_angle_ibo%d.png" % my_tx.impairment.ibo_db, dpi=600, bbox_inches='tight')
+plt.savefig("figs/sdr_at_angle_polar_ibo%d_%dto%dant_sweep.png" %(my_tx.impairment.ibo_db, np.min(n_ant_vec), np.max(n_ant_vec)), dpi=600, bbox_inches='tight')
 plt.show()
 
 # %%
@@ -227,7 +229,7 @@ ax5.set_ylabel("Power [dB]")
 ax5.legend(title="IBO = %d [dB]" % my_tx.impairment.ibo_db)
 ax5.grid()
 plt.tight_layout()
-plt.savefig("figs/psd_at_angle_%d_deg_ibo%d.png" % (point_idx_psd, my_tx.impairment.ibo_db), dpi=600,
+plt.savefig("figs/psd_at_angle_%ddeg_ibo%d_ant%d.png" % (point_idx_psd, my_tx.impairment.ibo_db, np.max(n_ant_vec)), dpi=600,
             bbox_inches='tight')
 plt.show()
 

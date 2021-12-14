@@ -17,9 +17,10 @@ class CncReceiver():
         in_sig_fd = np.concatenate((in_sig_fd[-n_sub_carr // 2:], in_sig_fd[1:(n_sub_carr // 2) + 1]))
         # allow a fixed number of iterations
         for iter_idx in range(n_iters):
+            # skip estimate subtraction for first iteration
             if iter_idx != 0:
                 in_sig_fd = in_sig_fd - distortion_estimate_fd
-                # skip estimate subtraction
+
 
             # perform detection with corrected RX constellation - get symbols
             rx_symbols = self.modem.symbol_detection(in_sig_fd/self.modem.alpha)
@@ -36,9 +37,9 @@ class CncReceiver():
             clipped_ofdm_sym_td = self.impairment.process(ofdm_sym_td)
 
             # simulate OFDM receive
-            ofdm_sym_fd = torch.fft.fft(torch.from_numpy(clipped_ofdm_sym_td), norm="ortho").numpy()
+            clipped_ofdm_sym_fd = torch.fft.fft(torch.from_numpy(clipped_ofdm_sym_td), norm="ortho").numpy()
 
-            rx_symbols_estimate = np.concatenate((ofdm_sym_fd[-n_sub_carr // 2:], ofdm_sym_fd[1:(n_sub_carr // 2) + 1])) / np.sqrt(upsample_factor)
+            rx_symbols_estimate = np.concatenate((clipped_ofdm_sym_fd[-n_sub_carr // 2:], clipped_ofdm_sym_fd[1:(n_sub_carr // 2) + 1])) / np.sqrt(upsample_factor)
 
             # calculate distortion estimate
             distortion_estimate_fd = rx_symbols_estimate - (rx_symbols * self.modem.alpha)

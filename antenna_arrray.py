@@ -74,11 +74,11 @@ class LinearArray:
                     angle_of_elev_rad = np.arctan(dim_ratio)
 
                     second_path_len = rx_transceiver.cord_z / np.sin(angle_of_elev_rad)
-                    # TODO: add optional reflection coefficient
                     first_path_len = tx_transceiver.cord_z / np.sin(angle_of_elev_rad)
-                    # Change of phase, att at reflection point?
-                    sec_fd_shift_mat = np.exp(
-                        2j * np.pi * (first_path_len + second_path_len) * (sig_freq_vals / scp.constants.c))
+
+                    reflection_coeff = -1.0
+                    sec_fd_shift_mat = reflection_coeff * np.exp(2j * np.pi * (first_path_len + second_path_len) *
+                                              (sig_freq_vals / scp.constants.c))
                     two_path_fd_chan = np.add(los_fd_shift_mat, sec_fd_shift_mat)
                     # normalize to exclude amplification/attenuation
                     two_path_fd_chan_normalized = np.exp(1j * np.angle(two_path_fd_chan))
@@ -103,7 +103,10 @@ class LinearArray:
                 precoding_mat_fd[idx, :] = precoding_vec_fd
         else:
             # set precoding vector based on provided channel mat coefficients
-            precoding_mat_fd = np.conjugate(channel_fd_mat)
+            channel_fd_mat_conjungate = np.conjugate(channel_fd_mat)
+            # normalize rayleigh channel precoding coefficients
+            precoding_mat_fd = np.exp(1j * np.angle(channel_fd_mat_conjungate))
+
         # apply precoding vectors to each tx node from matrix
         for idx, tx_transceiver in enumerate(self.array_elements):
             # select coefficients based on carrier frequencies

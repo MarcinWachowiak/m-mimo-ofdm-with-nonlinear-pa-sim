@@ -48,11 +48,7 @@ class Modem:
     # TODO: optimize symbol detection
     def symbol_detection(self, input_symbols):
         index_list = np.abs(input_symbols - self.constellation[:, None]).argmin(0)
-        demod_bits = dec2bitarray(index_list, self.n_bits_per_symbol)
-        mapfunc = np.vectorize(lambda i:
-                               self.constellation[bitarray2dec(demod_bits[i:i + self.n_bits_per_symbol])])
-        baseband_symbols = mapfunc(np.arange(0, len(demod_bits), self.n_bits_per_symbol))
-        return baseband_symbols
+        return self.constellation[index_list]
 
     def plot_constellation(self):
         fig, ax = plt.subplots()
