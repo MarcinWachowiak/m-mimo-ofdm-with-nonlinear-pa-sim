@@ -47,30 +47,29 @@ bits_sent_max = int(1e6)
 n_err_min = 1000
 
 # %%
-dist_vals_db = [5, 5]
-# TODO: Debug why for some num of iteration the correction fails
-cnc_n_iters = 5
+#Number of CNC iterations eval, upsample ratio fixed
+ibo_val_db = 3
+print("Distortion IBO/TOI value:", ibo_val_db)
+cnc_n_iters_lst = [2, 4, 8, 12]
+print("CNC number of iteration list:", cnc_n_iters_lst)
 cnc_n_upsamp = 4
+# Single CNC iteration is equal to standard reception without distortion compensation
+cnc_n_iters_lst = np.insert(cnc_n_iters_lst, 0, 0)
 
 include_clean_run = True
 if include_clean_run:
-    dist_vals_db = np.insert(dist_vals_db, 0, 0)
+    cnc_n_iters_lst = np.insert(cnc_n_iters_lst, 0, 0)
 
-print("Distortion IBO/TOI values:", dist_vals_db)
+
 ber_per_dist, freq_arr, clean_ofdm_psd, distortion_psd, tx_ofdm_psd = ([] for i in range(5))
 
 start_time = time.time()
-for run_idx, dist_val_db in enumerate(dist_vals_db):
+for run_idx, cnc_n_iter_val in enumerate(cnc_n_iters_lst):
 
     if not (include_clean_run and run_idx == 0):
-        my_standard_rx.modem.correct_constellation(dist_val_db)
-        my_tx.impairment.set_ibo(dist_val_db)
-        my_cnc_rx.impairment.set_ibo(dist_val_db)
-
-    snapshot_counter = 0
-    clean_ofdm_for_psd = []
-    distortion_for_psd = []
-    tx_ofdm_for_psd = []
+        my_standard_rx.modem.correct_constellation(ibo_val_db)
+        my_tx.impairment.set_ibo(ibo_val_db)
+        my_cnc_rx.impairment.set_ibo(ibo_val_db)
 
     bers = np.zeros([len(snr_arr)])
 
@@ -87,20 +86,14 @@ for run_idx, dist_val_db in enumerate(dist_vals_db):
             else:
                 rx_ofdm_symbol = my_chan.propagate(tx_ofdm_symbol, my_mod.avg_sample_power)
 
-            if plot_psd and snapshot_counter < n_collected_snapshots:
-                tx_ofdm_for_psd.append(tx_ofdm_symbol)
-                clean_ofdm_for_psd.append(clean_ofdm_symbol)
-                distortion_for_psd.append(tx_ofdm_symbol - my_standard_rx.modem.alpha * clean_ofdm_symbol)
-                snapshot_counter += 1
-
-            if run_idx != 2:
+            if include_clean_run and run_idx == 0:
                 # standard reception
                 rx_bits = my_standard_rx.receive(rx_ofdm_symbol)
             else:
                 # enchanced CNC reception
                 # Change domain TD of RX signal to FD
                 no_cp_fd_sig_mat = torch.fft.fft(torch.from_numpy(rx_ofdm_symbol[my_cnc_rx.modem.cp_len:]), norm="ortho").numpy()
-                rx_bits = my_cnc_rx.receive(n_iters=cnc_n_iters, upsample_factor=cnc_n_upsamp, in_sig_fd=no_cp_fd_sig_mat)
+                rx_bits = my_cnc_rx.receive(n_iters=cnc_n_iter_val, upsample_factor=cnc_n_upsamp, in_sig_fd=no_cp_fd_sig_mat)
 
             n_bit_err = count_mismatched_bits(tx_bits, rx_bits)
 
@@ -109,92 +102,126 @@ for run_idx, dist_val_db in enumerate(dist_vals_db):
         bers[idx] = n_err / bits_sent
     ber_per_dist.append(bers)
 
-    if plot_psd:
-        # flatten psd data
+print("--- Computation time: %f ---" % (time.time() - start_time))
 
-        tx_odfm_freq_arr, tx_odfm_psd_arr = welch(np.concatenate(tx_ofdm_for_psd).ravel(), fs=psd_nfft,
-                                                  nfft=psd_nfft, nperseg=n_samp_per_seg,
-                                                  return_onesided=False)
-        clean_odfm_freq_arr, clean_odfm_psd_arr = welch(np.concatenate(clean_ofdm_for_psd).ravel(), fs=psd_nfft,
-                                                        nfft=psd_nfft, nperseg=n_samp_per_seg,
-                                                        return_onesided=False)
-        distortion_freq_arr, distortion_odfm_psd_arr = welch(np.concatenate(distortion_for_psd).ravel(), fs=psd_nfft,
-                                                             nfft=psd_nfft,
-                                                             nperseg=n_samp_per_seg,
-                                                             return_onesided=False)
-        freq_arr.append(np.array(clean_odfm_freq_arr[0:len(clean_odfm_freq_arr) // 2]))
-        tx_ofdm_psd.append(to_db(np.array(tx_odfm_psd_arr[0:len(tx_odfm_psd_arr) // 2])))
-        clean_ofdm_psd.append(to_db(np.array(clean_odfm_psd_arr[0:len(clean_odfm_psd_arr) // 2])))
-        distortion_psd.append(to_db(np.array(distortion_odfm_psd_arr[0:len(distortion_odfm_psd_arr) // 2])))
+# %%
+fig1, ax1 = plt.subplots(1, 1)
+ax1.set_yscale('log')
+for idx, cnc_iter_val in enumerate(cnc_n_iters_lst):
+    if include_clean_run:
+        if idx == 0:
+            ax1.plot(ebn0_arr, ber_per_dist[idx], label="No distortion")
+        elif idx == 1:
+            ax1.plot(ebn0_arr, ber_per_dist[idx], label="Standard RX")
+        else:
+            ax1.plot(ebn0_arr, ber_per_dist[idx], label="CNC NI = %d, J = %d" % (cnc_iter_val, cnc_n_upsamp))
+    else:
+        if idx == 0:
+            ax1.plot(ebn0_arr, ber_per_dist[idx], label="Standard RX")
+        else:
+            ax1.plot(ebn0_arr, ber_per_dist[idx],
+                     label="CNC NI = %d, J = %d" % (cnc_iter_val, cnc_n_upsamp))
+# fix log scaling
+ax1.set_title("Bit error rate, QAM %d, IBO = %d [dB]" %(my_mod.constellation_size, ibo_val_db))
+ax1.set_xlabel("Eb/N0 [dB]")
+ax1.set_ylabel("BER")
+ax1.grid()
+ax1.legend()
+
+plt.tight_layout()
+plt.savefig("figs/ber_soft_lim_siso_cnc_ibo%d_niter%d_sweep_nupsamp%d.png" %(my_tx.impairment.ibo_db, np.max(cnc_n_iters_lst), cnc_n_upsamp), dpi=600, bbox_inches='tight')
+plt.show()
+
+
+# %%
+# Upsample ratio eval, number of iterations fixed
+ibo_val_db = 3
+print("Distortion IBO/TOI value:", ibo_val_db)
+cnc_n_upsamp_lst = [2, 4, 8]
+cnc_n_upsamp_lst = np.insert(cnc_n_upsamp_lst, 0, 1)
+
+print("CNC upsample factors list:", cnc_n_upsamp_lst)
+cnc_n_iter_val = 4
+
+include_clean_run = True
+if include_clean_run:
+    cnc_n_upsamp_lst = np.insert(cnc_n_upsamp_lst, 0, 1)
+
+ber_per_dist, freq_arr, clean_ofdm_psd, distortion_psd, tx_ofdm_psd = ([] for i in range(5))
+
+start_time = time.time()
+for run_idx, cnc_upsample_val in enumerate(cnc_n_upsamp_lst):
+
+    if not (include_clean_run and run_idx == 0):
+        my_standard_rx.modem.correct_constellation(ibo_val_db)
+        my_tx.impairment.set_ibo(ibo_val_db)
+        my_cnc_rx.impairment.set_ibo(ibo_val_db)
+
+    bers = np.zeros([len(snr_arr)])
+
+    for idx, snr in enumerate(snr_arr):
+        my_chan.set_snr(snr)
+        n_err = 0
+        bits_sent = 0
+        while bits_sent < bits_sent_max and n_err < n_err_min:
+            tx_bits = bit_rng.choice((0, 1), my_tx.modem.n_bits_per_ofdm_sym)
+            tx_ofdm_symbol, clean_ofdm_symbol = my_tx.transmit(tx_bits, return_both=True)
+
+            if include_clean_run and run_idx == 0:
+                rx_ofdm_symbol = my_chan.propagate(clean_ofdm_symbol, my_mod.avg_sample_power)
+            else:
+                rx_ofdm_symbol = my_chan.propagate(tx_ofdm_symbol, my_mod.avg_sample_power)
+
+            if include_clean_run and run_idx == 0:
+                # standard reception
+                rx_bits = my_standard_rx.receive(rx_ofdm_symbol)
+            elif include_clean_run and run_idx == 1:
+                # enchanced CNC reception
+                # Change domain TD of RX signal to FD
+                no_cp_fd_sig_mat = torch.fft.fft(torch.from_numpy(rx_ofdm_symbol[my_cnc_rx.modem.cp_len:]), norm="ortho").numpy()
+                rx_bits = my_cnc_rx.receive(n_iters=0, upsample_factor=cnc_upsample_val, in_sig_fd=no_cp_fd_sig_mat)
+
+            else:
+                # enchanced CNC reception
+                # Change domain TD of RX signal to FD
+                no_cp_fd_sig_mat = torch.fft.fft(torch.from_numpy(rx_ofdm_symbol[my_cnc_rx.modem.cp_len:]), norm="ortho").numpy()
+                rx_bits = my_cnc_rx.receive(n_iters=cnc_n_iter_val, upsample_factor=cnc_upsample_val, in_sig_fd=no_cp_fd_sig_mat)
+
+            n_bit_err = count_mismatched_bits(tx_bits, rx_bits)
+
+            bits_sent += my_mod.n_bits_per_ofdm_sym
+            n_err += n_bit_err
+        bers[idx] = n_err / bits_sent
+    ber_per_dist.append(bers)
 
 print("--- Computation time: %f ---" % (time.time() - start_time))
 
 # %%
-if plot_psd:
-    # Plot PSD at the receiver
-    fig1, ax1 = plt.subplots(1, 1)
-    for idx, dist_val in enumerate(dist_vals_db):
-        if include_clean_run:
-            if idx == 0:
-                ax1.plot(freq_arr[0], clean_ofdm_psd[0], label="No distortion")
-            else:
-                ax1.plot(freq_arr[0], tx_ofdm_psd[idx], label=dist_val)
-        else:
-            ax1.plot(freq_arr[0], tx_ofdm_psd[idx], label=dist_val)
-
-    ax1.set_title("Power spectral density at TX")
-    ax1.set_xlabel("Subcarrier index [-]")
-    ax1.set_ylabel("Power [dB]")
-    ax1.legend(title="IBO [dB]")
-    ax1.grid()
-
-    plt.tight_layout()
-    plt.savefig("figs/psd_soft_lim_combined.png", dpi=600, bbox_inches='tight')
-    plt.show()
-
-    # Plot decomposed PSD of desired signal and distortion separately
-    fig2, ax2 = plt.subplots(1, 1)
-    for idx, dist_val in enumerate(dist_vals_db):
-        if include_clean_run:
-            if idx == 0:
-                ax2.plot(freq_arr[0], clean_ofdm_psd[0], label="Desired")
-            else:
-                ax2.plot(freq_arr[0], distortion_psd[idx], label="Distortion IBO = %d [dB]" % dist_val)
-        else:
-            ax2.plot(freq_arr[0], distortion_psd[idx], label="Distortion IBO = %d [dB]" % dist_val)
-
-    ax2.set_title("Power spectral density at TX decomposed")
-    ax2.set_xlabel("Subcarrier index [-]")
-    ax2.set_ylabel("Power [dB]")
-    ax2.legend(title="Signals:")
-    ax2.grid()
-
-    plt.tight_layout()
-    plt.savefig("figs/psd_soft_lim_decomposed.png", dpi=600, bbox_inches='tight')
-    plt.show()
-
-# %%
-fig3, ax3 = plt.subplots(1, 1)
-ax3.set_yscale('log')
-for idx, dist_val in enumerate(dist_vals_db):
+fig1, ax1 = plt.subplots(1, 1)
+ax1.set_yscale('log')
+for idx, cnc_upsamp_val in enumerate(cnc_n_upsamp_lst):
     if include_clean_run:
         if idx == 0:
-            ax3.plot(ebn0_arr, ber_per_dist[idx], label="No distortion")
+            ax1.plot(ebn0_arr, ber_per_dist[idx], label="No distortion")
         elif idx == 1:
-            ax3.plot(ebn0_arr, ber_per_dist[idx], label="Standard IBO = %d [dB]" % dist_val)
-        elif idx == 2:
-            ax3.plot(ebn0_arr, ber_per_dist[idx], label="CNC NI = %d, J = %d, IBO = %d [dB]" %(cnc_n_iters, cnc_n_upsamp, dist_val))
+            ax1.plot(ebn0_arr, ber_per_dist[idx], label="Standard RX")
+        else:
+            ax1.plot(ebn0_arr, ber_per_dist[idx], label="CNC NI = %d, J = %d" % (cnc_n_iter_val, cnc_upsamp_val))
     else:
-        ax3.plot(ebn0_arr, ber_per_dist[idx], label=dist_val)
+        if idx == 0:
+            ax1.plot(ebn0_arr, ber_per_dist[idx], label="Standard RX")
+        else:
+            ax1.plot(ebn0_arr, ber_per_dist[idx],
+                     label="CNC NI = %d, J = %d" % (cnc_n_iter_val, cnc_n_upsamp))
 # fix log scaling
-ax3.set_title("Bit error rate, QAM" + str(my_mod.constellation_size))
-ax3.set_xlabel("Eb/N0 [dB]")
-ax3.set_ylabel("BER")
-ax3.grid()
-ax3.legend()
+ax1.set_title("Bit error rate, QAM %d, IBO = %d [dB]" %(my_mod.constellation_size, ibo_val_db))
+ax1.set_xlabel("Eb/N0 [dB]")
+ax1.set_ylabel("BER")
+ax1.grid()
+ax1.legend()
 
 plt.tight_layout()
-plt.savefig("figs/ber_soft_lim_siso_cnc_ibo_%d_niter_%d_nupsamp_%d.png" %(my_tx.impairment.ibo_db, cnc_n_iters, cnc_n_upsamp), dpi=600, bbox_inches='tight')
+plt.savefig("figs/ber_soft_lim_siso_cnc_ibo%d_niter%d_nupsamp%d_sweep.png" %(my_tx.impairment.ibo_db, cnc_n_iter_val, np.max(cnc_n_upsamp_lst)), dpi=600, bbox_inches='tight')
 plt.show()
 
 print("Finished execution!")
