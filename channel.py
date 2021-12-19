@@ -1,4 +1,5 @@
 import abc
+from speedup import jit
 
 import numpy as np
 import scipy as scp
@@ -22,7 +23,7 @@ class Channel(metaclass=abc.ABCMeta):
 
 
 # @jit(nopython=True) not useful for such small rng datasets
-def _propagate_awgn(is_complex, snr_db, rng_gen, in_sig, avg_sample_pow):
+def _propagate_awgn_tdtd(is_complex, snr_db, rng_gen, in_sig, avg_sample_pow):
     n_sampl = len(in_sig)
     noise_std = np.complex128(np.sqrt((int(is_complex) + 1) * avg_sample_pow / (10 ** (snr_db / 10))))
     if is_complex:
@@ -41,28 +42,26 @@ class AwgnTdTd(Channel):
         super().__init__(snr_db, is_complex, seed)
 
     def propagate(self, in_sig, avg_sample_pow):
-        return _propagate_awgn(self.is_complex, self.snr_db, self.rng_gen, in_sig, avg_sample_pow)
+        return _propagate_awgn_tdtd(self.is_complex, self.snr_db, self.rng_gen, in_sig, avg_sample_pow)
 
 
 class AwgnMisoLosTdFd(Channel):
-
     def __init__(self, n_inputs, snr_db, is_complex, seed=None):
         self.n_inputs = n_inputs
+        self.channel_mat_fd = None
         super().__init__(snr_db, is_complex, seed)
 
-    def propagate(self, tx_transceivers, rx_transceiver, in_sig_mat, avg_sample_pow = None, skip_noise=False, skip_attenuation=False):
-        # channel in frequency domain
-        # remove cp from in sig matrix
-        no_cp_td_sig_mat = in_sig_mat[:, rx_transceiver.modem.cp_len:]
-        # perform fft row wise
-        no_cp_fd_sig_mat = torch.fft.fft(torch.from_numpy(no_cp_td_sig_mat), norm="ortho").numpy()
+    def get_channel_mat_fd(self):
+        return self.channel_mat_fd
+
+    def calc_channel_mat(self, tx_transceivers, rx_transceiver, skip_attenuation=False):
+        # for each tx to rx get distance
+        tx_rx_los_distances = np.empty(len(tx_transceivers))
+        tx_ant_gains = np.empty(len(tx_transceivers))
 
         # get carrier frequencies
         sig_freq_vals = torch.fft.fftfreq(rx_transceiver.modem.n_fft, d=1 / rx_transceiver.modem.n_fft).numpy() \
                         * rx_transceiver.carrier_spacing + rx_transceiver.center_freq
-        # for each tx to rx get distance
-        tx_rx_los_distances = np.empty(len(tx_transceivers))
-        tx_ant_gains = np.empty(len(tx_transceivers))
 
         for idx, tx_transceiver in enumerate(tx_transceivers):
             tx_ant_gains[idx] = tx_transceiver.tx_ant_gain_db
@@ -70,16 +69,29 @@ class AwgnMisoLosTdFd(Channel):
                 tx_transceiver.cord_y - rx_transceiver.cord_y, 2) + np.power(
                 tx_transceiver.cord_z - rx_transceiver.cord_z, 2))
 
+        # shift phases of carriers accordingly to spatial relations
         fd_ph_shift_mat = np.exp(2j * np.pi * np.outer(tx_rx_los_distances, sig_freq_vals) / scp.constants.c)
 
         # multiply fd signals by attenuation matrix
         if not skip_attenuation:
             fd_freq_att_mat = np.sqrt(np.power(10, (tx_ant_gains[:, np.newaxis] + rx_transceiver.rx_ant_gain_db) / 10)) \
                               * (scp.constants.c / (4 * np.pi * np.outer(tx_rx_los_distances, sig_freq_vals)))
-            no_cp_fd_sig_mat = np.multiply(no_cp_fd_sig_mat, fd_freq_att_mat)
+            calc_channel_mat_fd = np.multiply(fd_ph_shift_mat, fd_freq_att_mat)
+        else:
+            # then channel matrix consist of phase shits only
+            calc_channel_mat_fd = fd_ph_shift_mat
 
-        # shift phases of carriers accordingly to spatial relations
-        fd_signal_at_point = np.multiply(no_cp_fd_sig_mat, fd_ph_shift_mat)
+        self.channel_mat_fd = calc_channel_mat_fd
+
+    def propagate(self, rx_transceiver, in_sig_mat, avg_sample_pow=None, skip_noise=False):
+        # channel in frequency domain
+        # remove cp from in sig matrix
+        no_cp_td_sig_mat = in_sig_mat[:, rx_transceiver.modem.cp_len:]
+        # perform fft row wise
+        no_cp_fd_sig_mat = torch.fft.fft(torch.from_numpy(no_cp_td_sig_mat), norm="ortho").numpy()
+
+        # apply channel matrix to signal
+        fd_signal_at_point = np.multiply(no_cp_fd_sig_mat, self.channel_mat_fd)
         # sum columns
         fd_signal_at_point = np.sum(fd_signal_at_point, axis=0)
 
@@ -100,16 +112,15 @@ class AwgnMisoLosTdFd(Channel):
         return fd_signal_at_point
 
 
-# TODO: Should Rayleigh channel include antenna gains?
 class RayleighMisoTdFd(Channel):
     def __init__(self, n_inputs, fd_samp_size, snr_db, is_complex, seed=None):
         self.n_inputs = n_inputs
         self.fd_samp_size = fd_samp_size
         super().__init__(snr_db, is_complex, seed)
 
-        self.set_channel_coeffs()
+        self.set_channel_mat_fd()
 
-    def set_channel_coeffs(self, fd_chan_mat=None, avg=0, sigma=1):
+    def set_channel_mat_fd(self, fd_chan_mat=None, avg=0, sigma=1):
         if fd_chan_mat is None:
             # generate rayleigh channel coefficients
             self.fd_chan_mat = self.rng_gen.normal(avg, sigma, size=(self.n_inputs, self.fd_samp_size * 2)).view(
@@ -117,7 +128,7 @@ class RayleighMisoTdFd(Channel):
         else:
             self.fd_chan_mat = fd_chan_mat
 
-    def get_channel_coeffs(self):
+    def get_channel_mat_fd(self):
         return self.fd_chan_mat
 
     def reroll_channel_coeffs(self, avg=0, sigma=1):
@@ -146,15 +157,14 @@ class AwgnMisoTwoPathTdFd(Channel):
 
     def __init__(self, n_inputs, snr_db, is_complex, seed=None):
         self.n_inputs = n_inputs
+        self.channel_mat_fd = None
         super().__init__(snr_db, is_complex, seed)
 
-    def propagate(self, tx_transceivers, rx_transceiver, in_sig_mat, skip_noise=False, skip_attenuation=False):
-        # channel in frequency domain
-        # remove cp from in sig matrix
-        no_cp_td_sig_mat = in_sig_mat[:, rx_transceiver.modem.cp_len:]
-        # perform fft row wise
-        no_cp_fd_sig_mat = torch.fft.fft(torch.from_numpy(no_cp_td_sig_mat), norm="ortho").numpy()
+    def get_channel_mat_fd(self):
+        return self.channel_mat_fd
 
+    def calc_channel_mat(self, tx_transceivers, rx_transceiver, skip_attenuation=False):
+        # get frequencies of subcarriers
         sig_freq_vals = torch.fft.fftfreq(rx_transceiver.modem.n_fft, d=1 / rx_transceiver.modem.n_fft).numpy() \
                         * rx_transceiver.carrier_spacing + rx_transceiver.center_freq
 
@@ -182,7 +192,8 @@ class AwgnMisoTwoPathTdFd(Channel):
         los_fd_shift_mat = np.exp(2j * np.pi * np.outer(los_distances, sig_freq_vals) / scp.constants.c)
         # TODO: include detailed calculation of reflection coefficient
         reflection_coeff = -1.0
-        sec_fd_shift_mat = reflection_coeff * np.exp(2j * np.pi * np.outer(sec_distances, sig_freq_vals) / scp.constants.c)
+        sec_fd_shift_mat = reflection_coeff * np.exp(
+            2j * np.pi * np.outer(sec_distances, sig_freq_vals) / scp.constants.c)
 
         if not skip_attenuation:
             los_fd_att_mat = np.sqrt(np.power(10, (tx_ant_gains[:, np.newaxis] + rx_transceiver.rx_ant_gain_db) / 10)) \
@@ -194,8 +205,16 @@ class AwgnMisoTwoPathTdFd(Channel):
             sec_fd_shift_mat = np.multiply(sec_fd_shift_mat, sec_fd_att_mat)
 
         # combine two path coefficients without normalization
-        combinded_fd_chan = np.add(los_fd_shift_mat, sec_fd_shift_mat)
-        combinded_fd_sig = np.multiply(no_cp_fd_sig_mat, combinded_fd_chan)
+        self.channel_mat_fd =  np.add(los_fd_shift_mat, sec_fd_shift_mat)
+
+    def propagate(self, rx_transceiver, in_sig_mat, skip_noise=False):
+        # channel in frequency domain
+        # remove cp from in sig matrix
+        no_cp_td_sig_mat = in_sig_mat[:, rx_transceiver.modem.cp_len:]
+        # perform fft row wise
+        no_cp_fd_sig_mat = torch.fft.fft(torch.from_numpy(no_cp_td_sig_mat), norm="ortho").numpy()
+
+        combinded_fd_sig = np.multiply(no_cp_fd_sig_mat, self.channel_mat_fd)
 
         # TODO: add noise based on RX noise floor
         if not skip_noise:

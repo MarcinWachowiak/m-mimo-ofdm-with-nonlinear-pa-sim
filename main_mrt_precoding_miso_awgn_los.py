@@ -66,26 +66,29 @@ for n_ant in n_ant_vec:
                                           wav_len_spacing=0.5,
                                           cord_x=0, cord_y=0, cord_z=15)
     my_rx.set_position(cord_x=212, cord_y=212, cord_z=1.5)
-    my_array.set_precoding_single_point(rx_transceiver=my_rx, exact=True)
+    my_miso_chan.calc_channel_mat(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx, skip_attenuation=False)
+    channel_mat_at_point_fd = my_miso_chan.get_channel_mat_fd()
+    my_array.set_precoding_matrix(channel_mat_fd=channel_mat_at_point_fd)
 
     psd_at_angle_desired = np.empty(radian_vals.shape)
     psd_at_angle_dist = np.empty(radian_vals.shape)
     for pt_idx, point in enumerate(rx_points):
         (x_cord, y_cord) = point
         my_rx.set_position(cord_x=x_cord, cord_y=y_cord, cord_z=1.5)
+        # update channel matrix constant for a given point
+        my_miso_chan.calc_channel_mat(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx, skip_attenuation=False)
         rx_sig_accum = []
         clean_rx_sig_accum = []
+
         for snap_idx in range(n_snapshots):
 
             tx_bits = bit_rng.choice((0, 1), my_tx.modem.n_bits_per_ofdm_sym)
             arr_tx_sig, clean_sig_mat = my_array.transmit(in_bits=tx_bits, return_both=True)
 
-            rx_sig = my_miso_chan.propagate(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx,
-                                            in_sig_mat=arr_tx_sig, skip_noise=True, skip_attenuation=False)
+            rx_sig = my_miso_chan.propagate(rx_transceiver=my_rx, in_sig_mat=arr_tx_sig, skip_noise=True)
             rx_sig = torch.fft.ifft(torch.from_numpy(rx_sig), norm="ortho").numpy()
 
-            clean_rx_sig = my_miso_chan.propagate(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx,
-                                                  in_sig_mat=clean_sig_mat, skip_noise=True, skip_attenuation=False)
+            clean_rx_sig = my_miso_chan.propagate(rx_transceiver=my_rx, in_sig_mat=clean_sig_mat, skip_noise=True)
             clean_rx_sig = torch.fft.ifft(torch.from_numpy(clean_rx_sig), norm="ortho").numpy()
 
             # calculate PSD at point for the last value of N antennas

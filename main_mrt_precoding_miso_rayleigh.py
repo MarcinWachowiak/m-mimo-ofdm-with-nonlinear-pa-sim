@@ -72,8 +72,8 @@ for n_ant in n_ant_vec:
     my_miso_chan = channel.RayleighMisoTdFd(n_inputs=my_array.n_elements, fd_samp_size=my_tx.modem.n_fft, snr_db=10,
                                         is_complex=True, seed=1234)
     my_rx.set_position(cord_x=212, cord_y=212, cord_z=1.5)
-    chan_mat_at_point = my_miso_chan.get_channel_coeffs()
-    my_array.set_precoding_single_point(rx_transceiver=my_rx, channel_fd_mat=chan_mat_at_point)
+    chan_mat_at_point = my_miso_chan.get_channel_mat_fd()
+    my_array.set_precoding_matrix(channel_mat_fd=chan_mat_at_point)
 
     psd_at_angle_desired = np.empty(radian_vals.shape)
     psd_at_angle_dist = np.empty(radian_vals.shape)
@@ -81,7 +81,7 @@ for n_ant in n_ant_vec:
         # generate different channel for each point
         # precode only for single known point
         if pt_idx == precoding_point_idx:
-            my_miso_chan.set_channel_coeffs(chan_mat_at_point)
+            my_miso_chan.set_channel_mat_fd(chan_mat_at_point)
         else:
             my_miso_chan.reroll_channel_coeffs()
 

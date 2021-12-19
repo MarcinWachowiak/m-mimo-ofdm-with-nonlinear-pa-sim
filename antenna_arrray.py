@@ -2,8 +2,6 @@ import copy
 
 import numpy as np
 import scipy as scp
-import torch
-
 
 class LinearArray:
     def __init__(self, n_elements, transceiver, center_freq, wav_len_spacing, cord_x=0, cord_y=0, cord_z=0):
@@ -50,62 +48,11 @@ class LinearArray:
                 out_sig_mat[idx, :] = transceiver.transmit(in_bits, return_both=return_both)
             return out_sig_mat
 
-    def set_precoding_single_point(self, rx_transceiver, channel_fd_mat=None, exact=False, two_path=False):
-        precoding_mat_fd = np.empty([self.n_elements, rx_transceiver.modem.n_fft], dtype=np.complex128)
-
-        if channel_fd_mat is None:
-            for idx, tx_transceiver in enumerate(self.array_elements):
-                # get frequency of each subcarrier
-                sig_freq_vals = (torch.fft.fftfreq(self.array_elements[idx].modem.n_fft,
-                                                   d=1 / self.array_elements[idx].modem.n_fft).numpy() *
-                                 self.array_elements[idx].carrier_spacing + self.array_elements[idx].center_freq)
-
-                los_distance = np.sqrt(np.power(tx_transceiver.cord_x - rx_transceiver.cord_x, 2) + np.power(
-                    tx_transceiver.cord_y - rx_transceiver.cord_y, 2) + np.power(
-                    tx_transceiver.cord_z - rx_transceiver.cord_z, 2))
-
-                los_fd_shift_mat = np.exp(2j * np.pi * los_distance * (sig_freq_vals / scp.constants.c))
-
-                if two_path:
-                    dim_ratio = (tx_transceiver.cord_z + rx_transceiver.cord_z) / (
-                        np.sqrt(np.power(tx_transceiver.cord_x - rx_transceiver.cord_x, 2) + np.power(
-                            tx_transceiver.cord_y - rx_transceiver.cord_y, 2)))
-                    # angle of elevation (angle in relation to the ground plane) = 90 deg - angle of incidence
-                    angle_of_elev_rad = np.arctan(dim_ratio)
-
-                    second_path_len = rx_transceiver.cord_z / np.sin(angle_of_elev_rad)
-                    first_path_len = tx_transceiver.cord_z / np.sin(angle_of_elev_rad)
-
-                    reflection_coeff = -1.0
-                    sec_fd_shift_mat = reflection_coeff * np.exp(2j * np.pi * (first_path_len + second_path_len) *
-                                              (sig_freq_vals / scp.constants.c))
-                    two_path_fd_chan = np.add(los_fd_shift_mat, sec_fd_shift_mat)
-                    # normalize to exclude amplification/attenuation
-                    two_path_fd_chan_normalized = np.exp(1j * np.angle(two_path_fd_chan))
-
-                    precoding_vec_fd = np.conjugate(two_path_fd_chan_normalized)
-                else:
-                    if exact:
-                        precoding_vec_fd = np.conjugate(los_fd_shift_mat)
-                    else:
-                        # distance to center of array
-                        distance_center = np.sqrt(np.power(self.cord_x - rx_transceiver.cord_x, 2) + np.power(
-                            self.cord_y - rx_transceiver.cord_y, 2) + np.power(
-                            self.cord_z - rx_transceiver.cord_z, 2))
-                        # simplified array geometry, precoding based on angle
-                        simplified_los_vec_fd = np.exp(
-                            2j * np.pi * ((self.n_elements - 1) / 2 - idx) * self.wav_len_spacing
-                            * sig_freq_vals / self.center_freq * (
-                                    (rx_transceiver.cord_x - self.cord_x) / distance_center))
-                        precoding_vec_fd = np.conjugate(simplified_los_vec_fd)
-
-                # fill the precoding matrix
-                precoding_mat_fd[idx, :] = precoding_vec_fd
-        else:
-            # set precoding vector based on provided channel mat coefficients
-            channel_fd_mat_conjungate = np.conjugate(channel_fd_mat)
-            # normalize rayleigh channel precoding coefficients
-            precoding_mat_fd = np.exp(1j * np.angle(channel_fd_mat_conjungate))
+    def set_precoding_matrix(self, channel_mat_fd=None):
+        # set precoding vector based on provided channel mat coefficients
+        channel_fd_mat_conjungate = np.conjugate(channel_mat_fd)
+        # normalize channel precoding coefficients
+        precoding_mat_fd = np.exp(1j * np.angle(channel_fd_mat_conjungate))
 
         # apply precoding vectors to each tx node from matrix
         for idx, tx_transceiver in enumerate(self.array_elements):
