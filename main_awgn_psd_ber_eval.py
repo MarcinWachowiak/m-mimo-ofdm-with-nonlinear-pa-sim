@@ -9,8 +9,9 @@ import numpy as np
 from scipy.signal import welch
 
 import channel
-import impairment
+import distortion
 import modulation
+import noise
 import transceiver
 from plot_settings import set_latex_plot_style
 from utilities import count_mismatched_bits, ebn0_to_snr, to_db
@@ -20,9 +21,9 @@ set_latex_plot_style()
 # %%
 
 my_mod = modulation.OfdmQamModem(constel_size=64, n_fft=4096, n_sub_carr=1024, cp_len=256)
-my_distortion = impairment.SoftLimiter(5, my_mod.avg_sample_power)
-my_limiter2 = impairment.Rapp(0, my_mod.avg_sample_power, p_hardness=5)
-my_limiter3 = impairment.ThirdOrderNonLin(25, my_mod.avg_sample_power)
+my_distortion = distortion.SoftLimiter(5, my_mod.avg_sample_power)
+my_limiter2 = distortion.Rapp(0, my_mod.avg_sample_power, p_hardness=5)
+my_limiter3 = distortion.ThirdOrderNonLin(25, my_mod.avg_sample_power)
 
 my_tx = transceiver.Transceiver(modem=my_mod, impairment=my_distortion)
 my_tx.impairment.plot_characteristics()
@@ -30,7 +31,7 @@ my_tx.impairment.plot_characteristics()
 my_demod = copy.deepcopy(my_mod)
 my_rx = transceiver.Transceiver(my_demod)
 
-my_chan = channel.AwgnTdTd(0, True, 1234)
+my_noise = noise.Awgn(0, True, 1234)
 bit_rng = np.random.default_rng(4321)
 
 ebn0_arr = np.arange(0, 21, 2)
@@ -69,17 +70,17 @@ for dist_idx, dist_val_db in enumerate(dist_vals_db):
     bers = np.zeros([len(snr_arr)])
 
     for idx, snr in enumerate(snr_arr):
-        my_chan.set_snr(snr)
+        my_noise.snr_db = snr
         n_err = 0
         bits_sent = 0
         while bits_sent < bits_sent_max and n_err < n_err_min:
             tx_bits = bit_rng.choice((0, 1), my_tx.modem.n_bits_per_ofdm_sym)
-            tx_ofdm_symbol, clean_ofdm_symbol = my_tx.transmit(tx_bits, return_both=True)
+            tx_ofdm_symbol, clean_ofdm_symbol = my_tx.transmit(tx_bits, out_domain_fd=False, return_both=True)
 
             if include_clean_run and dist_idx == 0:
-                rx_ofdm_symbol = my_chan.propagate(clean_ofdm_symbol, my_mod.avg_sample_power)
+                rx_ofdm_symbol = my_noise.process(clean_ofdm_symbol, my_mod.avg_sample_power)
             else:
-                rx_ofdm_symbol = my_chan.propagate(tx_ofdm_symbol, my_mod.avg_sample_power)
+                rx_ofdm_symbol = my_noise.process(tx_ofdm_symbol, my_mod.avg_sample_power)
 
             if plot_psd and snapshot_counter < n_collected_snapshots:
                 tx_ofdm_for_psd.append(tx_ofdm_symbol)

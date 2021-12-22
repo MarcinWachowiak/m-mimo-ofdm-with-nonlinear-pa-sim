@@ -3,6 +3,7 @@ import copy
 import numpy as np
 import scipy as scp
 
+
 class LinearArray:
     def __init__(self, n_elements, transceiver, center_freq, wav_len_spacing, cord_x=0, cord_y=0, cord_z=0):
         self.n_elements = n_elements
@@ -32,20 +33,29 @@ class LinearArray:
                 tmp_transceiver.cord_z = self.cord_z
                 self.array_elements.append(tmp_transceiver)
 
-    def transmit(self, in_bits, return_both=False):
-        out_sig_mat = np.empty([self.n_elements, self.transceiver.modem.n_fft + self.transceiver.modem.cp_len],
+    def transmit(self, in_bits, out_domain_fd=True, return_both=False):
+        if out_domain_fd:
+            out_sig_mat = np.empty([self.n_elements, self.transceiver.modem.n_fft],
                                dtype=np.complex128)
-
+        else:
+            out_sig_mat = np.empty([self.n_elements, self.transceiver.modem.n_fft + self.transceiver.modem.cp_len],
+                                   dtype=np.complex128)
         if return_both:
-            clean_sig_mat = np.empty([self.n_elements, self.transceiver.modem.n_fft + self.transceiver.modem.cp_len],
-                                     dtype=np.complex128)
+            if out_domain_fd:
+                clean_sig_mat = np.empty([self.n_elements, self.transceiver.modem.n_fft], dtype=np.complex128)
+            else:
+                clean_sig_mat = np.empty(
+                    [self.n_elements, self.transceiver.modem.n_fft + self.transceiver.modem.cp_len],
+                    dtype=np.complex128)
+
             for idx, transceiver in enumerate(self.array_elements):
-                out_sig_mat[idx, :], clean_sig_mat[idx, :] = transceiver.transmit(in_bits, return_both=True)
+                out_sig_mat[idx, :], clean_sig_mat[idx, :] = transceiver.transmit(in_bits, out_domain_fd=out_domain_fd,
+                                                                                  return_both=True)
 
             return out_sig_mat, clean_sig_mat
         else:
             for idx, transceiver in enumerate(self.array_elements):
-                out_sig_mat[idx, :] = transceiver.transmit(in_bits, return_both=return_both)
+                out_sig_mat[idx, :] = transceiver.transmit(in_bits, out_domain_fd=out_domain_fd, return_both=return_both)
             return out_sig_mat
 
     def set_precoding_matrix(self, channel_mat_fd=None):

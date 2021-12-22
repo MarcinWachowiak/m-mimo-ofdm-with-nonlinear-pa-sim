@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy as scp
+from scipy import special as scp_special
 import torch
 from numba import objmode
 
@@ -70,7 +70,7 @@ class Modem:
 
     def calc_alpha(self, ibo_db):
         gamma = np.power(10, ibo_db / 10)
-        alpha = 1 - np.exp(-np.power(gamma, 2)) + (np.sqrt(np.pi) * gamma / 2) * scp.special.erfc(gamma)
+        alpha = 1 - np.exp(-np.power(gamma, 2)) + (np.sqrt(np.pi) * gamma / 2) * scp_special.erfc(gamma)
         # scale constellation
         return alpha
 

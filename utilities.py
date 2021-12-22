@@ -1,14 +1,11 @@
 import numpy as np
 
-__all__ = ['dec2bitarray', 'decimal2bitarray', 'bitarray2dec', 'hamming_dist', 'euclid_dist', 'upsample',
-           'signal_power', 'count_mismatched_bits', 'snr_to_ebn0', 'ebn0_to_snr', 'to_db', 'plot_spatial_config',
-           'pts_on_semicircum']
-
 vectorized_binary_repr = np.vectorize(np.binary_repr)
 
 from speedup import jit
 import matplotlib.pyplot as plt
 from matplotlib import colors
+import torch
 
 
 # TODO: Inspect faster ways of dec to bin, bin to dec conversion
@@ -295,3 +292,20 @@ def plot_array_config(ant_array, plot_3d=False):
         ax.set_axisbelow(True)
         plt.tight_layout()
         plt.show()
+
+
+def to_freq_domain(in_sig_td, remove_cp=True, cp_len=None):
+    # remove cp from in sig matrix
+    if remove_cp:
+        if in_sig_td.ndim == 1:
+            in_sig = in_sig_td[cp_len:]
+        else:
+            in_sig = in_sig_td[:, cp_len:]
+    else:
+        in_sig = in_sig_td
+    # perform fft row wise
+    return torch.fft.fft(torch.from_numpy(in_sig), norm="ortho").numpy()
+
+
+def to_time_domain(in_sig_mat_fd):
+    return torch.fft.ifft(torch.from_numpy(in_sig_mat_fd), norm="ortho").numpy()
