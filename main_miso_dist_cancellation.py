@@ -51,7 +51,7 @@ print("CNC upsample factor:", cnc_n_upsamp_val)
 # snr_arr = ebn0_to_snr(ebn0_arr, my_mod.n_fft, my_mod.n_sub_carr, my_mod.constel_size)
 # print("SNR values:", snr_arr)
 
-noise_floor_vals = np.arange(-120, -119, 1)
+noise_floor_vals = np.arange(-60, -120, -10)
 print(noise_floor_vals)
 
 # BER accuracy settings
@@ -142,157 +142,44 @@ for n_ant_idx, n_ant in enumerate(n_ant_vec):
             tx_bits = bit_rng.choice((0, 1), my_tx.modem.n_bits_per_ofdm_sym)
             tx_ofdm_symbol_fd, clean_ofdm_symbol_fd = my_array.transmit(tx_bits, out_domain_fd=True, return_both=True)
 
-            # print("def dbm:", 10 * np.log10(1000*my_tx.modem.avg_symbol_power))
-            # print("tx dbm:", my_array.array_elements[0].tx_power_dbm)
-            # print("diff dbm", (10 * np.log10(1000*my_mod.avg_symbol_power) - my_array.array_elements[0].tx_power_dbm))
-            #print(def_constel_power_corr)
-            #print("tx pow", signal_power(my_array.array_elements[0].transmit(tx_bits, out_domain_fd=True, skip_dist=True)*def_constel_power_corr))
-            #print("mod pow", signal_power(my_mod.modulate(tx_bits)))
-
             rx_sig_fd = my_miso_chan.propagate(in_sig_mat=tx_ofdm_symbol_fd)
             rx_ofdm_symbol_fd = my_noise.process(rx_sig_fd, fixed_noise_power=True)
 
+            # correct for different TX power (in regard to default constellation values)
+            rx_constel_pow_corr = np.sqrt(my_mod.avg_sample_power / (1e-3 * 10 ** (total_tx_pow_dbm / 10)))
+            rx_ofdm_symbol_fd = rx_ofdm_symbol_fd * rx_constel_pow_corr
+
             # enchanced CNC reception
             # scale the RX signal to match the default constellation
-            rx_bits = my_cnc_rx.receive(n_iters=cnc_n_iter_val, upsample_factor=cnc_n_upsamp_val,
-                                         in_sig_fd=rx_ofdm_symbol_fd, channel_estimation_mat=np.abs(lambda_corr_estimate[idx])*n_ant)
+            rx_bits = my_cnc_rx.receive(n_iters=0, upsample_factor=cnc_n_upsamp_val,
+                                         in_sig_fd=rx_ofdm_symbol_fd, channel_estimation_mat=np.abs(lambda_corr_estimate[idx]))
 
             n_bit_err = count_mismatched_bits(tx_bits, rx_bits)
             bits_sent += my_mod.n_bits_per_ofdm_sym
             n_err += n_bit_err
+
         bers[idx] = n_err / bits_sent
     bits_per_nant.append(bers)
 
     print("--- Computation time: %f ---" % (time.time() - start_time))
+
+
+# fig1, ax1 = plt.subplots(1, 1)
+# ax1.set_yscale('log')
+# for idx, cnc_upsamp_val in enumerate(n_ant_vec):
+#             ax1.plot(ebn0_arr, ber_per_dist[idx], label="CNC NI = %d, J = %d" % (cnc_n_iter_val, cnc_upsamp_val))
 #
-# # %%
-# # plot beampatterns of desired signal
-# fig1, ax1 = plt.subplots(1, 1, subplot_kw=dict(projection='polar'))
+# # fix log scaling
+# ax1.set_title("Bit error rate, QAM %d, IBO = %d [dB]" % (my_mod.constellation_size, ))
+# ax1.set_xlabel("Eb/N0 [dB]")
+# ax1.set_ylabel("BER")
+# ax1.grid()
+# ax1.legend()
+#
 # plt.tight_layout()
-# ax1.set_theta_zero_location("E")
-#
-# if plot_full_circle:
-#     ax1.set_thetalim(-np.pi, np.pi)
-#     ax1.set_xticks(np.pi / 180. * np.linspace(180, -180, 24, endpoint=False))
-# else:
-#     ax1.set_thetalim(0, np.pi)
-#     ax1.set_xticks(np.pi / 180. * np.linspace(0, 180, 12, endpoint=False))
-#
-# dist_lines_lst = []
-# for idx, n_ant in enumerate(n_ant_vec):
-#     ax1.plot(radian_vals, desired_psd_at_angle_lst[idx], label=n_ant, linewidth=1.5)
-# ax1.set_title("Desired signal PSD at angle [dB]")
-# ax1.legend(title="N antennas:", ncol=len(n_ant_vec), loc='lower center')
-# ax1.grid(True)
-# plt.savefig("figs/desired_signal_beampattern_ibo%d_%dto%dant_sweep.png" % (
-#     my_tx.impairment.ibo_db, np.min(n_ant_vec), np.max(n_ant_vec)), dpi=600, bbox_inches='tight')
+# plt.savefig("figs/ber_soft_lim_siso_cnc_ibo%d_niter%d_nupsamp%d_sweep.png" % (
+# my_tx.impairment.ibo_db, cnc_n_iter_val, np.max(cnc_n_upsamp_lst)), dpi=600, bbox_inches='tight')
 # plt.show()
 #
+# print("Finished execution!")
 # # %%
-# # plot beampatterns of distortion signal
-# fig2, ax2 = plt.subplots(1, 1, subplot_kw=dict(projection='polar'))
-# plt.tight_layout()
-# ax2.set_theta_zero_location("E")
-# if plot_full_circle:
-#     ax2.set_thetalim(-np.pi, np.pi)
-#     ax2.set_xticks(np.pi / 180. * np.linspace(180, -180, 24, endpoint=False))
-# else:
-#     ax2.set_thetalim(0, np.pi)
-#     ax2.set_xticks(np.pi / 180. * np.linspace(0, 180, 12, endpoint=False))
-#
-# dist_lines_lst = []
-# for idx, n_ant in enumerate(n_ant_vec):
-#     ax2.plot(radian_vals, distortion_psd_at_angle_lst[idx], label=n_ant, linewidth=1.5)
-# ax2.set_title("Distortion signal PSD at angle [dB]")
-# ax2.legend(title="N antennas:", ncol=len(n_ant_vec), loc='lower center')
-# ax2.grid(True)
-# plt.savefig("figs/distortion_signal_beampattern_ibo%d_%dto%dant_sweep.png" % (
-#     my_tx.impairment.ibo_db, np.min(n_ant_vec), np.max(n_ant_vec)), dpi=600, bbox_inches='tight')
-# plt.show()
-#
-# # %%
-# # Desired vs distortion PSD beampattern comparison for given number of antennas
-# fig3, ax3 = plt.subplots(1, 1, subplot_kw=dict(projection='polar'))
-# plt.tight_layout()
-# ax3.set_theta_zero_location("E")
-# if plot_full_circle:
-#     ax3.set_thetalim(-np.pi, np.pi)
-#     ax3.set_xticks(np.pi / 180. * np.linspace(180, -180, 24, endpoint=False))
-# else:
-#     ax3.set_thetalim(0, np.pi)
-#     ax3.set_xticks(np.pi / 180. * np.linspace(0, 180, 12, endpoint=False))
-#
-# dist_lines_lst = []
-# # select index to plot
-# sel_idx = 3
-# ax3.plot(radian_vals, desired_psd_at_angle_lst[sel_idx], label="Desired", linewidth=1.5)
-# ax3.plot(radian_vals, distortion_psd_at_angle_lst[sel_idx], label="Distortion", linewidth=1.5)
-# ax3.set_title("Power spectral density at angle [dB]")
-# ax3.legend(title="N antennas = %d, signals:" % n_ant_vec[sel_idx], ncol=2, loc='lower center')
-# ax3.grid(True)
-# plt.savefig("figs/desired_vs_distortion_beampattern_ibo%d_%dant.png" % (my_tx.impairment.ibo_db, np.max(n_ant_vec)),
-#             dpi=600, bbox_inches='tight')
-# plt.show()
-#
-# # %%
-# # plot signal to distortion ratio polar
-# fig4, ax4 = plt.subplots(1, 1, subplot_kw=dict(projection='polar'))
-# plt.tight_layout()
-# ax4.set_theta_zero_location("E")
-# if plot_full_circle:
-#     ax4.set_thetalim(-np.pi, np.pi)
-#     ax4.set_xticks(np.pi / 180. * np.linspace(180, -180, 24, endpoint=False))
-# else:
-#     ax4.set_thetalim(0, np.pi)
-#     ax4.set_xticks(np.pi / 180. * np.linspace(0, 180, 12, endpoint=False))
-#
-# for idx, n_ant in enumerate(n_ant_vec):
-#     ax4.plot(radian_vals, desired_psd_at_angle_lst[idx] - distortion_psd_at_angle_lst[idx], label=n_ant, linewidth=1.5)
-# ax4.set_title("Signal to distortion ratio at angle [dB]")
-# ax4.legend(title="N antennas:", ncol=len(n_ant_vec), loc='lower center')
-# ax4.grid(True)
-# plt.savefig("figs/sdr_at_angle_polar_ibo%d_%dto%dant_sweep.png" % (
-#     my_tx.impairment.ibo_db, np.min(n_ant_vec), np.max(n_ant_vec)), dpi=600, bbox_inches='tight')
-# plt.show()
-#
-# # %%
-# # plot signal to distortion ratio cartesian
-# fig5, ax5 = plt.subplots(1, 1)
-# plt.tight_layout()
-# for idx, n_ant in enumerate(n_ant_vec):
-#     ax5.plot(np.degrees(radian_vals), desired_psd_at_angle_lst[idx] - distortion_psd_at_angle_lst[idx], label=n_ant,
-#              linewidth=1.5)
-#
-# ax5.set_xlim([30, 60])
-# ax5.set_xlabel("Angle [$\degree$]")
-# ax5.set_ylabel("Signal to distortion ratio [dB]")
-#
-# ax5.set_title("Signal to distortion ratio at angle")
-# ax5.legend(title="N antennas:")
-# ax5.grid(True)
-# plt.savefig("figs/sdr_at_angle_cartesian_ibo%d_%dto%dant_sweep.png" % (
-#     my_tx.impairment.ibo_db, np.min(n_ant_vec), np.max(n_ant_vec)), dpi=600, bbox_inches='tight')
-# plt.show()
-#
-# # %%
-# # plot PSD at selected point/angle
-# fig6, ax6 = plt.subplots(1, 1)
-# sorted_clean_rx_at_point_freq_arr, sorted_clean_psd_at_point_arr = zip(
-#     *sorted(zip(rx_clean_at_point_freq_arr, rx_clean_at_point_psd)))
-# ax6.plot(np.array(sorted_clean_rx_at_point_freq_arr), to_db(np.array(sorted_clean_psd_at_point_arr)), label="Desired")
-# sorted_dist_rx_at_point_freq_arr, sorted_dist_psd_at_point_arr = zip(
-#     *sorted(zip(rx_dist_at_point_freq_arr, rx_dist_at_point_psd)))
-# ax6.plot(np.array(sorted_dist_rx_at_point_freq_arr), to_db(np.array(sorted_dist_psd_at_point_arr)), label="Distorted")
-#
-# ax6.set_title("Power spectral density at angle %d$\degree$" % point_idx_psd)
-# ax6.set_xlabel("Subcarrier index [-]")
-# ax6.set_ylabel("Power [dB]")
-# ax6.legend(title="IBO = %d [dB]" % my_tx.impairment.ibo_db)
-# ax6.grid()
-# plt.tight_layout()
-# plt.savefig("figs/psd_at_angle_%ddeg_ibo%d_ant%d.png" % (point_idx_psd, my_tx.impairment.ibo_db, np.max(n_ant_vec)),
-#             dpi=600,
-#             bbox_inches='tight')
-# plt.show()
-#
-# print("Finished processing!")
