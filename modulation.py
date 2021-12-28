@@ -5,7 +5,7 @@ import torch
 from numba import objmode
 
 from speedup import jit
-from utilities import bitarray2dec, dec2bitarray, signal_power
+from utilities import bitarray2dec, dec2bitarray, td_signal_power, fd_signal_power
 
 
 # @jit(nopython=True)
@@ -86,7 +86,7 @@ class Modem:
             raise ValueError('Constellation length must be a power of 2.')
 
         self._constellation = np.array(value)
-        self.avg_symbol_power = signal_power(self.constellation)
+        self.avg_sample_power = td_signal_power(self.constellation)
         self.constellation_size = self._constellation.size
         self.n_bits_per_symbol = int(n_bits_per_symbol)
 
@@ -140,7 +140,7 @@ def _rx_ofdm_symbol(ofdm_symbol, n_fft: int, n_sub_carr: int, cp_length: int):
         # skip cyclic prefix
         ofdm_sym_freq = torch.fft.fft(torch.from_numpy(ofdm_symbol[cp_length:]), norm="ortho").numpy()
 
-    # extract and rearange data from LR boundaries
+    # extract and rearange data from LR
     return np.concatenate((ofdm_sym_freq[-n_sub_carr // 2:], ofdm_sym_freq[1:(n_sub_carr // 2) + 1]))
 
 
@@ -177,4 +177,4 @@ class OfdmQamModem(QamModem):
         return _demodulate(self._constellation, self.n_bits_per_symbol, input_symbols)
 
     def ofdm_avg_sample_pow(self):
-        return self.avg_symbol_power * (self.n_sub_carr / self.n_fft)
+        return self.avg_sample_power * (self.n_sub_carr / self.n_fft)

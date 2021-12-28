@@ -1,5 +1,5 @@
 import utilities
-
+import numpy as np
 
 class Transceiver:
     def __init__(self, modem, center_freq=None, carrier_spacing=None, impairment=None, cord_x=0, cord_y=0, cord_z=0):
@@ -10,6 +10,9 @@ class Transceiver:
         # antenna gains
         self.tx_ant_gain_db = 0
         self.rx_ant_gain_db = 0
+        # TX power
+        # default value for legacy simulations
+        self.tx_power_dbm = None
         # position of transceiver/antenna
         self.cord_x = cord_x
         self.cord_y = cord_y
@@ -25,9 +28,14 @@ class Transceiver:
         self.tx_ant_gain_db = tx_ant_gain_db
         self.rx_ant_gain_db = rx_ant_gain_db
 
+    def set_tx_power_dbm(self, tx_power_dbm):
+        self.tx_power_dbm = tx_power_dbm
+
+    def tx_amplify(self, in_sig):
+        return in_sig * np.sqrt(1e-3*10**(self.tx_power_dbm/10) / self.modem.avg_sample_power)
+
     def transmit(self, in_bits, out_domain_fd=True, skip_dist=False, return_both=False):
         clean_symb_td = self.modem.modulate(in_bits)
-
         if skip_dist or self.impairment is None:
             if out_domain_fd:
                 return utilities.to_freq_domain(clean_symb_td, remove_cp=True, cp_len=self.modem.cp_len)
@@ -36,16 +44,15 @@ class Transceiver:
         elif return_both and self.impairment is not None:
             if out_domain_fd:
                 return utilities.to_freq_domain(self.impairment.process(clean_symb_td), remove_cp=True, cp_len=self.modem.cp_len),\
-                       utilities.to_freq_domain(clean_symb_td, remove_cp=True, cp_len=self.modem.cp_len)
+                      utilities.to_freq_domain(clean_symb_td, remove_cp=True, cp_len=self.modem.cp_len)
             else:
                 return self.impairment.process(clean_symb_td), clean_symb_td
         elif self.impairment is not None:
             if out_domain_fd:
-                utilities.to_freq_domain(self.impairment.process(clean_symb_td), remove_cp=True,
-                                         cp_len=self.modem.cp_len)
+                utilities.to_freq_domain(self.impairment.process(clean_symb_td), remove_cp=True, cp_len=self.modem.cp_len)
             else:
                 return self.impairment.process(clean_symb_td)
 
-    def receive(self, in_symb, skip_noise=False):
-        # add noise to the received signal accordingly to RX noise level
+    def receive(self, in_symb):
         return self.modem.demodulate(in_symb)
+

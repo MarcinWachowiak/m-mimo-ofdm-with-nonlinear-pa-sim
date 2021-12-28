@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import welch
 
-import channel
 import distortion
 import modulation
 import noise
@@ -21,6 +20,7 @@ set_latex_plot_style()
 # %%
 
 my_mod = modulation.OfdmQamModem(constel_size=64, n_fft=4096, n_sub_carr=1024, cp_len=256)
+
 my_distortion = distortion.SoftLimiter(5, my_mod.avg_sample_power)
 my_limiter2 = distortion.Rapp(0, my_mod.avg_sample_power, p_hardness=5)
 my_limiter3 = distortion.ThirdOrderNonLin(25, my_mod.avg_sample_power)

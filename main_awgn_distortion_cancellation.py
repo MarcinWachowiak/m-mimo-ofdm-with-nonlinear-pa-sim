@@ -30,7 +30,7 @@ my_tx = transceiver.Transceiver(modem=my_mod, impairment=my_distortion)
 my_standard_rx = transceiver.Transceiver(modem=my_mod, impairment=None)
 my_cnc_rx = corrector.CncReceiver(copy.deepcopy(my_mod), copy.deepcopy(my_distortion))
 
-my_noise = noise.Awgn(10, True, 1234)
+my_noise = noise.Awgn(snr_db=10, seed=1234)
 bit_rng = np.random.default_rng(4321)
 
 ebn0_arr = np.arange(0, 21, 2)
@@ -50,7 +50,7 @@ n_err_min = 1000
 # Number of CNC iterations eval, upsample ratio fixed
 ibo_val_db = 5
 print("Distortion IBO/TOI value:", ibo_val_db)
-cnc_n_iters_lst = [1,2,3]
+cnc_n_iters_lst = [1, 2, 3]
 print("CNC number of iteration list:", cnc_n_iters_lst)
 cnc_n_upsamp = 4
 # Single CNC iteration is equal to standard reception without distortion compensation
@@ -71,7 +71,6 @@ for run_idx, cnc_n_iter_val in enumerate(cnc_n_iters_lst):
         my_cnc_rx.impairment.set_ibo(ibo_val_db)
 
     bers = np.zeros([len(snr_arr)])
-
     for idx, snr in enumerate(snr_arr):
         my_noise.snr_db = snr
         n_err = 0
@@ -136,7 +135,7 @@ plt.show()
 
 # %%
 # Upsample ratio eval, number of iterations fixed
-ibo_val_db = 3
+ibo_val_db = 5
 print("Distortion IBO/TOI value:", ibo_val_db)
 cnc_n_upsamp_lst = [2, 4, 8]
 cnc_n_upsamp_lst = np.insert(cnc_n_upsamp_lst, 0, 1)

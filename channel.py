@@ -4,7 +4,7 @@ import numpy as np
 from scipy import constants as scp_constants
 import torch
 
-from utilities import to_db, signal_power
+from utilities import to_db
 
 
 class MisoLosFd:
