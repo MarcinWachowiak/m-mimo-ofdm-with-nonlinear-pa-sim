@@ -18,7 +18,7 @@ import noise
 import transceiver
 import utilities
 from plot_settings import set_latex_plot_style
-from utilities import count_mismatched_bits, ebn0_to_snr, to_db, td_signal_power
+from utilities import count_mismatched_bits, ebn0_to_snr, to_db, td_signal_power, to_time_domain
 
 # TODO: consider logger
 
@@ -73,7 +73,7 @@ my_array = antenna_arrray.LinearArray(n_elements=1, transceiver=my_tx, center_fr
                                       cord_x=0, cord_y=0, cord_z=15)
 my_array.set_tx_power_lvls(tx_power_dbm=total_tx_pow_dbm, total=True)
 
-my_miso_chan = channel.MisoLosFd()
+my_miso_chan = channel.MisoTwoPathFd()
 my_miso_chan.calc_channel_mat(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx, skip_attenuation=False)
 
 chan_mat_at_point = my_miso_chan.get_channel_mat_fd()
@@ -95,6 +95,8 @@ for idx, noise_p_dbm in enumerate(noise_floor_vals):
         tx_ofdm_symbol_fd, clean_ofdm_symbol_fd = my_array.transmit(tx_bits, out_domain_fd=True, return_both=True)
 
         rx_sig_fd = my_miso_chan.propagate(in_sig_mat=tx_ofdm_symbol_fd)
+        print("ATT:", to_db(td_signal_power(to_time_domain(rx_sig_fd))/td_signal_power(to_time_domain(tx_ofdm_symbol_fd))))
+
         rx_ofdm_symbol = my_noise.process(rx_sig_fd, fixed_noise_power=True)
 
         clean_ofdm_symbol_fd = np.squeeze(clean_ofdm_symbol_fd)
