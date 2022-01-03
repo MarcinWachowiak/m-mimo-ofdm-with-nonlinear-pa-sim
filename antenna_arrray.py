@@ -65,11 +65,17 @@ class LinearArray:
                                                            return_both=return_both)
             return out_sig_mat
 
-    def set_precoding_matrix(self, channel_mat_fd=None):
+    def set_precoding_matrix(self, channel_mat_fd=None, mr_precoding=False):
         # set precoding vector based on provided channel mat coefficients
         channel_fd_mat_conjungate = np.conjugate(channel_mat_fd)
-        # normalize channel precoding coefficients
-        precoding_mat_fd = np.exp(1j * np.angle(channel_fd_mat_conjungate))
+
+        if mr_precoding is True:
+            # normalize the precoding vector in regard to number of antennas and power
+            precoding_mat_fd = np.divide(channel_fd_mat_conjungate, np.sqrt(channel_mat_fd.shape[0] * np.sum(np.power(np.abs(channel_mat_fd), 4), axis=0)))
+        else:
+            # take only phases into consideration
+            # normalize channel precoding coefficients
+            precoding_mat_fd = np.exp(1j * np.angle(channel_fd_mat_conjungate))
 
         # apply precoding vectors to each tx node from matrix
         for idx, tx_transceiver in enumerate(self.array_elements):
@@ -81,3 +87,9 @@ class LinearArray:
             precoding_vec[-tx_n_sc // 2:] = precoding_mat_row_fd[-tx_n_sc // 2:]
 
             tx_transceiver.modem.set_precoding_vec(precoding_vec)
+
+    def update_distortion(self, avg_sample_pow, channel_mat_fd):
+        for idx, transceiver in enumerate(self.array_elements):
+            avg_precoding_gain = np.average(np.divide(np.power(np.abs(channel_mat_fd),2), np.power(np.sum(np.power(np.abs(channel_mat_fd), 2), axis=0), 2)))
+            new_avg_sample_pow = avg_sample_pow * avg_precoding_gain
+            transceiver.impairment.update_avg_sample_power(new_avg_sample_pow)

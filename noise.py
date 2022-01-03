@@ -1,8 +1,8 @@
 import abc
 
 import numpy as np
-
-from utilities import to_db, fd_signal_power
+#
+from utilities import to_db, fd_signal_power, td_signal_power, to_time_domain
 
 
 class Noise(metaclass=abc.ABCMeta):
@@ -33,10 +33,14 @@ class Awgn(Noise):
 
         noise = self.rng_gen.standard_normal((n_sampl, 2)).view(np.complex128)[:, 0] * noise_std * 0.5
 
-        # # check resultant SNR
+        # check resultant SNR
         # print("Signal power:[dBm]", to_db(fd_signal_power(in_sig))+30)
         # print("Noise power:[dBm]", to_db(fd_signal_power(noise))+30)
         # print("SNR: ", to_db(fd_signal_power(in_sig)/fd_signal_power(noise)))
+
+        # print("Signal power:[dBm]", to_db(td_signal_power(to_time_domain(in_sig)))+30)
+        # print("Noise power:[dBm]", to_db(td_signal_power(to_time_domain(noise)))+30)
+        # print("SNR: ", to_db(td_signal_power(to_time_domain(in_sig))/td_signal_power(to_time_domain(noise))))
 
         return in_sig + noise
 
