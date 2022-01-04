@@ -71,7 +71,7 @@ class LinearArray:
 
         if mr_precoding is True:
             # normalize the precoding vector in regard to number of antennas and power
-            precoding_mat_fd = np.divide(channel_fd_mat_conjungate, np.sqrt(channel_mat_fd.shape[0] * np.sum(np.power(np.abs(channel_mat_fd), 4), axis=0)))
+            precoding_mat_fd = np.divide(channel_fd_mat_conjungate, np.sum(np.power(np.abs(channel_mat_fd), 2), axis=0))
         else:
             # take only phases into consideration
             # normalize channel precoding coefficients

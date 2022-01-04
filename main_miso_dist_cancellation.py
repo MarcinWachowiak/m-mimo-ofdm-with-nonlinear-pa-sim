@@ -25,7 +25,7 @@ from utilities import count_mismatched_bits, ebn0_to_snr, to_db, td_signal_power
 set_latex_plot_style()
 # %%
 print("Multi antenna processing init!")
-ibo_db_val = 3
+ibo_db_val = 7
 
 my_mod = modulation.OfdmQamModem(constel_size=64, n_fft=4096, n_sub_carr=1024, cp_len=128)
 my_distortion = distortion.SoftLimiter(ibo_db=ibo_db_val, avg_symb_pow=my_mod.avg_sample_power)
@@ -33,6 +33,7 @@ my_tx = transceiver.Transceiver(modem=my_mod, impairment=my_distortion, center_f
                                 carrier_spacing=int(15e3))
 my_rx = transceiver.Transceiver(modem=my_mod, impairment=None, cord_x=100, cord_y=100, cord_z=1.5,
                                 center_freq=int(3.5e9),
+
                                 carrier_spacing=int(15e3))
 my_rx.modem.correct_constellation(my_tx.impairment.ibo_db)
 
@@ -48,7 +49,7 @@ print("CNC N iterations:", cnc_n_iter_val)
 cnc_n_upsamp_val = 4
 print("CNC upsample factor:", cnc_n_upsamp_val)
 
-ebn0_arr = np.arange(0, 21, 5)
+ebn0_arr = np.arange(0, 21, 2)
 print("Eb/n0 values:", ebn0_arr)
 snr_arr = ebn0_to_snr(ebn0_arr, my_mod.n_fft, my_mod.n_sub_carr, my_mod.constel_size)
 print("SNR values:", snr_arr)
@@ -58,7 +59,7 @@ bits_sent_max = int(1e6)
 n_err_min = 1000
 
 # sweep antenna count sweep
-n_ant_vec = [16,32,64]
+n_ant_vec = [1,2,4,8]
 
 lambda_per_nant = []
 bers_per_nant = []
@@ -74,7 +75,7 @@ bers_per_nant = []
 # chan_mat_at_point = my_miso_chan.get_channel_mat_fd()
 # my_array.set_precoding_matrix(channel_mat_fd=chan_mat_at_point, mr_precoding=True)
 #
-# dividing = np.sqrt(np.sum(np.power(np.abs(chan_mat_at_point), 4), axis=0) * chan_mat_at_point.shape[0])
+# dividing = np.sum(np.power(np.abs(chan_mat_at_point), 2), axis=0)
 #
 # precoding_mat_fd = np.divide(np.conj(chan_mat_at_point), dividing)
 #
@@ -237,7 +238,7 @@ for n_iter_idx, n_iter in enumerate(cnc_n_iter_lst):
             # scale the RX signal to match the default constellation
             rx_bits = my_cnc_rx.receive(n_iters=n_iter, upsample_factor=cnc_n_upsamp_val,
                                         in_sig_fd=rx_ofdm_symbol_fd,
-                                        channel_estimation_mat=np.abs(lambda_per_nant[1][snr_idx]))
+                                        channel_estimation_mat=np.abs(lambda_per_nant[-1][snr_idx]))
 
             n_bit_err = count_mismatched_bits(tx_bits, rx_bits)
             bits_sent += my_mod.n_bits_per_ofdm_sym
