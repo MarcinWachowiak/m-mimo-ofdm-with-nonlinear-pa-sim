@@ -25,16 +25,14 @@ from utilities import count_mismatched_bits, ebn0_to_snr, to_db, td_signal_power
 set_latex_plot_style()
 # %%
 print("Multi antenna processing init!")
-ibo_db_val = 7
-
+ibo_db_val = 3
+# remember to copy objects not to avoid shared properties modifications!
 my_mod = modulation.OfdmQamModem(constel_size=64, n_fft=4096, n_sub_carr=1024, cp_len=128)
 my_distortion = distortion.SoftLimiter(ibo_db=ibo_db_val, avg_symb_pow=my_mod.avg_sample_power)
-my_tx = transceiver.Transceiver(modem=my_mod, impairment=my_distortion, center_freq=int(3.5e9),
+my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion), center_freq=int(3.5e9),
                                 carrier_spacing=int(15e3))
-my_rx = transceiver.Transceiver(modem=my_mod, impairment=None, cord_x=100, cord_y=100, cord_z=1.5,
-                                center_freq=int(3.5e9),
-
-                                carrier_spacing=int(15e3))
+my_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=None, cord_x=100, cord_y=100, cord_z=1.5,
+                                center_freq=int(3.5e9), carrier_spacing=int(15e3))
 my_rx.modem.correct_constellation(my_tx.impairment.ibo_db)
 
 my_miso_chan = channel.MisoTwoPathFd()
@@ -102,6 +100,7 @@ for n_ant_idx, n_ant in enumerate(n_ant_vec):
     # estimate lambda correcting coefficient
     # same seed is required
     bit_rng = np.random.default_rng(4321)
+    dist_rx_pow_coeff = (np.abs(my_mod.calc_alpha(ibo_db_val))) ** 2
     for snr_idx, snr_val in enumerate(snr_arr):
         start_time = time.time()
         print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
@@ -117,7 +116,8 @@ for n_ant_idx, n_ant in enumerate(n_ant_vec):
             rx_sig_fd = my_miso_chan.propagate(in_sig_mat=tx_ofdm_symbol_fd)
             rx_sig_clean_fd = my_miso_chan.propagate(in_sig_mat=clean_ofdm_symbol_fd)
 
-            rx_ofdm_symbol = my_noise.process(rx_sig_fd, avg_sample_pow=my_mod.avg_sample_power, fixed_noise_power=False)
+            #perfect nonlinearity information - correct RX power by alpha to provide reliable SNR
+            rx_ofdm_symbol = my_noise.process(rx_sig_fd, avg_sample_pow=my_mod.avg_sample_power*dist_rx_pow_coeff, fixed_noise_power=False)
             rx_ofdm_clean_symbol = my_noise.process(rx_sig_clean_fd, avg_sample_pow=my_mod.avg_sample_power, fixed_noise_power=False)
 
             clean_nsc_ofdm_symb_fd = np.concatenate(
@@ -138,6 +138,7 @@ for n_ant_idx, n_ant in enumerate(n_ant_vec):
     lambda_per_nant.append(lambda_corr_estimate)
 # %%
 # N ANTENNAS EVAL
+print("SNR values:", snr_arr)
 for n_ant_idx, n_ant in enumerate(n_ant_vec):
     print_pow = True
     start_time = time.time()
@@ -165,7 +166,7 @@ for n_ant_idx, n_ant in enumerate(n_ant_vec):
             tx_ofdm_symbol_fd, clean_ofdm_symbol_fd = my_array.transmit(tx_bits, out_domain_fd=True, return_both=True)
 
             rx_sig_fd = my_miso_chan.propagate(in_sig_mat=tx_ofdm_symbol_fd)
-            rx_ofdm_symbol_fd = my_noise.process(rx_sig_fd,avg_sample_pow=my_mod.avg_sample_power,fixed_noise_power=False)
+            rx_ofdm_symbol_fd = my_noise.process(rx_sig_fd,avg_sample_pow=my_mod.avg_sample_power*(np.abs(np.average(lambda_per_nant[n_ant_idx][snr_idx])))**2, fixed_noise_power=False, disp_data=True)
 
             # enchanced CNC reception
             rx_bits = my_cnc_rx.receive(n_iters=cnc_n_iter_val, upsample_factor=cnc_n_upsamp_val,
@@ -203,7 +204,7 @@ print("Finished execution!")
 
 # %%
 # CNC N ITERS EVAL
-num_ant = 32
+num_ant = 8
 cnc_n_iter_lst = [0, 1, 2, 3, 4]
 bers_per_niter = []
 for n_iter_idx, n_iter in enumerate(cnc_n_iter_lst):
