@@ -59,7 +59,7 @@ print("IBO values:", ibo_arr)
 bits_sent_max = int(1e6)
 n_err_min = 1000
 
-lambda_per_ibo = []
+abs_lambda_per_ibo = []
 bers_per_ibo = np.zeros((len(cnc_n_iter_vals), len(ibo_arr)))
 
 # %%
@@ -82,9 +82,6 @@ for ibo_idx, ibo_val_db in enumerate(ibo_arr):
     # estimate lambda correcting coefficient
     # same seed is required
     bit_rng = np.random.default_rng(4321)
-    dist_rx_pow_coeff = (np.abs(my_mod.calc_alpha(ibo_val_db))) ** 2
-
-    my_noise.snr_db = snr_val_db
     n_ofdm_symb = 1e3
     ofdm_symb_idx = 0
     lambda_numerator_vecs = []
@@ -96,14 +93,10 @@ for ibo_idx, ibo_val_db in enumerate(ibo_arr):
         rx_sig_fd = my_miso_chan.propagate(in_sig_mat=tx_ofdm_symbol_fd)
         rx_sig_clean_fd = my_miso_chan.propagate(in_sig_mat=clean_ofdm_symbol_fd)
 
-        #perfect nonlinearity information - correct RX power by alpha to provide reliable SNR
-        rx_ofdm_symbol = my_noise.process(rx_sig_fd, avg_sample_pow=my_mod.avg_sample_power*dist_rx_pow_coeff, fixed_noise_power=False)
-        rx_ofdm_clean_symbol = my_noise.process(rx_sig_clean_fd, avg_sample_pow=my_mod.avg_sample_power, fixed_noise_power=False)
-
         clean_nsc_ofdm_symb_fd = np.concatenate(
-            (rx_ofdm_clean_symbol[-my_mod.n_sub_carr // 2:], rx_ofdm_clean_symbol[1:(my_mod.n_sub_carr // 2) + 1]))
+            (rx_sig_clean_fd[-my_mod.n_sub_carr // 2:], rx_sig_clean_fd[1:(my_mod.n_sub_carr // 2) + 1]))
         rx_nsc_ofdm_symb_fd = np.concatenate(
-            (rx_ofdm_symbol[-my_mod.n_sub_carr // 2:], rx_ofdm_symbol[1:(my_mod.n_sub_carr // 2) + 1]))
+            (rx_sig_fd[-my_mod.n_sub_carr // 2:], rx_sig_fd[1:(my_mod.n_sub_carr // 2) + 1]))
 
         lambda_numerator_vecs.append(np.multiply(rx_nsc_ofdm_symb_fd, np.conjugate(clean_nsc_ofdm_symb_fd)))
         lambda_denominator_vecs.append(np.multiply(clean_nsc_ofdm_symb_fd, np.conjugate(clean_nsc_ofdm_symb_fd)))
@@ -113,8 +106,7 @@ for ibo_idx, ibo_val_db in enumerate(ibo_arr):
         # calculate lambda estimate
     lambda_num = np.average(np.vstack(lambda_numerator_vecs), axis=0)
     lambda_denum = np.average(np.vstack(lambda_denominator_vecs), axis=0)
-    lambda_corr_estimate.append(lambda_num / lambda_denum)
-    lambda_per_ibo.append(lambda_corr_estimate)
+    abs_lambda_per_ibo.append(np.abs(np.average(lambda_num / lambda_denum)))
     print("--- Computation time: %f ---" % (time.time() - start_time))
 
 # %%
@@ -146,12 +138,12 @@ for ibo_idx, ibo_val_db in enumerate(ibo_arr):
             tx_ofdm_symbol_fd, clean_ofdm_symbol_fd = my_array.transmit(tx_bits, out_domain_fd=True, return_both=True)
 
             rx_sig_fd = my_miso_chan.propagate(in_sig_mat=tx_ofdm_symbol_fd)
-            rx_ofdm_symbol_fd = my_noise.process(rx_sig_fd, avg_sample_pow=my_mod.avg_sample_power*(np.abs(np.average(lambda_per_ibo[ibo_idx])))**2, fixed_noise_power=False)
+            rx_ofdm_symbol_fd = my_noise.process(rx_sig_fd, avg_sample_pow=my_mod.avg_sample_power*(abs_lambda_per_ibo[ibo_idx]**2), fixed_noise_power=False)
 
             # enchanced CNC reception
             rx_bits = my_cnc_rx.receive(n_iters=cnc_iters_val, upsample_factor=cnc_n_upsamp_val,
                                         in_sig_fd=rx_ofdm_symbol_fd,
-                                        lambda_estimation=np.abs(lambda_per_ibo[ibo_idx]))
+                                        lambda_estimation=abs_lambda_per_ibo[ibo_idx])
 
             n_bit_err = count_mismatched_bits(tx_bits, rx_bits)
             bits_sent += my_mod.n_bits_per_ofdm_sym
