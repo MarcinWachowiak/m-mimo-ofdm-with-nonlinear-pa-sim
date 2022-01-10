@@ -5,9 +5,9 @@ import scipy as scp
 
 
 class LinearArray:
-    def __init__(self, n_elements, transceiver, center_freq, wav_len_spacing, cord_x=0, cord_y=0, cord_z=0):
+    def __init__(self, n_elements, base_transceiver, center_freq, wav_len_spacing, cord_x=0, cord_y=0, cord_z=0):
         self.n_elements = n_elements
-        self.transceiver = transceiver
+        self.base_transceiver = base_transceiver
         self.center_freq = center_freq
         self.wav_len_spacing = wav_len_spacing
         self.array_elements = []
@@ -15,10 +15,10 @@ class LinearArray:
         self.cord_y = cord_y
         self.cord_z = cord_z
 
-        if isinstance(self.transceiver, list) and len(self.transceiver) == self.n_elements and len(
-                self.transceiver) == self.n_elements:
+        if isinstance(self.base_transceiver, list) and len(self.base_transceiver) == self.n_elements and len(
+                self.base_transceiver) == self.n_elements:
             # extend for custom list of transceivers
-            for idx, base_modem in enumerate(self.transceiver):
+            for idx, base_modem in enumerate(self.base_transceiver):
                 pass
         else:
             # antenna position vector centered around 0
@@ -27,7 +27,7 @@ class LinearArray:
                                   (self.n_elements - 1) * self.wav_len_spacing * wavelength_at_freq / 2,
                                   self.n_elements)
             for idx in range(self.n_elements):
-                tmp_transceiver = copy.deepcopy(self.transceiver)
+                tmp_transceiver = copy.deepcopy(self.base_transceiver)
                 tmp_transceiver.cord_x = ant_vec[idx]
                 tmp_transceiver.cord_y = 0
                 tmp_transceiver.cord_z = self.cord_z
@@ -42,26 +42,26 @@ class LinearArray:
 
     def transmit(self, in_bits, out_domain_fd=True, return_both=False):
         if out_domain_fd:
-            out_sig_mat = np.empty([self.n_elements, self.transceiver.modem.n_fft],
+            out_sig_mat = np.empty([self.n_elements, self.base_transceiver.modem.n_fft],
                                    dtype=np.complex128)
         else:
-            out_sig_mat = np.empty([self.n_elements, self.transceiver.modem.n_fft + self.transceiver.modem.cp_len],
+            out_sig_mat = np.empty([self.n_elements, self.base_transceiver.modem.n_fft + self.base_transceiver.modem.cp_len],
                                    dtype=np.complex128)
         if return_both:
             if out_domain_fd:
-                clean_sig_mat = np.empty([self.n_elements, self.transceiver.modem.n_fft], dtype=np.complex128)
+                clean_sig_mat = np.empty([self.n_elements, self.base_transceiver.modem.n_fft], dtype=np.complex128)
             else:
-                clean_sig_mat = np.empty([self.n_elements, self.transceiver.modem.n_fft + self.transceiver.modem.cp_len],
+                clean_sig_mat = np.empty([self.n_elements, self.base_transceiver.modem.n_fft + self.base_transceiver.modem.cp_len],
                     dtype=np.complex128)
 
-            for idx, transceiver in enumerate(self.array_elements):
-                out_sig_mat[idx, :], clean_sig_mat[idx, :] = transceiver.transmit(in_bits, out_domain_fd=out_domain_fd,
+            for idx, tx_transceiver in enumerate(self.array_elements):
+                out_sig_mat[idx, :], clean_sig_mat[idx, :] = tx_transceiver.transmit(in_bits, out_domain_fd=out_domain_fd,
                                                                                   return_both=True)
 
             return out_sig_mat, clean_sig_mat
         else:
-            for idx, transceiver in enumerate(self.array_elements):
-                out_sig_mat[idx, :] = transceiver.transmit(in_bits, out_domain_fd=out_domain_fd,
+            for idx, tx_transceiver in enumerate(self.array_elements):
+                out_sig_mat[idx, :] = tx_transceiver.transmit(in_bits, out_domain_fd=out_domain_fd,
                                                            return_both=return_both)
             return out_sig_mat
 
@@ -88,8 +88,9 @@ class LinearArray:
 
             tx_transceiver.modem.set_precoding_vec(precoding_vec)
 
-    def update_distortion(self, avg_sample_pow, channel_mat_fd):
-        for idx, transceiver in enumerate(self.array_elements):
-            avg_precoding_gain = np.average(np.divide(np.power(np.abs(channel_mat_fd),2), np.power(np.sum(np.power(np.abs(channel_mat_fd), 2), axis=0), 2)))
-            new_avg_sample_pow = avg_sample_pow * avg_precoding_gain
-            transceiver.impairment.update_avg_sample_power(new_avg_sample_pow)
+    def update_distortion(self, ibo_db, avg_sample_pow, channel_mat_fd):
+        avg_precoding_gain = np.average(np.divide(np.power(np.abs(channel_mat_fd), 2),
+                                                  np.power(np.sum(np.power(np.abs(channel_mat_fd), 2), axis=0), 2)))
+        for idx, array_transceiver in enumerate(self.array_elements):
+            array_transceiver.impairment.set_ibo(ibo_db)
+            array_transceiver.impairment.set_avg_sample_power(avg_sample_pow * avg_precoding_gain)

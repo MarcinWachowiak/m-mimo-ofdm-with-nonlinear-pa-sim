@@ -12,18 +12,18 @@ def _process_soft_lim(sat_pow, in_sig):
 
 class SoftLimiter:
 
-    def __init__(self, ibo_db, avg_symb_pow):
+    def __init__(self, ibo_db, avg_samp_pow):
         self.ibo_db = ibo_db
-        self.avg_symb_pow = avg_symb_pow
-        self.sat_pow = np.power(10, ibo_db / 10) * avg_symb_pow
+        self.avg_samp_pow = avg_samp_pow
+        self.sat_pow = np.power(10, ibo_db / 10) * avg_samp_pow
 
     def set_ibo(self, ibo_db):
         self.ibo_db = ibo_db
-        self.sat_pow = np.power(10, ibo_db / 10) * self.avg_symb_pow
+        self.sat_pow = np.power(10, ibo_db / 10) * self.avg_samp_pow
 
-    def update_avg_sample_power(self, avg_symb_pow):
-        self.avg_symb_pow = avg_symb_pow
-        self.sat_pow = np.power(10, self.ibo_db / 10) * avg_symb_pow
+    def set_avg_sample_power(self, avg_samp_pow):
+        self.avg_samp_pow = avg_samp_pow
+        self.sat_pow = np.power(10, self.ibo_db / 10) * avg_samp_pow
 
     def plot_characteristics(self, in_ampl_min=-10, in_ampl_max=10, step=0.1):
         in_sig_ampl = np.arange(in_ampl_min, in_ampl_max + step, step)
@@ -51,18 +51,18 @@ def _process_rapp(sat_pow, p_hardness, in_sig):
 
 class Rapp:
 
-    def __init__(self, ibo_db, avg_symb_pow, p_hardness):
+    def __init__(self, ibo_db, avg_samp_pow, p_hardness):
         self.p_hardness = p_hardness
         self.ibo_db = ibo_db
-        self.avg_symb_pow = avg_symb_pow
-        self.sat_pow = np.power(10, ibo_db / 10) * avg_symb_pow
+        self.avg_samp_pow = avg_samp_pow
+        self.sat_pow = np.power(10, ibo_db / 10) * avg_samp_pow
 
     def set_hardness(self, p_hardness):
         self.p_hardness = p_hardness
 
     def set_ibo(self, ibo_db):
         self.ibo_db = ibo_db
-        self.sat_pow = np.power(10, ibo_db / 10) * self.avg_symb_pow
+        self.sat_pow = np.power(10, ibo_db / 10) * self.avg_samp_pow
 
     def plot_characteristics(self, in_ampl_min=-10, in_ampl_max=10, step=0.1):
         in_sig_ampl = np.arange(in_ampl_min, in_ampl_max + step, step)
@@ -91,7 +91,7 @@ def _process_toi(cubic_dist_coeff, in_sig):
 # TODO: verify proper third order coefficient calculation
 class ThirdOrderNonLin:
 
-    def __init__(self, toi_db, avg_symb_pow):
+    def __init__(self, toi_db, avg_samp_pow):
         self.toi_db = toi_db
         self.cubic_dist_coeff = 1 / (np.power(10, (toi_db / 10)))
 
