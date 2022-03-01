@@ -6,9 +6,6 @@ from modulation import OfdmQamModem
 
 
 # Nonlinear distortion recovery technique based on Ochiai, Clipping noise cancellation
-
-
-
 class CncReceiver():
     def __init__(self, modem: OfdmQamModem, impairment: SoftLimiter):
         self.modem = modem

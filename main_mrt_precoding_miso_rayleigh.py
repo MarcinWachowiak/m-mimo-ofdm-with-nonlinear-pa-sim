@@ -5,7 +5,6 @@ from datetime import datetime
 
 import matplotlib.pyplot as plt
 import numpy as np
-import torch
 from scipy.signal import welch
 
 import antenna_arrray
@@ -24,8 +23,10 @@ set_latex_plot_style()
 print("Multi antenna processing init!")
 bit_rng = np.random.default_rng(4321)
 
+ibo_val_db = 5
+
 my_mod = modulation.OfdmQamModem(constel_size=256, n_fft=4096, n_sub_carr=1024, cp_len=128)
-my_distortion = distortion.SoftLimiter(ibo_db=5, avg_symb_pow=my_mod.ofdm_avg_sample_pow())
+my_distortion = distortion.SoftLimiter(ibo_db=ibo_val_db, avg_samp_pow=my_mod.avg_sample_power)
 my_tx = transceiver.Transceiver(modem=my_mod, impairment=my_distortion, center_freq=int(3.5e9),
                                 carrier_spacing=int(15e3))
 
@@ -52,7 +53,7 @@ n_snapshots = 10
 # %%
 # plot PSD for chosen point/angle
 point_idx_psd = 50
-n_ant_vec = [1, 2, 4, 8]
+n_ant_vec = [4, 8, 16, 32]
 # precode for a single point
 precoding_point_idx = 45
 
@@ -65,13 +66,15 @@ for n_ant in n_ant_vec:
     start_time = time.time()
     print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
-    my_array = antenna_arrray.LinearArray(n_elements=n_ant, transceiver=my_tx, center_freq=int(3.5e9),
+    my_array = antenna_arrray.LinearArray(n_elements=n_ant, base_transceiver=my_tx, center_freq=int(3.5e9),
                                           wav_len_spacing=0.5,
                                           cord_x=0, cord_y=0, cord_z=15)
     my_miso_chan = channel.RayleighMisoFd(n_inputs=my_array.n_elements, fd_samp_size=my_tx.modem.n_fft, seed=1234)
     my_rx.set_position(cord_x=212, cord_y=212, cord_z=1.5)
-    chan_mat_at_point = my_miso_chan.get_channel_mat_fd()
-    my_array.set_precoding_matrix(channel_mat_fd=chan_mat_at_point)
+    chan_mat_at_point_fd = my_miso_chan.get_channel_mat_fd()
+    my_array.set_precoding_matrix(channel_mat_fd=chan_mat_at_point_fd, mr_precoding=True)
+    my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power,
+                              channel_mat_fd=chan_mat_at_point_fd)
 
     psd_at_angle_desired = np.empty(radian_vals.shape)
     psd_at_angle_dist = np.empty(radian_vals.shape)
@@ -79,7 +82,7 @@ for n_ant in n_ant_vec:
         # generate different channel for each point
         # precode only for single known point
         if pt_idx == precoding_point_idx:
-            my_miso_chan.set_channel_mat_fd(chan_mat_at_point)
+            my_miso_chan.set_channel_mat_fd(chan_mat_at_point_fd)
         else:
             my_miso_chan.reroll_channel_coeffs()
 
@@ -150,7 +153,7 @@ ax1.set_title("Desired signal PSD at angle [dB]")
 ax1.legend(title="N antennas:", ncol=len(n_ant_vec), loc='lower center')
 ax1.grid(True)
 plt.savefig("figs/desired_signal_beampattern_ibo%d_%dto%dant_sweep.png" % (
-my_tx.impairment.ibo_db, np.min(n_ant_vec), np.max(n_ant_vec)), dpi=600, bbox_inches='tight')
+    my_tx.impairment.ibo_db, np.min(n_ant_vec), np.max(n_ant_vec)), dpi=600, bbox_inches='tight')
 plt.show()
 
 # %%
@@ -172,7 +175,7 @@ ax2.set_title("Distortion signal PSD at angle [dB]")
 ax2.legend(title="N antennas:", ncol=len(n_ant_vec), loc='lower center')
 ax2.grid(True)
 plt.savefig("figs/distortion_signal_beampattern_ibo%d_%dto%dant_sweep.png" % (
-my_tx.impairment.ibo_db, np.min(n_ant_vec), np.max(n_ant_vec)), dpi=600, bbox_inches='tight')
+    my_tx.impairment.ibo_db, np.min(n_ant_vec), np.max(n_ant_vec)), dpi=600, bbox_inches='tight')
 plt.show()
 
 # %%
@@ -217,7 +220,7 @@ ax4.set_title("Signal to distortion ratio at angle [dB]")
 ax4.legend(title="N antennas:", ncol=len(n_ant_vec), loc='lower center')
 ax4.grid(True)
 plt.savefig("figs/sdr_at_angle_polar_ibo%d_%dto%dant_sweep.png" % (
-my_tx.impairment.ibo_db, np.min(n_ant_vec), np.max(n_ant_vec)), dpi=600, bbox_inches='tight')
+    my_tx.impairment.ibo_db, np.min(n_ant_vec), np.max(n_ant_vec)), dpi=600, bbox_inches='tight')
 plt.show()
 
 # %%
@@ -236,7 +239,7 @@ ax5.set_title("Signal to distortion ratio at angle")
 ax5.legend(title="N antennas:")
 ax5.grid(True)
 plt.savefig("figs/sdr_at_angle_cartesian_ibo%d_%dto%dant_sweep.png" % (
-my_tx.impairment.ibo_db, np.min(n_ant_vec), np.max(n_ant_vec)), dpi=600, bbox_inches='tight')
+    my_tx.impairment.ibo_db, np.min(n_ant_vec), np.max(n_ant_vec)), dpi=600, bbox_inches='tight')
 plt.show()
 
 # %%

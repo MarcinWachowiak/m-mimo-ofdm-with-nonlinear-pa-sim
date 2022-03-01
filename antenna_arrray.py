@@ -45,24 +45,27 @@ class LinearArray:
             out_sig_mat = np.empty([self.n_elements, self.base_transceiver.modem.n_fft],
                                    dtype=np.complex128)
         else:
-            out_sig_mat = np.empty([self.n_elements, self.base_transceiver.modem.n_fft + self.base_transceiver.modem.cp_len],
-                                   dtype=np.complex128)
+            out_sig_mat = np.empty(
+                [self.n_elements, self.base_transceiver.modem.n_fft + self.base_transceiver.modem.cp_len],
+                dtype=np.complex128)
         if return_both:
             if out_domain_fd:
                 clean_sig_mat = np.empty([self.n_elements, self.base_transceiver.modem.n_fft], dtype=np.complex128)
             else:
-                clean_sig_mat = np.empty([self.n_elements, self.base_transceiver.modem.n_fft + self.base_transceiver.modem.cp_len],
+                clean_sig_mat = np.empty(
+                    [self.n_elements, self.base_transceiver.modem.n_fft + self.base_transceiver.modem.cp_len],
                     dtype=np.complex128)
 
             for idx, tx_transceiver in enumerate(self.array_elements):
-                out_sig_mat[idx, :], clean_sig_mat[idx, :] = tx_transceiver.transmit(in_bits, out_domain_fd=out_domain_fd,
-                                                                                  return_both=True)
+                out_sig_mat[idx, :], clean_sig_mat[idx, :] = tx_transceiver.transmit(in_bits,
+                                                                                     out_domain_fd=out_domain_fd,
+                                                                                     return_both=True)
 
             return out_sig_mat, clean_sig_mat
         else:
             for idx, tx_transceiver in enumerate(self.array_elements):
                 out_sig_mat[idx, :] = tx_transceiver.transmit(in_bits, out_domain_fd=out_domain_fd,
-                                                           return_both=return_both)
+                                                              return_both=return_both)
             return out_sig_mat
 
     def set_precoding_matrix(self, channel_mat_fd=None, mr_precoding=False):

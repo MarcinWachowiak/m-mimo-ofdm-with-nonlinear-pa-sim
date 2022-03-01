@@ -171,10 +171,12 @@ def td_signal_power(signal):
     sig_power = np.mean(np.abs(signal) ** 2)
     return sig_power
 
+
 @jit(nopython=True)
 def fd_signal_power(signal):
     sig_power = np.sum(np.abs(signal) ** 2) / (len(signal) ** 2)
     return sig_power
+
 
 @jit(nopython=True)
 def count_mismatched_bits(tx_bits_arr, rx_bits_arr):

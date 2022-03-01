@@ -5,7 +5,6 @@ from datetime import datetime
 
 import matplotlib.pyplot as plt
 import numpy as np
-import torch
 from scipy.signal import welch
 
 import antenna_arrray
@@ -25,9 +24,11 @@ radian_vals_lst = []
 psd_at_angle_lst = []
 bit_rng = np.random.default_rng(4321)
 
+ibo_val_db = 5
+
 # for run_idx in range(1):
 my_mod = modulation.OfdmQamModem(constel_size=64, n_fft=4096, n_sub_carr=1024, cp_len=128)
-my_distortion = distortion.SoftLimiter(ibo_db=5, avg_symb_pow=my_mod.ofdm_avg_sample_pow())
+my_distortion = distortion.SoftLimiter(ibo_db=ibo_val_db, avg_samp_pow=my_mod.avg_sample_power)
 my_tx = transceiver.Transceiver(modem=my_mod, impairment=my_distortion, center_freq=int(3.5e9),
                                 carrier_spacing=int(15e3))
 my_rx = transceiver.Transceiver(modem=my_mod, impairment=None, cord_x=212, cord_y=212, cord_z=1.5,
@@ -64,14 +65,16 @@ for n_ant in n_ant_vec:
     start_time = time.time()
     print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
-    my_array = antenna_arrray.LinearArray(n_elements=n_ant, transceiver=my_tx, center_freq=int(3.5e9),
+    my_array = antenna_arrray.LinearArray(n_elements=n_ant, base_transceiver=my_tx, center_freq=int(3.5e9),
                                           wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
     my_miso_chan = channel.MisoTwoPathFd()
 
     my_rx.set_position(cord_x=212, cord_y=212, cord_z=1.5)
     my_miso_chan.calc_channel_mat(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx, skip_attenuation=False)
     channel_mat_at_point_fd = my_miso_chan.get_channel_mat_fd()
-    my_array.set_precoding_matrix(channel_mat_fd=channel_mat_at_point_fd)
+    my_array.set_precoding_matrix(channel_mat_fd=channel_mat_at_point_fd, mr_precoding=True)
+    my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power,
+                               channel_mat_fd=channel_mat_at_point_fd)
 
     psd_at_angle_desired = np.empty(radian_vals.shape)
     psd_at_angle_dist = np.empty(radian_vals.shape)
@@ -124,7 +127,7 @@ for n_ant in n_ant_vec:
 # calculate PSD at selected point/angle
 rx_sig_at_point_clean_arr = np.concatenate(rx_sig_at_point_clean).ravel()
 rx_sig_at_point_full_arr = np.concatenate(rx_sig_at_point_full).ravel()
-distortion_sig_at_point = rx_sig_at_point_full_arr - my_rx.modem.alpha * rx_sig_at_point_clean_arr
+distortion_sig_at_point = rx_sig_at_point_full_arr - my_tx.modem.alpha * rx_sig_at_point_clean_arr
 
 rx_clean_at_point_freq_arr, rx_clean_at_point_psd = welch(rx_sig_at_point_clean_arr, fs=psd_nfft, nfft=psd_nfft,
                                                           nperseg=n_samp_per_seg, return_onesided=False)
@@ -152,7 +155,7 @@ ax1.legend(title="N antennas:", ncol=len(n_ant_vec), loc='lower center')
 ax1.grid(True)
 # ax1.xaxis.set_major_locator(MaxNLocator(6))
 plt.savefig("figs/desired_signal_beampattern_ibo%d_%dto%dant_sweep.png" % (
-my_tx.impairment.ibo_db, np.min(n_ant_vec), np.max(n_ant_vec)), dpi=600, bbox_inches='tight')
+    my_tx.impairment.ibo_db, np.min(n_ant_vec), np.max(n_ant_vec)), dpi=600, bbox_inches='tight')
 plt.show()
 
 # %%
@@ -174,7 +177,7 @@ ax2.set_title("Distortion signal PSD at angle [dB]")
 ax2.legend(title="N antennas:", ncol=len(n_ant_vec), loc='lower center')
 ax2.grid(True)
 plt.savefig("figs/distortion_signal_beampattern_ibo%d_%dto%dant_sweep.png" % (
-my_tx.impairment.ibo_db, np.min(n_ant_vec), np.max(n_ant_vec)), dpi=600, bbox_inches='tight')
+    my_tx.impairment.ibo_db, np.min(n_ant_vec), np.max(n_ant_vec)), dpi=600, bbox_inches='tight')
 plt.show()
 
 # %%
@@ -219,7 +222,7 @@ ax4.set_title("Signal to distortion ratio at angle [dB]")
 ax4.legend(title="N antennas:", ncol=len(n_ant_vec), loc='lower center')
 ax4.grid(True)
 plt.savefig("figs/sdr_at_angle_polar_ibo%d_%dto%dant_sweep.png" % (
-my_tx.impairment.ibo_db, np.min(n_ant_vec), np.max(n_ant_vec)), dpi=600, bbox_inches='tight')
+    my_tx.impairment.ibo_db, np.min(n_ant_vec), np.max(n_ant_vec)), dpi=600, bbox_inches='tight')
 plt.show()
 
 # %%

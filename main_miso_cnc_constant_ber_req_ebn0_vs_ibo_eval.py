@@ -6,8 +6,7 @@ from datetime import datetime
 
 import matplotlib.pyplot as plt
 import numpy as np
-import torch
-from scipy.signal import welch
+from scipy import interpolate
 
 import antenna_arrray
 import channel
@@ -16,10 +15,9 @@ import distortion
 import modulation
 import noise
 import transceiver
-import utilities
 from plot_settings import set_latex_plot_style
-from utilities import count_mismatched_bits, ebn0_to_snr, to_db, td_signal_power, to_time_domain
-from scipy import interpolate
+from utilities import count_mismatched_bits, ebn0_to_snr
+
 # TODO: consider logger
 
 set_latex_plot_style()
@@ -29,7 +27,8 @@ print("Multi antenna processing init!")
 # check modifications before copy and what you copy!
 my_mod = modulation.OfdmQamModem(constel_size=64, n_fft=4096, n_sub_carr=1024, cp_len=128)
 my_distortion = distortion.SoftLimiter(ibo_db=5, avg_samp_pow=my_mod.avg_sample_power)
-my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion), center_freq=int(3.5e9),
+my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
+                                center_freq=int(3.5e9),
                                 carrier_spacing=int(15e3))
 my_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=None, cord_x=100, cord_y=100, cord_z=1.5,
                                 center_freq=int(3.5e9), carrier_spacing=int(15e3))
@@ -48,7 +47,7 @@ print("Eb/n0 values:", ebn0_db_vals)
 snr_db_vals = ebn0_to_snr(ebn0_db_vals, my_mod.n_fft, my_mod.n_sub_carr, my_mod.constel_size)
 print("SNR value:", snr_db_vals)
 
-cnc_n_iter_vals = [0,1,2,4]
+cnc_n_iter_vals = [0, 1, 2, 4]
 print("CNC N iterations:", cnc_n_iter_vals)
 cnc_n_upsamp_val = 4
 print("CNC upsample factor:", cnc_n_upsamp_val)
@@ -136,10 +135,12 @@ for ibo_idx, ibo_val_db in enumerate(ibo_arr):
             bits_sent = 0
             while bits_sent < bits_sent_max and n_err < n_err_min:
                 tx_bits = bit_rng.choice((0, 1), my_tx.modem.n_bits_per_ofdm_sym)
-                tx_ofdm_symbol_fd, clean_ofdm_symbol_fd = my_array.transmit(tx_bits, out_domain_fd=True, return_both=True)
+                tx_ofdm_symbol_fd, clean_ofdm_symbol_fd = my_array.transmit(tx_bits, out_domain_fd=True,
+                                                                            return_both=True)
 
                 rx_sig_fd = my_miso_chan.propagate(in_sig_mat=tx_ofdm_symbol_fd)
-                rx_ofdm_symbol_fd = my_noise.process(rx_sig_fd, avg_sample_pow=my_mod.avg_sample_power*(abs_lambda_per_ibo[ibo_idx]**2), fixed_noise_power=False)
+                rx_ofdm_symbol_fd = my_noise.process(rx_sig_fd, avg_sample_pow=my_mod.avg_sample_power * (
+                            abs_lambda_per_ibo[ibo_idx] ** 2), fixed_noise_power=False)
 
                 # enchanced CNC reception
                 rx_bits = my_cnc_rx.receive(n_iters=cnc_iters_val, upsample_factor=cnc_n_upsamp_val,
@@ -154,7 +155,7 @@ for ibo_idx, ibo_val_db in enumerate(ibo_arr):
     print("--- Computation time: %f ---" % (time.time() - start_time))
 
 # %%
-#%%
+# %%
 # extract SNR value providing given BER from collected data
 req_ebn0_per_ibo = np.zeros((len(cnc_n_iter_vals), len(ibo_arr)))
 target_ber = 1e-3
@@ -188,14 +189,13 @@ for iter_idx, iter_val in enumerate(cnc_n_iter_vals):
             # value not found in interpolation, replace with inf
             req_ebn0_per_ibo[iter_idx, ibo_idx] = np.inf
 
-
 # %%
 fig1, ax1 = plt.subplots(1, 1)
 for ite_idx, ite_val in enumerate(cnc_n_iter_vals):
-    #read by columns
+    # read by columns
     if ite_idx == 0:
         ite_val = "0 - standard"
-    ax1.plot(ibo_arr, req_ebn0_per_ibo[ite_idx,:], label=ite_val)
+    ax1.plot(ibo_arr, req_ebn0_per_ibo[ite_idx, :], label=ite_val)
 
 ax1.set_title("BER = %1.1e, QAM %d, N ant = %d" % (target_ber, my_mod.constellation_size, n_ant_val))
 ax1.set_xlabel("IBO [dB]")
@@ -205,9 +205,9 @@ ax1.legend(title="CNC N iterations")
 
 plt.tight_layout()
 plt.savefig(
-    "figs/constant_ber%1.0e_req_ebn0_vs_ibo%dto%d_soft_lim_miso_cnc_%dqam_%dnant.png" % (target_ber, min(ibo_arr), max(ibo_arr), my_mod.constel_size, n_ant_val),
+    "figs/constant_ber%1.0e_req_ebn0_vs_ibo%dto%d_soft_lim_miso_cnc_%dqam_%dnant.png" % (
+    target_ber, min(ibo_arr), max(ibo_arr), my_mod.constel_size, n_ant_val),
     dpi=600, bbox_inches='tight')
 plt.show()
 
 print("Finished execution!")
-

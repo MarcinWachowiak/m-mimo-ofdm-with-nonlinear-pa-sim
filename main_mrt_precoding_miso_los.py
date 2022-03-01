@@ -23,8 +23,10 @@ set_latex_plot_style()
 print("Multi antenna processing init!")
 bit_rng = np.random.default_rng(4321)
 
+ibo_val_db = 5
+
 my_mod = modulation.OfdmQamModem(constel_size=256, n_fft=4096, n_sub_carr=1024, cp_len=128)
-my_distortion = distortion.SoftLimiter(ibo_db=5, avg_symb_pow=my_mod.ofdm_avg_sample_pow())
+my_distortion = distortion.SoftLimiter(ibo_db=ibo_val_db, avg_samp_pow=my_mod.avg_sample_power)
 my_tx = transceiver.Transceiver(modem=my_mod, impairment=my_distortion, center_freq=int(3.5e9),
                                 carrier_spacing=int(15e3))
 
@@ -63,12 +65,14 @@ for n_ant in n_ant_vec:
     start_time = time.time()
     print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
-    my_array = antenna_arrray.LinearArray(n_elements=n_ant, transceiver=my_tx, center_freq=int(3.5e9),
+    my_array = antenna_arrray.LinearArray(n_elements=n_ant, base_transceiver=my_tx, center_freq=int(3.5e9),
                                           wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
     my_rx.set_position(cord_x=212, cord_y=212, cord_z=1.5)
     my_miso_chan.calc_channel_mat(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx, skip_attenuation=False)
     channel_mat_at_point_fd = my_miso_chan.get_channel_mat_fd()
-    my_array.set_precoding_matrix(channel_mat_fd=channel_mat_at_point_fd)
+    my_array.set_precoding_matrix(channel_mat_fd=channel_mat_at_point_fd, mr_precoding=True)
+    my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power,
+                              channel_mat_fd=channel_mat_at_point_fd)
 
     psd_at_angle_desired = np.empty(radian_vals.shape)
     psd_at_angle_dist = np.empty(radian_vals.shape)

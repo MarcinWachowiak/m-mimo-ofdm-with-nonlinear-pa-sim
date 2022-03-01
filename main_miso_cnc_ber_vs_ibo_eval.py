@@ -28,7 +28,7 @@ print("Multi antenna processing init!")
 # remember to copy objects not to avoid shared properties modifications!
 # check modifications before copy and what you copy!
 my_mod = modulation.OfdmQamModem(constel_size=64, n_fft=4096, n_sub_carr=1024, cp_len=128)
-my_distortion = distortion.SoftLimiter(ibo_db=4, avg_samp_pow=my_mod.avg_sample_power)
+my_distortion = distortion.SoftLimiter(ibo_db=0, avg_samp_pow=my_mod.avg_sample_power)
 my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion), center_freq=int(3.5e9),
                                 carrier_spacing=int(15e3))
 my_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=None, cord_x=100, cord_y=100, cord_z=1.5,
@@ -52,7 +52,7 @@ print("CNC N iterations:", cnc_n_iter_vals)
 cnc_n_upsamp_val = 4
 print("CNC upsample factor:", cnc_n_upsamp_val)
 
-ibo_arr = np.arange(0, 10.25, 0.5)
+ibo_arr = np.arange(0, 11.0, 1)
 print("IBO values:", ibo_arr)
 
 # BER accuracy settings

@@ -1,8 +1,9 @@
 import abc
 
 import numpy as np
+
 #
-from utilities import to_db, fd_signal_power, td_signal_power, to_time_domain
+from utilities import to_db, fd_signal_power
 
 
 class Noise(metaclass=abc.ABCMeta):

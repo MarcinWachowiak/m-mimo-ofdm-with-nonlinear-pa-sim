@@ -1,5 +1,7 @@
-import utilities
 import numpy as np
+
+import utilities
+
 
 class Transceiver:
     def __init__(self, modem, center_freq=None, carrier_spacing=None, impairment=None, cord_x=0, cord_y=0, cord_z=0):
@@ -12,12 +14,11 @@ class Transceiver:
         self.rx_ant_gain_db = 0
         # TX power
         # default value for legacy simulations
-        self.tx_power_dbm = 10 * np.log10(1000*self.modem.avg_sample_power)
+        self.tx_power_dbm = 10 * np.log10(1000 * self.modem.avg_sample_power)
         # position of transceiver/antenna
         self.cord_x = cord_x
         self.cord_y = cord_y
         self.cord_z = cord_z
-
 
     def set_position(self, cord_x, cord_y, cord_z):
         self.cord_x = cord_x
@@ -32,28 +33,30 @@ class Transceiver:
         self.tx_power_dbm = tx_power_dbm
 
     def tx_amplify(self, in_sig):
-        return in_sig * np.sqrt(1e-3*10**(self.tx_power_dbm/10) / self.modem.avg_sample_power)
+        return in_sig * np.sqrt(1e-3 * 10 ** (self.tx_power_dbm / 10) / self.modem.avg_sample_power)
 
     def transmit(self, in_bits, out_domain_fd=True, skip_dist=False, return_both=False):
         clean_symb_td = self.modem.modulate(in_bits)
         if skip_dist or self.impairment is None:
             if out_domain_fd:
-                return self.tx_amplify(utilities.to_freq_domain(clean_symb_td, remove_cp=True, cp_len=self.modem.cp_len))
+                return self.tx_amplify(
+                    utilities.to_freq_domain(clean_symb_td, remove_cp=True, cp_len=self.modem.cp_len))
             else:
                 return self.tx_amplify(clean_symb_td)
         elif return_both and self.impairment is not None:
             if out_domain_fd:
-                return self.tx_amplify(utilities.to_freq_domain(self.impairment.process(clean_symb_td), remove_cp=True, cp_len=self.modem.cp_len)),\
-                       self.tx_amplify(utilities.to_freq_domain(clean_symb_td, remove_cp=True, cp_len=self.modem.cp_len))
+                return self.tx_amplify(utilities.to_freq_domain(self.impairment.process(clean_symb_td), remove_cp=True,
+                                                                cp_len=self.modem.cp_len)), \
+                       self.tx_amplify(
+                           utilities.to_freq_domain(clean_symb_td, remove_cp=True, cp_len=self.modem.cp_len))
             else:
                 return self.tx_amplify(self.impairment.process(clean_symb_td)), self.tx_amplify(clean_symb_td)
         elif self.impairment is not None:
             if out_domain_fd:
                 self.tx_amplify(utilities.to_freq_domain(self.impairment.process(clean_symb_td), remove_cp=True,
-                                         cp_len=self.modem.cp_len))
+                                                         cp_len=self.modem.cp_len))
             else:
                 return self.tx_amplify(self.impairment.process(clean_symb_td))
 
     def receive(self, in_symb):
         return self.modem.demodulate(in_symb)
-

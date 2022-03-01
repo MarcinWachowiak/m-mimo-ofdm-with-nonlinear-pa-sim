@@ -1,11 +1,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy import special as scp_special
 import torch
 from numba import objmode
+from scipy import special as scp_special
 
 from speedup import jit
-from utilities import bitarray2dec, dec2bitarray, td_signal_power, fd_signal_power
+from utilities import bitarray2dec, dec2bitarray, td_signal_power
 
 
 # @jit(nopython=True)
