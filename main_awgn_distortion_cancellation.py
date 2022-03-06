@@ -44,6 +44,8 @@ n_samp_per_seg = 64
 
 bits_sent_max = int(1e6)
 n_err_min = 1000
+convergence_epsilon = 0.001  # e.g. 0.1%
+conv_ite_th = np.inf  # number of iterations after the convergence threshold is activated
 
 # %%
 # Number of CNC iterations eval, upsample ratio fixed
@@ -74,6 +76,7 @@ for run_idx, cnc_n_iter_val in enumerate(cnc_n_iters_lst):
         my_noise.snr_db = snr
         n_err = 0
         bits_sent = 0
+        ite_cnt = 0
         while bits_sent < bits_sent_max and n_err < n_err_min:
             tx_bits = bit_rng.choice((0, 1), my_tx.modem.n_bits_per_ofdm_sym)
             tx_ofdm_symbol, clean_ofdm_symbol = my_tx.transmit(tx_bits, out_domain_fd=False, return_both=True)
@@ -95,9 +98,21 @@ for run_idx, cnc_n_iter_val in enumerate(cnc_n_iters_lst):
                                             in_sig_fd=no_cp_fd_sig_mat)
 
             n_bit_err = count_mismatched_bits(tx_bits, rx_bits)
+            # check convergence
+            # calc tmp ber
+            if ite_cnt > conv_ite_th:
+                prev_step_ber = n_err / bits_sent
 
             bits_sent += my_mod.n_bits_per_ofdm_sym
             n_err += n_bit_err
+            curr_ber = n_err / bits_sent
+            if ite_cnt > conv_ite_th and prev_step_ber != 0:
+                rel_change = np.abs(curr_ber - prev_step_ber) / prev_step_ber
+                if rel_change < convergence_epsilon:
+                    break
+            ite_cnt += 1
+
+
         bers[idx] = n_err / bits_sent
     ber_per_dist.append(bers)
 
