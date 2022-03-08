@@ -15,6 +15,7 @@ import transceiver
 import utilities
 from plot_settings import set_latex_plot_style
 from utilities import to_db, pts_on_circum, pts_on_semicircum
+from matplotlib.ticker import MaxNLocator
 
 set_latex_plot_style()
 # %%
@@ -54,12 +55,14 @@ n_snapshots = 10
 # %%
 # plot PSD for chosen point/angle
 point_idx_psd = 78
-n_ant_vec = [1, 2, 4, 8]
+n_ant_vec = [16, 32, 64, 128]
 
 desired_psd_at_angle_lst = []
 distortion_psd_at_angle_lst = []
 rx_sig_at_point_clean = []
 rx_sig_at_point_full = []
+rx_sig_at_max_point_full = []
+rx_sig_at_max_point_clean = []
 
 for n_ant in n_ant_vec:
     start_time = time.time()
@@ -70,6 +73,8 @@ for n_ant in n_ant_vec:
     my_miso_chan = channel.MisoTwoPathFd()
 
     my_rx.set_position(cord_x=212, cord_y=212, cord_z=1.5)
+    max_point_idx = int(np.degrees(np.arctan(my_rx.cord_y/my_rx.cord_x)))
+
     my_miso_chan.calc_channel_mat(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx, skip_attenuation=False)
     channel_mat_at_point_fd = my_miso_chan.get_channel_mat_fd()
     my_array.set_precoding_matrix(channel_mat_fd=channel_mat_at_point_fd, mr_precoding=True)
@@ -105,6 +110,10 @@ for n_ant in n_ant_vec:
                 rx_sig_at_point_clean.append(clean_rx_sig_td)
                 rx_sig_at_point_full.append(rx_sig_td)
 
+            if pt_idx == max_point_idx and n_ant == n_ant_vec[-1]:
+                rx_sig_at_max_point_clean.append(clean_rx_sig_td)
+                rx_sig_at_max_point_full.append(rx_sig_td)
+
             rx_sig_accum.append(rx_sig_td)
             clean_rx_sig_accum.append(clean_rx_sig_td)
 
@@ -134,94 +143,106 @@ rx_clean_at_point_freq_arr, rx_clean_at_point_psd = welch(rx_sig_at_point_clean_
 rx_dist_at_point_freq_arr, rx_dist_at_point_psd = welch(distortion_sig_at_point, fs=psd_nfft, nfft=psd_nfft,
                                                         nperseg=n_samp_per_seg, return_onesided=False)
 
+# calculate PSD at selected max point/angle
+rx_sig_at_max_point_clean_arr = np.concatenate(rx_sig_at_max_point_clean).ravel()
+rx_sig_at_max_point_full_arr = np.concatenate(rx_sig_at_max_point_full).ravel()
+distortion_sig_at_max_point_arr = rx_sig_at_max_point_full_arr - my_rx.modem.alpha * rx_sig_at_max_point_clean_arr
+
+rx_clean_at_max_point_freq_arr, rx_clean_at_max_point_psd = welch(rx_sig_at_max_point_clean_arr, fs=psd_nfft, nfft=psd_nfft,
+                                                          nperseg=n_samp_per_seg, return_onesided=False)
+rx_dist_at_max_point_freq_arr, rx_dist_at_max_point_psd = welch(distortion_sig_at_max_point_arr, fs=psd_nfft, nfft=psd_nfft,
+                                                        nperseg=n_samp_per_seg, return_onesided=False)
+
 # %%
 # plot beampatterns of desired signal
-fig1, ax1 = plt.subplots(1, 1, subplot_kw=dict(projection='polar'))
+fig1, ax1 = plt.subplots(1, 1, subplot_kw=dict(projection='polar'), figsize=(3.5, 3))
 plt.tight_layout()
 ax1.set_theta_zero_location("E")
 
 if plot_full_circle:
     ax1.set_thetalim(-np.pi, np.pi)
-    ax1.set_xticks(np.pi / 180. * np.linspace(180, -180, 24, endpoint=False))
+    ax1.set_xticks(np.pi / 180. * np.linspace(180, -180, 24, endpoint=True))
 else:
     ax1.set_thetalim(0, np.pi)
-    ax1.set_xticks(np.pi / 180. * np.linspace(0, 180, 12, endpoint=False))
+    ax1.set_xticks(np.pi / 180. * np.linspace(0, 180, 13, endpoint=True))
+ax1.yaxis.set_major_locator(MaxNLocator(5))
 
 dist_lines_lst = []
 for idx, n_ant in enumerate(n_ant_vec):
     ax1.plot(radian_vals, desired_psd_at_angle_lst[idx], label=n_ant, linewidth=1.5)
-ax1.set_title("Desired signal PSD at angle [dB]")
-ax1.legend(title="N antennas:", ncol=len(n_ant_vec), loc='lower center')
+ax1.set_title("Desired signal PSD at angle [dB]", pad=-15)
+ax1.legend(title="N antennas:", ncol=len(n_ant_vec), loc='lower center', borderaxespad=0)
 ax1.grid(True)
 # ax1.xaxis.set_major_locator(MaxNLocator(6))
-plt.savefig("figs/desired_signal_beampattern_ibo%d_%dto%dant_sweep.png" % (
+plt.savefig("figs/2path_desired_signal_beampattern_ibo%d_%dto%dant_sweep.png" % (
     my_tx.impairment.ibo_db, np.min(n_ant_vec), np.max(n_ant_vec)), dpi=600, bbox_inches='tight')
 plt.show()
 
 # %%
 # plot beampatterns of distortion signal
-fig2, ax2 = plt.subplots(1, 1, subplot_kw=dict(projection='polar'))
+fig2, ax2 = plt.subplots(1, 1, subplot_kw=dict(projection='polar'), figsize=(3.5, 3))
 plt.tight_layout()
 ax2.set_theta_zero_location("E")
 if plot_full_circle:
     ax2.set_thetalim(-np.pi, np.pi)
-    ax2.set_xticks(np.pi / 180. * np.linspace(180, -180, 24, endpoint=False))
+    ax2.set_xticks(np.pi / 180. * np.linspace(180, -180, 24, endpoint=True))
 else:
     ax2.set_thetalim(0, np.pi)
-    ax2.set_xticks(np.pi / 180. * np.linspace(0, 180, 12, endpoint=False))
+    ax2.set_xticks(np.pi / 180. * np.linspace(0, 180, 13, endpoint=True))
+ax2.yaxis.set_major_locator(MaxNLocator(5))
 
 dist_lines_lst = []
 for idx, n_ant in enumerate(n_ant_vec):
     ax2.plot(radian_vals, distortion_psd_at_angle_lst[idx], label=n_ant, linewidth=1.5)
-ax2.set_title("Distortion signal PSD at angle [dB]")
-ax2.legend(title="N antennas:", ncol=len(n_ant_vec), loc='lower center')
+ax2.set_title("Distortion signal PSD at angle [dB]", pad=-15)
+ax2.legend(title="N antennas:", ncol=len(n_ant_vec), loc='lower center', borderaxespad=0)
 ax2.grid(True)
-plt.savefig("figs/distortion_signal_beampattern_ibo%d_%dto%dant_sweep.png" % (
+plt.savefig("figs/2path_distortion_signal_beampattern_ibo%d_%dto%dant_sweep.png" % (
     my_tx.impairment.ibo_db, np.min(n_ant_vec), np.max(n_ant_vec)), dpi=600, bbox_inches='tight')
 plt.show()
 
 # %%
 # Desired vs distortion PSD beampattern comparison for given number of antennas
-fig3, ax3 = plt.subplots(1, 1, subplot_kw=dict(projection='polar'))
+fig3, ax3 = plt.subplots(1, 1, subplot_kw=dict(projection='polar'), figsize=(3.5, 3))
 plt.tight_layout()
 ax3.set_theta_zero_location("E")
 if plot_full_circle:
     ax3.set_thetalim(-np.pi, np.pi)
-    ax3.set_xticks(np.pi / 180. * np.linspace(180, -180, 24, endpoint=False))
+    ax3.set_xticks(np.pi / 180. * np.linspace(180, -180, 24, endpoint=True))
 else:
     ax3.set_thetalim(0, np.pi)
-    ax3.set_xticks(np.pi / 180. * np.linspace(0, 180, 12, endpoint=False))
+    ax3.set_xticks(np.pi / 180. * np.linspace(0, 180, 13, endpoint=True))
 
 dist_lines_lst = []
 # select index to plot
 sel_idx = 3
 ax3.plot(radian_vals, desired_psd_at_angle_lst[sel_idx], label="Desired", linewidth=1.5)
 ax3.plot(radian_vals, distortion_psd_at_angle_lst[sel_idx], label="Distortion", linewidth=1.5)
-ax3.set_title("Power spectral density at angle [dB]")
-ax3.legend(title="N antennas = %d, signals:" % n_ant_vec[sel_idx], ncol=2, loc='lower center')
+ax3.set_title("Power spectral density at angle [dB]", pad=-15)
+ax3.legend(title="N antennas = %d, signals:" % n_ant_vec[sel_idx], ncol=2, loc='lower center', borderaxespad=0)
 ax3.grid(True)
-plt.savefig("figs/desired_vs_distortion_beampattern_ibo%d_%dant.png" % (my_tx.impairment.ibo_db, np.max(n_ant_vec)),
+plt.savefig("figs/2path_desired_vs_distortion_beampattern_ibo%d_%dant.png" % (my_tx.impairment.ibo_db, np.max(n_ant_vec)),
             dpi=600, bbox_inches='tight')
 plt.show()
 
 # %%
 # plot signal to distortion ratio
-fig4, ax4 = plt.subplots(1, 1, subplot_kw=dict(projection='polar'))
+fig4, ax4 = plt.subplots(1, 1, subplot_kw=dict(projection='polar'), figsize=(3.5, 3))
 plt.tight_layout()
 ax4.set_theta_zero_location("E")
 if plot_full_circle:
     ax4.set_thetalim(-np.pi, np.pi)
-    ax4.set_xticks(np.pi / 180. * np.linspace(180, -180, 24, endpoint=False))
+    ax4.set_xticks(np.pi / 180. * np.linspace(180, -180, 24, endpoint=True))
 else:
     ax4.set_thetalim(0, np.pi)
-    ax4.set_xticks(np.pi / 180. * np.linspace(0, 180, 12, endpoint=False))
+    ax4.set_xticks(np.pi / 180. * np.linspace(0, 180, 13, endpoint=True))
 
 for idx, n_ant in enumerate(n_ant_vec):
     ax4.plot(radian_vals, desired_psd_at_angle_lst[idx] - distortion_psd_at_angle_lst[idx], label=n_ant, linewidth=1.5)
-ax4.set_title("Signal to distortion ratio at angle [dB]")
-ax4.legend(title="N antennas:", ncol=len(n_ant_vec), loc='lower center')
+ax4.set_title("Signal to distortion ratio at angle [dB]", pad=-15)
+ax4.legend(title="N antennas:", ncol=len(n_ant_vec), loc='lower center', borderaxespad=0)
 ax4.grid(True)
-plt.savefig("figs/sdr_at_angle_polar_ibo%d_%dto%dant_sweep.png" % (
+plt.savefig("figs/2path_sdr_at_angle_polar_ibo%d_%dto%dant_sweep.png" % (
     my_tx.impairment.ibo_db, np.min(n_ant_vec), np.max(n_ant_vec)), dpi=600, bbox_inches='tight')
 plt.show()
 
@@ -241,10 +262,31 @@ ax5.set_ylabel("Power [dB]")
 ax5.legend(title="IBO = %d [dB]" % my_tx.impairment.ibo_db)
 ax5.grid()
 plt.tight_layout()
-plt.savefig("figs/psd_at_angle_%ddeg_ibo%d_ant%d.png" % (point_idx_psd, my_tx.impairment.ibo_db, np.max(n_ant_vec)),
+plt.savefig("figs/2path_psd_at_angle_%ddeg_ibo%d_ant%d.png" % (point_idx_psd, my_tx.impairment.ibo_db, np.max(n_ant_vec)),
             dpi=600,
             bbox_inches='tight')
 plt.show()
 
+# %%
+
+# plot PSD at_max selected max point/angle
+fig6, ax6 = plt.subplots(1, 1)
+sorted_clean_rx_at_max_point_freq_arr, sorted_clean_psd_at_max_point_arr = zip(
+    *sorted(zip(rx_clean_at_max_point_freq_arr, rx_clean_at_max_point_psd)))
+ax6.plot(np.array(sorted_clean_rx_at_max_point_freq_arr), to_db(np.array(sorted_clean_psd_at_max_point_arr)), label="Desired", linewidth=1.0)
+sorted_dist_rx_at_max_point_freq_arr, sorted_dist_psd_at_max_point_arr = zip(
+    *sorted(zip(rx_dist_at_max_point_freq_arr, rx_dist_at_max_point_psd)))
+ax6.plot(np.array(sorted_dist_rx_at_max_point_freq_arr), to_db(np.array(sorted_dist_psd_at_max_point_arr)), label="Distorted", linewidth=1.0)
+
+ax6.set_title("Power spectral density at angle %d$\degree$" % max_point_idx)
+ax6.set_xlabel("Subcarrier index [-]")
+ax6.set_ylabel("Power [dB]")
+ax6.legend(title="IBO = %d [dB]" % my_tx.impairment.ibo_db)
+ax6.grid()
+plt.tight_layout()
+plt.savefig("figs/2path_psd_at_angle_%ddeg_ibo%d_ant%d.png" % (max_point_idx, my_tx.impairment.ibo_db, np.max(n_ant_vec)),
+            dpi=600,
+            bbox_inches='tight')
+plt.show()
 print("Finished processing!")
 # TODO: better names for saved figures - more configuration details

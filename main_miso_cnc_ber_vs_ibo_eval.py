@@ -19,6 +19,7 @@ import transceiver
 import utilities
 from plot_settings import set_latex_plot_style
 from utilities import count_mismatched_bits, ebn0_to_snr, to_db, td_signal_power, to_time_domain
+from matplotlib.ticker import MaxNLocator
 
 # TODO: consider logger
 
@@ -41,13 +42,13 @@ my_cnc_rx = corrector.CncReceiver(copy.deepcopy(my_mod), copy.deepcopy(my_distor
 # %%
 # Upsample ratio eval, number of iterations fixed
 # arbitrarly set params:
-n_ant_val = 16
-ebn0_val_db = 15
+n_ant_val = 4
+ebn0_val_db = 20
 print("Eb/n0 value:", ebn0_val_db)
 snr_val_db = ebn0_to_snr(ebn0_val_db, my_mod.n_fft, my_mod.n_sub_carr, my_mod.constel_size)
 print("SNR value:", snr_val_db)
 
-cnc_n_iter_vals = [0,1,2,3,4,8]
+cnc_n_iter_vals = [0,1,2,3,4]
 print("CNC N iterations:", cnc_n_iter_vals)
 cnc_n_upsamp_val = 4
 print("CNC upsample factor:", cnc_n_upsamp_val)
@@ -181,7 +182,6 @@ ax1.set_xlabel("IBO [dB]")
 ax1.set_ylabel("BER")
 ax1.grid()
 ax1.legend(title="CNC N iterations")
-
 plt.tight_layout()
 plt.savefig(
     "figs/ber_vs_ibo%dto%d_soft_lim_miso_cnc_%debn0_%dqam_%dnant.png" % (min(ibo_arr), max(ibo_arr), ebn0_val_db, my_mod.constel_size, n_ant_val),

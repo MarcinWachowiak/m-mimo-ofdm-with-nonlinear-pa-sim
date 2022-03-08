@@ -40,19 +40,19 @@ my_cnc_rx = corrector.CncReceiver(copy.deepcopy(my_mod), copy.deepcopy(my_distor
 # %%
 # Upsample ratio eval, number of iterations fixed
 # arbitrarly set params:
-n_ant_val = 16
-ebn0_db_vals = np.arange(10, 31, 2)
+n_ant_val = 1
+ebn0_db_vals = np.arange(10, 31, 1)
 
 print("Eb/n0 values:", ebn0_db_vals)
 snr_db_vals = ebn0_to_snr(ebn0_db_vals, my_mod.n_fft, my_mod.n_sub_carr, my_mod.constel_size)
 print("SNR value:", snr_db_vals)
 
-cnc_n_iter_vals = [0, 1, 2, 4]
+cnc_n_iter_vals = [0, 1, 2, 3, 4]
 print("CNC N iterations:", cnc_n_iter_vals)
 cnc_n_upsamp_val = 4
 print("CNC upsample factor:", cnc_n_upsamp_val)
 
-ibo_arr = np.arange(0, 6, 0.25)
+ibo_arr = np.arange(0, 6, 0.2)
 print("IBO values:", ibo_arr)
 
 # BER accuracy settings
