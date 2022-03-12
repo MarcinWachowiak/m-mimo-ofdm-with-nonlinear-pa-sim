@@ -91,9 +91,13 @@ class LinearArray:
 
             tx_transceiver.modem.set_precoding_vec(precoding_vec)
 
-    def update_distortion(self, ibo_db, avg_sample_pow, channel_mat_fd):
-        avg_precoding_gain = np.average(np.divide(np.power(np.abs(channel_mat_fd), 2),
-                                                  np.power(np.sum(np.power(np.abs(channel_mat_fd), 2), axis=0), 2)))
+    def update_distortion(self, ibo_db, avg_sample_pow, channel_mat_fd=None):
+        if channel_mat_fd is not None:
+            avg_precoding_gain = np.average(np.divide(np.power(np.abs(channel_mat_fd), 2),
+                                                      np.power(np.sum(np.power(np.abs(channel_mat_fd), 2), axis=0), 2)))
+        else:
+            avg_precoding_gain = 1.0
+
         for idx, array_transceiver in enumerate(self.array_elements):
             array_transceiver.impairment.set_ibo(ibo_db)
             array_transceiver.impairment.set_avg_sample_power(avg_sample_pow * avg_precoding_gain)
