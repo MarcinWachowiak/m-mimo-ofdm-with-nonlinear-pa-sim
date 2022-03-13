@@ -69,7 +69,8 @@ class Modem:
         self._constellation = self.alpha * self._constellation
 
     def calc_alpha(self, ibo_db):
-        gamma = np.power(10, ibo_db / 10)
+        # gamma coefficient in Ochiai paper is a ratio of envelopes not powers!
+        gamma = np.power(10, ibo_db / 20)
         alpha = 1 - np.exp(-np.power(gamma, 2)) + (np.sqrt(np.pi) * gamma / 2) * scp_special.erfc(gamma)
         # scale constellation
         return alpha

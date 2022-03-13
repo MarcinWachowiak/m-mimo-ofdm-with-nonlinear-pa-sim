@@ -38,7 +38,7 @@ my_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=None, co
 my_miso_chan = channel.MisoTwoPathFd()
 
 # %%
-n_ant_arr = [1] # 2, 4, 8, 16, 32, 64, 128]
+n_ant_arr = [1, 2, 4, 8] # 16, 32, 64, 128]
 print("N antennas values:", n_ant_arr)
 ibo_arr = np.arange(0, 11.0, 1)
 print("IBO values:", ibo_arr)
