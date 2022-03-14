@@ -22,6 +22,7 @@ def _demodulate(constellation, n_bits_per_symbol, input_symbols):
     demod_bits = dec2bitarray(index_list, n_bits_per_symbol)
     return demod_bits
 
+# TODO: Separate constellations for RX and TX to ease the access and use of shrinking coeffs
 
 class Modem:
 
@@ -74,6 +75,9 @@ class Modem:
         alpha = 1 - np.exp(-np.power(gamma, 2)) + (np.sqrt(np.pi) * gamma / 2) * scp_special.erfc(gamma)
         # scale constellation
         return alpha
+
+    def update_alpha(self, ibo_db):
+        self.alpha = self.calc_alpha(ibo_db)
 
     @property
     def constellation(self):

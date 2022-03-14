@@ -9,6 +9,8 @@ class Transceiver:
         self.impairment = impairment
         self.center_freq = center_freq
         self.carrier_spacing = carrier_spacing
+        # update modem alpha in regard to impairment object
+        self.modem.update_alpha(ibo_db=impairment.ibo_db)
         # antenna gains
         self.tx_ant_gain_db = 0
         self.rx_ant_gain_db = 0
@@ -31,6 +33,9 @@ class Transceiver:
 
     def set_tx_power_dbm(self, tx_power_dbm):
         self.tx_power_dbm = tx_power_dbm
+
+    def correct_constellation(self):
+        self.modem.correct_constellation(ibo_db=self.impairment.ibo_db)
 
     # legacy method -  in case amplification of signal is required (dBm scale)
     # def tx_amplify(self, in_sig):

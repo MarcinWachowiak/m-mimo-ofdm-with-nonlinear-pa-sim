@@ -1,5 +1,6 @@
 # antenna array evaluation
 # %%
+import copy
 import time
 from datetime import datetime
 
@@ -27,12 +28,13 @@ ibo_val_db = 5
 
 my_mod = modulation.OfdmQamModem(constel_size=256, n_fft=4096, n_sub_carr=1024, cp_len=128)
 my_distortion = distortion.SoftLimiter(ibo_db=ibo_val_db, avg_samp_pow=my_mod.avg_sample_power)
-my_tx = transceiver.Transceiver(modem=my_mod, impairment=my_distortion, center_freq=int(3.5e9),
+my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion), center_freq=int(3.5e9),
                                 carrier_spacing=int(15e3))
 
-my_rx = transceiver.Transceiver(modem=my_mod, impairment=None, cord_x=30, cord_y=30, cord_z=1.5, center_freq=int(3.5e9),
+my_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion), cord_x=30, cord_y=30, cord_z=1.5, center_freq=int(3.5e9),
                                 carrier_spacing=int(15e3))
-my_rx.modem.correct_constellation(my_tx.impairment.ibo_db)
+my_rx.correct_constellation()
+
 my_miso_chan = channel.MisoLosFd()
 
 # %%
@@ -54,7 +56,7 @@ n_snapshots = 10
 # %%
 # plot PSD for chosen point/angle
 point_idx_psd = 78
-n_ant_vec = [16, 32, 64, 128]
+n_ant_vec = [1, 2, 4, 8] # 16, 32, 64, 128]
 
 desired_psd_at_angle_lst = []
 distortion_psd_at_angle_lst = []

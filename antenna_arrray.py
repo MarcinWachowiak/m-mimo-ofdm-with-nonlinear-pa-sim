@@ -71,7 +71,6 @@ class LinearArray:
     def set_precoding_matrix(self, channel_mat_fd=None, mr_precoding=False):
         # set precoding vector based on provided channel mat coefficients
         channel_fd_mat_conjungate = np.conjugate(channel_mat_fd)
-
         if mr_precoding is True:
             # normalize the precoding vector in regard to number of antennas and power
             precoding_mat_fd = np.divide(channel_fd_mat_conjungate, np.sum(np.power(np.abs(channel_mat_fd), 2), axis=0))
@@ -95,6 +94,7 @@ class LinearArray:
         if channel_mat_fd is not None:
             avg_precoding_gain = np.average(np.divide(np.power(np.abs(channel_mat_fd), 2),
                                                       np.power(np.sum(np.power(np.abs(channel_mat_fd), 2), axis=0), 2)))
+            # print("AVG precoding gain: ", avg_precoding_gain)
         else:
             avg_precoding_gain = 1.0
 

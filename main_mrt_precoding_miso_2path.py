@@ -1,5 +1,6 @@
 # antenna array evaluation
 # %%
+import copy
 import time
 from datetime import datetime
 
@@ -30,11 +31,11 @@ ibo_val_db = 5
 # for run_idx in range(1):
 my_mod = modulation.OfdmQamModem(constel_size=64, n_fft=4096, n_sub_carr=1024, cp_len=128)
 my_distortion = distortion.SoftLimiter(ibo_db=ibo_val_db, avg_samp_pow=my_mod.avg_sample_power)
-my_tx = transceiver.Transceiver(modem=my_mod, impairment=my_distortion, center_freq=int(3.5e9),
+my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion), center_freq=int(3.5e9),
                                 carrier_spacing=int(15e3))
-my_rx = transceiver.Transceiver(modem=my_mod, impairment=None, cord_x=212, cord_y=212, cord_z=1.5,
+my_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion), cord_x=212, cord_y=212, cord_z=1.5,
                                 center_freq=int(3.5e9), carrier_spacing=int(15e3))
-my_rx.modem.correct_constellation(ibo_db=my_tx.impairment.ibo_db)
+my_rx.correct_constellation()
 
 # %%
 plot_full_circle = False
@@ -136,7 +137,7 @@ for n_ant in n_ant_vec:
 # calculate PSD at selected point/angle
 rx_sig_at_point_clean_arr = np.concatenate(rx_sig_at_point_clean).ravel()
 rx_sig_at_point_full_arr = np.concatenate(rx_sig_at_point_full).ravel()
-distortion_sig_at_point = rx_sig_at_point_full_arr - my_tx.modem.alpha * rx_sig_at_point_clean_arr
+distortion_sig_at_point = rx_sig_at_point_full_arr - my_rx.modem.alpha * rx_sig_at_point_clean_arr
 
 rx_clean_at_point_freq_arr, rx_clean_at_point_psd = welch(rx_sig_at_point_clean_arr, fs=psd_nfft, nfft=psd_nfft,
                                                           nperseg=n_samp_per_seg, return_onesided=False)

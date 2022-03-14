@@ -32,8 +32,9 @@ my_mod = modulation.OfdmQamModem(constel_size=64, n_fft=4096, n_sub_carr=1024, c
 my_distortion = distortion.SoftLimiter(ibo_db=0, avg_samp_pow=my_mod.avg_sample_power)
 my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion), center_freq=int(3.5e9),
                                 carrier_spacing=int(15e3))
-my_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=None, cord_x=100, cord_y=100, cord_z=1.5,
+my_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion), cord_x=100, cord_y=100, cord_z=1.5,
                                 center_freq=int(3.5e9), carrier_spacing=int(15e3))
+my_rx.correct_constellation()
 
 my_miso_chan = channel.MisoTwoPathFd()
 

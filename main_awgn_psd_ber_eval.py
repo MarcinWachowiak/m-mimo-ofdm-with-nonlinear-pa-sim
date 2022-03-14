@@ -25,7 +25,7 @@ my_distortion = distortion.SoftLimiter(5, my_mod.avg_sample_power)
 my_limiter2 = distortion.Rapp(0, my_mod.avg_sample_power, p_hardness=5)
 my_limiter3 = distortion.ThirdOrderNonLin(25, my_mod.avg_sample_power)
 
-my_tx = transceiver.Transceiver(modem=my_mod, impairment=my_distortion)
+my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion))
 my_tx.impairment.plot_characteristics()
 
 my_demod = copy.deepcopy(my_mod)

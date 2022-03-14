@@ -105,6 +105,7 @@ class RayleighMisoFd:
     def __init__(self, n_inputs, fd_samp_size, seed=None):
         self.n_inputs = n_inputs
         self.fd_samp_size = fd_samp_size
+        self.fd_chan_mat = None
         # seed for random channel coefficients
         if seed is not None:
             self.seed = seed
@@ -114,20 +115,23 @@ class RayleighMisoFd:
 
         self.set_channel_mat_fd()
 
-    def set_channel_mat_fd(self, fd_chan_mat=None, avg=0, sigma=1):
+    def set_channel_mat_fd(self, fd_chan_mat=None):
         if fd_chan_mat is None:
             # generate rayleigh channel coefficients
-            self.fd_chan_mat = self.rng_gen.normal(avg, sigma, size=(self.n_inputs, self.fd_samp_size * 2)).view(
-                dtype=np.complex128)
+            self.fd_chan_mat = self.rng_gen.standard_normal(size=(self.n_inputs, self.fd_samp_size * 2)).view(
+                dtype=np.complex128) / np.sqrt(2.0)
         else:
             self.fd_chan_mat = fd_chan_mat
 
     def get_channel_mat_fd(self):
         return self.fd_chan_mat
 
-    def reroll_channel_coeffs(self, avg=0, sigma=1):
-        self.fd_chan_mat = self.rng_gen.normal(avg, sigma, size=(self.n_inputs, self.fd_samp_size * 2)).view(
-            dtype=np.complex128)
+    def reroll_channel_coeffs(self):
+        self.fd_chan_mat = self.rng_gen.standard_normal(size=(self.n_inputs, self.fd_samp_size * 2)).view(
+                dtype=np.complex128) / np.sqrt(2.0)
+        avg_precoding_gain = np.average(np.divide(np.power(np.abs(self.fd_chan_mat), 2),
+                                                  np.power(np.sum(np.power(np.abs(self.fd_chan_mat), 2), axis=0), 2)))
+        print("AVG precoding gain: ", avg_precoding_gain)
 
     def propagate(self, in_sig_mat):
         # channel in frequency domain
