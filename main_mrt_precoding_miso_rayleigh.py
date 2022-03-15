@@ -58,11 +58,11 @@ n_snapshots = 10
 precoding_point_idx = 45
 # plot PSD for chosen point/angle
 point_idx_psd = 50
-n_ant_vec = [1, 2, 3, 4, 8]  # 16, 32, 64, 128]
+n_ant_vec = [1, 2, 4, 8]  # 16, 32, 64, 128]
 
 
-desired_psd_at_angle_lst = []
-distortion_psd_at_angle_lst = []
+desired_sc_psd_at_angle_lst = []
+distortion_sc_psd_at_angle_lst = []
 rx_sig_at_point_clean = []
 rx_sig_at_point_full = []
 rx_sig_at_max_point_full = []
@@ -75,7 +75,7 @@ for n_ant in n_ant_vec:
     my_array = antenna_arrray.LinearArray(n_elements=n_ant, base_transceiver=my_tx, center_freq=int(3.5e9),
                                           wav_len_spacing=0.5,
                                           cord_x=0, cord_y=0, cord_z=15)
-    my_miso_chan = channel.RayleighMisoFd(n_inputs=my_array.n_elements, fd_samp_size=my_tx.modem.n_fft, seed=1235)
+    my_miso_chan = channel.RayleighMisoFd(n_inputs=my_array.n_elements, fd_samp_size=my_tx.modem.n_fft, seed=1234)
 
     chan_mat_at_point_fd = my_miso_chan.get_channel_mat_fd()
     # skip precoding for a single antenna
@@ -84,8 +84,8 @@ for n_ant in n_ant_vec:
         my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power,
                                channel_mat_fd=chan_mat_at_point_fd)
 
-    psd_at_angle_desired = np.empty(radian_vals.shape)
-    psd_at_angle_dist = np.empty(radian_vals.shape)
+    sc_psd_at_angle_desired = np.empty(radian_vals.shape)
+    sc_psd_at_angle_dist = np.empty(radian_vals.shape)
     for pt_idx, point in enumerate(rx_points):
         # generate different channel for each point
         # precode only for single known point
@@ -94,8 +94,8 @@ for n_ant in n_ant_vec:
         else:
             my_miso_chan.reroll_channel_coeffs()
 
-        rx_sig_accum = []
-        clean_rx_sig_accum = []
+        rx_ofdm_sc_accum = []
+        clean_rx_ofdm_sc_accum = []
         for snap_idx in range(n_snapshots):
 
             tx_bits = bit_rng.choice((0, 1), my_tx.modem.n_bits_per_ofdm_sym)
@@ -103,9 +103,15 @@ for n_ant in n_ant_vec:
 
             rx_sig_fd = my_miso_chan.propagate(in_sig_mat=arr_tx_sig_fd)
             rx_sig_td = utilities.to_time_domain(rx_sig_fd)
+            rx_sc_ofdm_symb_fd = np.concatenate(
+                (rx_sig_fd[-my_mod.n_sub_carr // 2:], rx_sig_fd[1:(my_mod.n_sub_carr // 2) + 1]))
+            rx_sc_ofdm_symb_td = utilities.to_time_domain(rx_sc_ofdm_symb_fd)
 
             clean_rx_sig_fd = my_miso_chan.propagate(in_sig_mat=clean_sig_mat_fd)
             clean_rx_sig_td = utilities.to_time_domain(clean_rx_sig_fd)
+            clean_sc_ofdm_symb_fd = np.concatenate(
+                (clean_rx_sig_fd[-my_mod.n_sub_carr // 2:], clean_rx_sig_fd[1:(my_mod.n_sub_carr // 2) + 1]))
+            clean_sc_ofdm_symb_td = utilities.to_time_domain(clean_sc_ofdm_symb_fd)
 
             # calculate PSD at point for the last value of N antennas
             if pt_idx == point_idx_psd and n_ant == n_ant_vec[-1]:
@@ -116,25 +122,26 @@ for n_ant in n_ant_vec:
                 rx_sig_at_max_point_clean.append(clean_rx_sig_td)
                 rx_sig_at_max_point_full.append(rx_sig_td)
 
-            rx_sig_accum.append(rx_sig_td)
-            clean_rx_sig_accum.append(clean_rx_sig_td)
+            rx_ofdm_sc_accum.append(rx_sc_ofdm_symb_td)
+            clean_rx_ofdm_sc_accum.append(clean_sc_ofdm_symb_td)
 
-        rx_sig_accum_arr = np.concatenate(rx_sig_accum).ravel()
-        clean_rx_sig_accum_arr = np.concatenate(clean_rx_sig_accum).ravel()
-        distortion_sig = rx_sig_accum_arr - my_rx.modem.alpha * clean_rx_sig_accum_arr
+        rx_ofdm_symb_accum_arr = np.concatenate(rx_ofdm_sc_accum).ravel()
+        clean_ofdm_symb_accum_arr = np.concatenate(clean_rx_ofdm_sc_accum).ravel()
+        sc_ofdm_distortion_sig = rx_ofdm_symb_accum_arr - my_rx.modem.alpha * clean_ofdm_symb_accum_arr
 
-        dist_rx_sig_freq_arr, dist_rx_sig_psd_arr = welch(distortion_sig, fs=psd_nfft, nfft=psd_nfft,
+        dist_ofdm_symb_freq_arr, dist_ofdm_symb_psd_arr = welch(sc_ofdm_distortion_sig, fs=psd_nfft, nfft=psd_nfft,
                                                           nperseg=n_samp_per_seg, return_onesided=False)
-        clean_rx_sig_freq_arr, clean_rx_sig_psd_arr = welch(clean_rx_sig_accum_arr, fs=psd_nfft, nfft=psd_nfft,
+        clean_ofdm_symb_freq_arr, clean_ofdm_symb_psd_arr = welch(clean_ofdm_symb_accum_arr, fs=psd_nfft, nfft=psd_nfft,
                                                             nperseg=n_samp_per_seg, return_onesided=False)
 
-        psd_at_angle_desired[pt_idx] = to_db(np.sum(np.array(clean_rx_sig_psd_arr)))
-        psd_at_angle_dist[pt_idx] = to_db(np.sum(np.array(dist_rx_sig_psd_arr)))
+        sc_psd_at_angle_desired[pt_idx] = to_db(np.sum(np.array(clean_ofdm_symb_psd_arr)))
+        sc_psd_at_angle_dist[pt_idx] = to_db(np.sum(np.array(dist_ofdm_symb_psd_arr)))
 
-    desired_psd_at_angle_lst.append(psd_at_angle_desired)
-    distortion_psd_at_angle_lst.append(psd_at_angle_dist)
+    desired_sc_psd_at_angle_lst.append(sc_psd_at_angle_desired)
+    distortion_sc_psd_at_angle_lst.append(sc_psd_at_angle_dist)
     print("--- Computation time: %f ---" % (time.time() - start_time))
 
+#%%
 rx_sig_at_point_clean_arr = np.concatenate(rx_sig_at_point_clean).ravel()
 rx_sig_at_point_full_arr = np.concatenate(rx_sig_at_point_full).ravel()
 distortion_sig_at_point = rx_sig_at_point_full_arr - my_rx.modem.alpha * rx_sig_at_point_clean_arr
@@ -172,7 +179,7 @@ ax1.yaxis.set_major_locator(MaxNLocator(5))
 
 dist_lines_lst = []
 for idx, n_ant in enumerate(n_ant_vec):
-    ax1.plot(radian_vals, desired_psd_at_angle_lst[idx], label=n_ant, linewidth=1.5)
+    ax1.plot(radian_vals, desired_sc_psd_at_angle_lst[idx], label=n_ant, linewidth=1.5)
 ax1.set_title("Desired signal PSD at angle [dB]", pad=-15)
 ax1.legend(title="N antennas:", ncol=len(n_ant_vec), loc='lower center', borderaxespad=0)
 ax1.grid(True)
@@ -195,7 +202,7 @@ ax2.yaxis.set_major_locator(MaxNLocator(5))
 
 dist_lines_lst = []
 for idx, n_ant in enumerate(n_ant_vec):
-    ax2.plot(radian_vals, distortion_psd_at_angle_lst[idx], label=n_ant, linewidth=1.5)
+    ax2.plot(radian_vals, distortion_sc_psd_at_angle_lst[idx], label=n_ant, linewidth=1.5)
 ax2.set_title("Distortion signal PSD at angle [dB]", pad=-15)
 ax2.legend(title="N antennas:", ncol=len(n_ant_vec), loc='lower center', borderaxespad=0)
 ax2.grid(True)
@@ -219,8 +226,8 @@ ax3.yaxis.set_major_locator(MaxNLocator(5))
 dist_lines_lst = []
 # select index to plot
 sel_idx = -1
-ax3.plot(radian_vals, desired_psd_at_angle_lst[sel_idx], label="Desired", linewidth=1.5)
-ax3.plot(radian_vals, distortion_psd_at_angle_lst[sel_idx], label="Distortion", linewidth=1.5)
+ax3.plot(radian_vals, desired_sc_psd_at_angle_lst[sel_idx], label="Desired", linewidth=1.5)
+ax3.plot(radian_vals, distortion_sc_psd_at_angle_lst[sel_idx], label="Distortion", linewidth=1.5)
 ax3.set_title("Power spectral density at angle [dB]", pad=-15)
 ax3.legend(title="N antennas = %d, signals:" % n_ant_vec[sel_idx], ncol=2, loc='lower center', borderaxespad=0)
 ax3.grid(True)
@@ -243,7 +250,7 @@ else:
 ax4.yaxis.set_major_locator(MaxNLocator(5))
 
 for idx, n_ant in enumerate(n_ant_vec):
-    ax4.plot(radian_vals, desired_psd_at_angle_lst[idx] - distortion_psd_at_angle_lst[idx], label=n_ant, linewidth=1.5)
+    ax4.plot(radian_vals, desired_sc_psd_at_angle_lst[idx] - distortion_sc_psd_at_angle_lst[idx], label=n_ant, linewidth=1.5)
 ax4.set_title("Signal to distortion ratio at angle [dB]", pad=-15)
 ax4.legend(title="N antennas:", ncol=len(n_ant_vec), loc='lower center', borderaxespad=0)
 ax4.grid(True)
@@ -256,7 +263,7 @@ plt.show()
 fig5, ax5 = plt.subplots(1, 1)
 plt.tight_layout()
 for idx, n_ant in enumerate(n_ant_vec):
-    ax5.plot(np.degrees(radian_vals), desired_psd_at_angle_lst[idx] - distortion_psd_at_angle_lst[idx], label=n_ant,
+    ax5.plot(np.degrees(radian_vals), desired_sc_psd_at_angle_lst[idx] - distortion_sc_psd_at_angle_lst[idx], label=n_ant,
              linewidth=1.5)
 
 ax5.set_xlim([40, 50])

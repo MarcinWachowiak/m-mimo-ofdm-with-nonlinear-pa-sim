@@ -2,6 +2,7 @@ import numpy as np
 import torch
 from scipy import constants as scp_constants
 
+import matplotlib.pyplot as plt
 
 class MisoLosFd:
     def __init__(self):
@@ -42,7 +43,7 @@ class MisoLosFd:
     def propagate(self, in_sig_mat):
         # apply channel matrix to signal
         fd_signal_at_point = np.multiply(in_sig_mat, self.channel_mat_fd)
-        # sum columns
+        # sum rows
         fd_signal_at_point = np.sum(fd_signal_at_point, axis=0)
         return fd_signal_at_point
 
@@ -97,7 +98,7 @@ class MisoTwoPathFd:
 
     def propagate(self, in_sig_mat):
         combined_fd_sig = np.multiply(in_sig_mat, self.channel_mat_fd)
-        # sum columns
+        # sum rows
         return np.sum(combined_fd_sig, axis=0)
 
 
@@ -129,13 +130,14 @@ class RayleighMisoFd:
     def reroll_channel_coeffs(self):
         self.fd_chan_mat = self.rng_gen.standard_normal(size=(self.n_inputs, self.fd_samp_size * 2)).view(
                 dtype=np.complex128) / np.sqrt(2.0)
-        avg_precoding_gain = np.average(np.divide(np.power(np.abs(self.fd_chan_mat), 2),
-                                                  np.power(np.sum(np.power(np.abs(self.fd_chan_mat), 2), axis=0), 2)))
-        print("AVG precoding gain: ", avg_precoding_gain)
+        # avg_precoding_gain = np.average(np.divide(np.power(np.abs(self.fd_chan_mat), 2),
+        #                                           np.power(np.sum(np.power(np.abs(self.fd_chan_mat), 2), axis=0), 2)))
+        # print("AVG precoding gain: ", avg_precoding_gain)
+
 
     def propagate(self, in_sig_mat):
         # channel in frequency domain
         # multiply signal by rayleigh channel coefficients in frequency domain
         fd_sigmat_after_chan = np.multiply(in_sig_mat, self.fd_chan_mat)
-        # sum columns
+        # sum rows
         return np.sum(fd_sigmat_after_chan, axis=0)
