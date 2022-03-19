@@ -94,15 +94,15 @@ class LinearArray:
 
             tx_transceiver.modem.set_precoding_vec(precoding_vec)
 
-    def update_distortion(self, ibo_db, avg_sample_pow, channel_mat):
+    def update_distortion(self, ibo_db, avg_sample_pow, channel_mat_fd):
         # calculate the avg precoding gain only for the desired signal - withing the idx range of subcarriers        for idx, tx_transceiver in enumerate(self.array_elements):
             # select coefficients based on carrier frequencies
         tx_n_sc = self.base_transceiver.modem.n_sub_carr
-        sc_channel_mat = np.concatenate((channel_mat[:, 1:(tx_n_sc // 2) + 1], channel_mat[:, -tx_n_sc // 2:]), axis=1)
+        sc_channel_mat = np.concatenate((channel_mat_fd[:, 1:(tx_n_sc // 2) + 1], channel_mat_fd[:, -tx_n_sc // 2:]), axis=1)
 
         avg_precoding_gain = np.average(np.divide(np.power(np.abs(sc_channel_mat), 2),
                                                   np.power(np.sum(np.power(np.abs(sc_channel_mat), 2), axis=0), 2)))
-        # print("AVG precoding gain: ", avg_precoding_gain)
+        print("AVG precoding gain: ", avg_precoding_gain)
 
 
         for idx, array_transceiver in enumerate(self.array_elements):
