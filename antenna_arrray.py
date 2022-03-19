@@ -70,14 +70,18 @@ class LinearArray:
 
     def set_precoding_matrix(self, channel_mat_fd=None, mr_precoding=False):
         # set precoding vector based on provided channel mat coefficients
-        channel_fd_mat_conjungate = np.conjugate(channel_mat_fd)
+        # only the subcarriers are precoded, other normalization operations should be performed in regard to carrier pool
+        tx_n_sc = self.base_transceiver.modem.n_sub_carr
+        sc_channel_mat_fd = np.concatenate((channel_mat_fd[:, 1:(tx_n_sc // 2) + 1], channel_mat_fd[:, -tx_n_sc // 2:]), axis=1)
+        sc_channel_mat_fd_conjugate = np.conjugate(sc_channel_mat_fd)
+
         if mr_precoding is True:
             # normalize the precoding vector in regard to number of antennas and power
-            precoding_mat_fd = np.divide(channel_fd_mat_conjungate, np.sum(np.power(np.abs(channel_mat_fd), 2), axis=0))
+            precoding_mat_fd = np.divide(sc_channel_mat_fd_conjugate, np.sum(np.power(np.abs(sc_channel_mat_fd), 2), axis=0))
         else:
             # take only phases into consideration
             # normalize channel precoding coefficients
-            precoding_mat_fd = np.exp(1j * np.angle(channel_fd_mat_conjungate))
+            precoding_mat_fd = np.exp(1j * np.angle(sc_channel_mat_fd_conjugate))
 
         # apply precoding vectors to each tx node from matrix
         for idx, tx_transceiver in enumerate(self.array_elements):
@@ -85,18 +89,21 @@ class LinearArray:
             tx_n_sc = tx_transceiver.modem.n_sub_carr
             precoding_mat_row_fd = precoding_mat_fd[idx, :]
             precoding_vec = np.ones(tx_transceiver.modem.n_fft, dtype=np.complex128)
-            precoding_vec[1:(tx_n_sc // 2) + 1] = precoding_mat_row_fd[1:(tx_n_sc // 2) + 1]
+            precoding_vec[1:(tx_n_sc // 2) + 1] = precoding_mat_row_fd[: tx_n_sc//2]
             precoding_vec[-tx_n_sc // 2:] = precoding_mat_row_fd[-tx_n_sc // 2:]
 
             tx_transceiver.modem.set_precoding_vec(precoding_vec)
 
-    def update_distortion(self, ibo_db, avg_sample_pow, channel_mat_fd=None):
-        if channel_mat_fd is not None:
-            avg_precoding_gain = np.average(np.divide(np.power(np.abs(channel_mat_fd), 2),
-                                                      np.power(np.sum(np.power(np.abs(channel_mat_fd), 2), axis=0), 2)))
-            # print("AVG precoding gain: ", avg_precoding_gain)
-        else:
-            avg_precoding_gain = 1.0
+    def update_distortion(self, ibo_db, avg_sample_pow, channel_mat):
+        # calculate the avg precoding gain only for the desired signal - withing the idx range of subcarriers        for idx, tx_transceiver in enumerate(self.array_elements):
+            # select coefficients based on carrier frequencies
+        tx_n_sc = self.base_transceiver.modem.n_sub_carr
+        sc_channel_mat = np.concatenate((channel_mat[:, 1:(tx_n_sc // 2) + 1], channel_mat[:, -tx_n_sc // 2:]), axis=1)
+
+        avg_precoding_gain = np.average(np.divide(np.power(np.abs(sc_channel_mat), 2),
+                                                  np.power(np.sum(np.power(np.abs(sc_channel_mat), 2), axis=0), 2)))
+        # print("AVG precoding gain: ", avg_precoding_gain)
+
 
         for idx, array_transceiver in enumerate(self.array_elements):
             array_transceiver.impairment.set_ibo(ibo_db)

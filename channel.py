@@ -103,10 +103,11 @@ class MisoTwoPathFd:
 
 
 class RayleighMisoFd:
-    def __init__(self, n_inputs, fd_samp_size, seed=None):
-        self.n_inputs = n_inputs
-        self.fd_samp_size = fd_samp_size
-        self.fd_chan_mat = None
+    def __init__(self, tx_transceivers, rx_transceiver, seed=None):
+        self.n_inputs = len(tx_transceivers)
+        self.fd_samp_size = tx_transceivers[0].modem.n_fft
+        self.fd_att_mat = None
+        self.los_fd_att_mat = None
         # seed for random channel coefficients
         if seed is not None:
             self.seed = seed
@@ -114,30 +115,50 @@ class RayleighMisoFd:
         else:
             self.rng_gen = np.random.default_rng(1234)
 
+        # get frequencies of subcarriers
+        sig_freq_vals = torch.fft.fftfreq(rx_transceiver.modem.n_fft, d=1 / rx_transceiver.modem.n_fft).numpy() \
+                        * rx_transceiver.carrier_spacing + rx_transceiver.center_freq
+
+        los_distances = np.empty(len(tx_transceivers))
+        tx_ant_gains = np.empty(len(tx_transceivers))
+
+        for idx, tx_transceiver in enumerate(tx_transceivers):
+            tx_ant_gains[idx] = tx_transceiver.tx_ant_gain_db
+            los_distances[idx] = np.sqrt(np.power(tx_transceiver.cord_x - rx_transceiver.cord_x, 2) + np.power(
+                tx_transceiver.cord_y - rx_transceiver.cord_y, 2) + np.power(
+                tx_transceiver.cord_z - rx_transceiver.cord_z, 2))
+        self.los_fd_att_mat = np.sqrt(np.power(10, (tx_ant_gains[:, np.newaxis] + rx_transceiver.rx_ant_gain_db) / 10)) \
+                         * (scp_constants.c / (4 * np.pi * np.outer(los_distances, sig_freq_vals)))
+
+
         self.set_channel_mat_fd()
 
-    def set_channel_mat_fd(self, fd_chan_mat=None):
+    def set_channel_mat_fd(self, fd_chan_mat=None, skip_attenuation=True):
         if fd_chan_mat is None:
             # generate rayleigh channel coefficients
-            self.fd_chan_mat = self.rng_gen.standard_normal(size=(self.n_inputs, self.fd_samp_size * 2)).view(
+            fd_rayleigh_coeffs = self.rng_gen.standard_normal(size=(self.n_inputs, self.fd_samp_size * 2)).view(
                 dtype=np.complex128) / np.sqrt(2.0)
+            if skip_attenuation:
+                self.fd_chan_mat = fd_rayleigh_coeffs
+            else:
+                self.fd_chan_mat = np.multiply(fd_rayleigh_coeffs, self.los_fd_att_mat)
         else:
             self.fd_chan_mat = fd_chan_mat
 
     def get_channel_mat_fd(self):
         return self.fd_chan_mat
 
-    def reroll_channel_coeffs(self):
-        self.fd_chan_mat = self.rng_gen.standard_normal(size=(self.n_inputs, self.fd_samp_size * 2)).view(
+    def reroll_channel_coeffs(self, skip_attenuation=True):
+        fd_rayleigh_coeffs = self.rng_gen.standard_normal(size=(self.n_inputs, self.fd_samp_size * 2)).view(
                 dtype=np.complex128) / np.sqrt(2.0)
-        # avg_precoding_gain = np.average(np.divide(np.power(np.abs(self.fd_chan_mat), 2),
-        #                                           np.power(np.sum(np.power(np.abs(self.fd_chan_mat), 2), axis=0), 2)))
-        # print("AVG precoding gain: ", avg_precoding_gain)
-
+        if skip_attenuation:
+            self.fd_chan_mat = fd_rayleigh_coeffs
+        else:
+            self.fd_chan_mat = np.multiply(fd_rayleigh_coeffs, self.los_fd_att_mat)
 
     def propagate(self, in_sig_mat):
         # channel in frequency domain
         # multiply signal by rayleigh channel coefficients in frequency domain
         fd_sigmat_after_chan = np.multiply(in_sig_mat, self.fd_chan_mat)
-        # sum rows
+        # sum columns
         return np.sum(fd_sigmat_after_chan, axis=0)

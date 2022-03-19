@@ -58,7 +58,7 @@ n_snapshots = 10
 precoding_point_idx = 45
 # plot PSD for chosen point/angle
 point_idx_psd = 50
-n_ant_vec = [1, 2, 4, 8]  # 16, 32, 64, 128]
+n_ant_vec = [1, 2, 3, 4, 6]  # 16, 32, 64, 128]
 
 
 desired_sc_psd_at_angle_lst = []
@@ -68,6 +68,7 @@ rx_sig_at_point_full = []
 rx_sig_at_max_point_full = []
 rx_sig_at_max_point_clean = []
 
+
 for n_ant in n_ant_vec:
     start_time = time.time()
     print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
@@ -75,20 +76,23 @@ for n_ant in n_ant_vec:
     my_array = antenna_arrray.LinearArray(n_elements=n_ant, base_transceiver=my_tx, center_freq=int(3.5e9),
                                           wav_len_spacing=0.5,
                                           cord_x=0, cord_y=0, cord_z=15)
-    my_miso_chan = channel.RayleighMisoFd(n_inputs=my_array.n_elements, fd_samp_size=my_tx.modem.n_fft, seed=1234)
+    my_rx.set_position(cord_x=212, cord_y=212, cord_z=1.5)
+
+    my_miso_chan = channel.RayleighMisoFd(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx, seed=1234)
 
     chan_mat_at_point_fd = my_miso_chan.get_channel_mat_fd()
     # skip precoding for a single antenna
-    if n_ant != 1:
-        my_array.set_precoding_matrix(channel_mat_fd=chan_mat_at_point_fd, mr_precoding=True)
-        my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power,
-                               channel_mat_fd=chan_mat_at_point_fd)
 
     sc_psd_at_angle_desired = np.empty(radian_vals.shape)
     sc_psd_at_angle_dist = np.empty(radian_vals.shape)
     for pt_idx, point in enumerate(rx_points):
         # generate different channel for each point
         # precode only for single known point
+        # if n_ant != 1:
+        my_array.set_precoding_matrix(channel_mat_fd=chan_mat_at_point_fd, mr_precoding=True)
+        my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power,
+                                   channel_mat=chan_mat_at_point_fd)
+
         if pt_idx == precoding_point_idx:
             my_miso_chan.set_channel_mat_fd(chan_mat_at_point_fd)
         else:

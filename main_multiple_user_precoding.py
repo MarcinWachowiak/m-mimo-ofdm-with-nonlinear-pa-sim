@@ -35,7 +35,7 @@ my_mod = modulation.OfdmQamModem(constel_size=64, n_fft=4096, n_sub_carr=1024, c
 my_distortion = distortion.SoftLimiter(ibo_db=ibo_val_db, avg_samp_pow=my_mod.avg_sample_power)
 my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion), center_freq=int(3.5e9),
                                 carrier_spacing=int(15e3))
-my_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=None, cord_x=212, cord_y=212, cord_z=1.5,
+my_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion), cord_x=212, cord_y=212, cord_z=1.5,
                                 center_freq=int(3.5e9), carrier_spacing=int(15e3))
 my_rx.modem.correct_constellation(ibo_db=my_tx.impairment.ibo_db)
 
@@ -61,7 +61,7 @@ point_idx_psd = 78
 n_ant_vec = [16]
 
 usr_distance = 300
-usr_angles = [0, 45, 160]
+usr_angles = [15, 60]
 max_point_idx = usr_angles[0]
 
 desired_psd_at_angle_lst = []
