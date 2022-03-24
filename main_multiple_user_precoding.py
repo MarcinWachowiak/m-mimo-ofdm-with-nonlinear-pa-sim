@@ -61,7 +61,7 @@ point_idx_psd = 78
 n_ant_vec = [16]
 
 usr_distance = 300
-usr_angles = [15, 60]
+usr_angles = [15, 60, 135]
 max_point_idx = usr_angles[0]
 
 desired_psd_at_angle_lst = []

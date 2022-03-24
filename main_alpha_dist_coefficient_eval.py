@@ -36,10 +36,9 @@ my_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.dee
                                 center_freq=int(3.5e9), carrier_spacing=int(15e3))
 my_rx.correct_constellation()
 
-my_miso_chan = channel.MisoTwoPathFd()
 
 # %%
-n_ant_arr = [1, 2, 4, 8] # 16, 32, 64, 128]
+n_ant_arr = [1, 2, 3, 4] # 16, 32, 64, 128]
 print("N antennas values:", n_ant_arr)
 ibo_arr = np.arange(0, 11.0, 1)
 print("IBO values:", ibo_arr)
@@ -61,8 +60,7 @@ for n_ant_idx, n_ant_val in enumerate(n_ant_arr):
         my_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(3.5e9),
                                               wav_len_spacing=0.5,
                                               cord_x=0, cord_y=0, cord_z=15)
-
-        my_miso_chan.calc_channel_mat(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx, skip_attenuation=False)
+        my_miso_chan = channel.RayleighMisoFd(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx, seed=1234)
 
         chan_mat_at_point = my_miso_chan.get_channel_mat_fd()
         my_array.set_precoding_matrix(channel_mat_fd=chan_mat_at_point, mr_precoding=True)
@@ -72,7 +70,7 @@ for n_ant_idx, n_ant_val in enumerate(n_ant_arr):
         # estimate lambda correcting coefficient
         # same seed is required
         bit_rng = np.random.default_rng(4321)
-        n_ofdm_symb = 1e2
+        n_ofdm_symb = 5e2
         ofdm_symb_idx = 0
         lambda_numerator_vecs = []
         lambda_denominator_vecs = []

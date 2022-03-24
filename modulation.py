@@ -22,6 +22,7 @@ def _demodulate(constellation, n_bits_per_symbol, input_symbols):
     demod_bits = dec2bitarray(index_list, n_bits_per_symbol)
     return demod_bits
 
+
 # TODO: Separate constellations for RX and TX to ease the access and use of shrinking coeffs
 
 class Modem:
@@ -151,7 +152,7 @@ def _rx_ofdm_symbol(ofdm_symbol, n_fft: int, n_sub_carr: int, cp_length: int):
 
 class OfdmQamModem(QamModem):
 
-    def __init__(self, constel_size: int, n_fft: int, n_sub_carr: int, cp_len: int):
+    def __init__(self, constel_size: int, n_fft: int, n_sub_carr: int, cp_len: int, n_users=1):
         super().__init__(constel_size)
 
         self.n_fft = n_fft
@@ -159,17 +160,34 @@ class OfdmQamModem(QamModem):
         self.cp_len = cp_len
         self.n_bits_per_ofdm_sym = int(np.log2(constel_size) * n_sub_carr)
         self.avg_sample_power = self.ofdm_avg_sample_pow()
-        self.precoding_vec = None
+        self.precoding_mat = None
+        self.n_users = n_users
 
-    def set_precoding_vec(self, precoding_vec):
-        self.precoding_vec = precoding_vec
+    def set_precoding(self, precoding_mat):
+        self.precoding_mat = precoding_mat
 
     def modulate(self, input_bits, get_symbols_only=False):
-        modulated_symbols = _modulate(self._constellation, self.n_bits_per_symbol, input_bits)
-        if get_symbols_only:
-            return modulated_symbols
+        if self.n_users == 1:
+            modulated_symbols = _modulate(self._constellation, self.n_bits_per_symbol, input_bits)
+            if get_symbols_only:
+                return modulated_symbols
+            else:
+                return _tx_ofdm_symbol(modulated_symbols, self.n_fft, self.n_sub_carr, self.cp_len, self.precoding_mat)
         else:
-            return _tx_ofdm_symbol(modulated_symbols, self.n_fft, self.n_sub_carr, self.cp_len, self.precoding_vec)
+            modulated_symbols = np.empty(self.n_users, self.n_sub_carr)
+            for user_idx in range(self.n_users):
+                modulated_symbols[user_idx, :] = _modulate(self._constellation, self.n_bits_per_symbol,
+                                                           input_bits[user_idx, :])
+            if get_symbols_only:
+                return modulated_symbols
+            else:
+                ofdm_symbol_mat = np.empty(self.n_users, self.n_fft)
+                for user_idx in range(self.n_users):
+                    ofdm_symbol_mat[user_idx, :] = _tx_ofdm_symbol(modulated_symbols, self.n_fft, self.n_sub_carr,
+                                                                   self.cp_len,
+                                                                   self.precoding_mat[user_idx, :])
+                # sum the ofdm symbols of all users
+                return np.sum(ofdm_symbol_mat, axis=0)
 
     def demodulate(self, ofdm_symbol, get_symbols_only=False):
         baseband_symbols = _rx_ofdm_symbol(ofdm_symbol, self.n_fft, self.n_sub_carr, self.cp_len)

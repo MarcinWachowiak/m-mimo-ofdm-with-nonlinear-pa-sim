@@ -58,7 +58,7 @@ n_snapshots = 10
 precoding_point_idx = 45
 # plot PSD for chosen point/angle
 point_idx_psd = 50
-n_ant_vec = [1, 2, 3, 4, 8]  # 16, 32, 64, 128]
+n_ant_vec = [1, 2, 3, 4]  # 16, 32, 64, 128]
 
 
 desired_sc_psd_at_angle_lst = []
@@ -81,6 +81,7 @@ for n_ant in n_ant_vec:
     my_miso_chan = channel.RayleighMisoFd(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx, seed=1234)
 
     chan_mat_at_point_fd = my_miso_chan.get_channel_mat_fd()
+    # if n_ant != 1:
     my_array.set_precoding_matrix(channel_mat_fd=chan_mat_at_point_fd, mr_precoding=True)
     my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power,
                                channel_mat_fd=chan_mat_at_point_fd)
@@ -114,11 +115,11 @@ for n_ant in n_ant_vec:
             clean_sc_ofdm_symb_td = utilities.to_time_domain(clean_sc_ofdm_symb_fd)
 
             # calculate PSD at point for the last value of N antennas
-            if pt_idx == point_idx_psd and n_ant == n_ant_vec[-1]:
+            if pt_idx == point_idx_psd and n_ant == n_ant_vec[0]:
                 rx_sig_at_point_clean.append(clean_rx_sig_td)
                 rx_sig_at_point_full.append(rx_sig_td)
 
-            if pt_idx == precoding_point_idx and n_ant == n_ant_vec[-1]:
+            if pt_idx == precoding_point_idx and n_ant == n_ant_vec[0]:
                 rx_sig_at_max_point_clean.append(clean_rx_sig_td)
                 rx_sig_at_max_point_full.append(rx_sig_td)
 
