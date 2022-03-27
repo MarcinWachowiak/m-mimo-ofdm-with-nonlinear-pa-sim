@@ -33,7 +33,8 @@ my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.dee
                                 center_freq=int(3.5e9),
                                 carrier_spacing=int(15e3))
 
-my_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion), cord_x=30, cord_y=30, cord_z=1.5,
+my_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion), cord_x=30,
+                                cord_y=30, cord_z=1.5,
                                 center_freq=int(3.5e9),
                                 carrier_spacing=int(15e3))
 my_rx.correct_constellation()
@@ -58,8 +59,7 @@ n_snapshots = 10
 precoding_point_idx = 45
 # plot PSD for chosen point/angle
 point_idx_psd = 50
-n_ant_vec = [1, 2, 4, 8] # 16, 32, 64, 128]
-
+n_ant_vec = [1, 2, 4, 8]  # 16, 32, 64, 128]
 
 desired_sc_psd_at_angle_lst = []
 distortion_sc_psd_at_angle_lst = []
@@ -67,7 +67,6 @@ rx_sig_at_point_clean = []
 rx_sig_at_point_full = []
 rx_sig_at_max_point_full = []
 rx_sig_at_max_point_clean = []
-
 
 for n_ant in n_ant_vec:
     start_time = time.time()
@@ -130,9 +129,9 @@ for n_ant in n_ant_vec:
         sc_ofdm_distortion_sig = rx_ofdm_symb_accum_arr - my_rx.modem.alpha * clean_ofdm_symb_accum_arr
 
         dist_ofdm_symb_freq_arr, dist_ofdm_symb_psd_arr = welch(sc_ofdm_distortion_sig, fs=psd_nfft, nfft=psd_nfft,
-                                                          nperseg=n_samp_per_seg, return_onesided=False)
+                                                                nperseg=n_samp_per_seg, return_onesided=False)
         clean_ofdm_symb_freq_arr, clean_ofdm_symb_psd_arr = welch(clean_ofdm_symb_accum_arr, fs=psd_nfft, nfft=psd_nfft,
-                                                            nperseg=n_samp_per_seg, return_onesided=False)
+                                                                  nperseg=n_samp_per_seg, return_onesided=False)
 
         sc_psd_at_angle_desired[pt_idx] = to_db(np.sum(np.array(clean_ofdm_symb_psd_arr)))
         sc_psd_at_angle_dist[pt_idx] = to_db(np.sum(np.array(dist_ofdm_symb_psd_arr)))
@@ -141,7 +140,7 @@ for n_ant in n_ant_vec:
     distortion_sc_psd_at_angle_lst.append(sc_psd_at_angle_dist)
     print("--- Computation time: %f ---" % (time.time() - start_time))
 
-#%%
+# %%
 rx_sig_at_point_clean_arr = np.concatenate(rx_sig_at_point_clean).ravel()
 rx_sig_at_point_full_arr = np.concatenate(rx_sig_at_point_full).ravel()
 distortion_sig_at_point = rx_sig_at_point_full_arr - my_rx.modem.alpha * rx_sig_at_point_clean_arr
@@ -250,7 +249,8 @@ else:
 ax4.yaxis.set_major_locator(MaxNLocator(5))
 
 for idx, n_ant in enumerate(n_ant_vec):
-    ax4.plot(radian_vals, desired_sc_psd_at_angle_lst[idx] - distortion_sc_psd_at_angle_lst[idx], label=n_ant, linewidth=1.5)
+    ax4.plot(radian_vals, desired_sc_psd_at_angle_lst[idx] - distortion_sc_psd_at_angle_lst[idx], label=n_ant,
+             linewidth=1.5)
 ax4.set_title("Signal to distortion ratio at angle [dB]", pad=-15)
 ax4.legend(title="N antennas:", ncol=len(n_ant_vec), loc='lower center', borderaxespad=0)
 ax4.grid(True)
@@ -263,7 +263,8 @@ plt.show()
 fig5, ax5 = plt.subplots(1, 1)
 plt.tight_layout()
 for idx, n_ant in enumerate(n_ant_vec):
-    ax5.plot(np.degrees(radian_vals), desired_sc_psd_at_angle_lst[idx] - distortion_sc_psd_at_angle_lst[idx], label=n_ant,
+    ax5.plot(np.degrees(radian_vals), desired_sc_psd_at_angle_lst[idx] - distortion_sc_psd_at_angle_lst[idx],
+             label=n_ant,
              linewidth=1.5)
 
 ax5.set_xlim([40, 50])
@@ -318,7 +319,7 @@ ax7.legend(title="IBO = %d [dB]" % my_tx.impairment.ibo_db)
 ax7.grid()
 plt.tight_layout()
 plt.savefig("figs/rayleigh_psd_at_angle_%ddeg_ibo%d_ant%d.png" % (
-precoding_point_idx, my_tx.impairment.ibo_db, np.max(n_ant_vec)),
+    precoding_point_idx, my_tx.impairment.ibo_db, np.max(n_ant_vec)),
             dpi=600,
             bbox_inches='tight')
 plt.show()

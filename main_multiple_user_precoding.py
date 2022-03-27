@@ -31,8 +31,8 @@ bit_rng = np.random.default_rng(4321)
 ibo_val_db = 5
 
 # Multiple users data
-usr_angles = [90, 45]
-usr_distances = [100, 150]
+usr_angles = [30, 90, 135]
+usr_distances = [30, 60, 150]
 n_users = len(usr_angles)
 max_point_idx = usr_angles[0]
 
@@ -64,7 +64,7 @@ n_snapshots = 10
 # %%
 # plot PSD for chosen point/angle
 point_idx_psd = 78
-n_ant_vec = [32]
+n_ant_vec = [16]
 
 desired_psd_at_angle_lst = []
 distortion_psd_at_angle_lst = []
