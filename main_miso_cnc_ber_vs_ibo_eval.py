@@ -125,7 +125,7 @@ for ibo_idx, ibo_val_db in enumerate(ibo_arr):
 
     chan_mat_at_point = my_miso_chan.get_channel_mat_fd()
     my_array.set_precoding_matrix(channel_mat_fd=chan_mat_at_point, mr_precoding=True)
-    my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power, channel_mat_fd=chan_mat_at_point)
+    my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
     my_cnc_rx.update_distortion(ibo_db=ibo_val_db)
 
     for iter_idx, cnc_iters_val in enumerate(cnc_n_iter_vals):

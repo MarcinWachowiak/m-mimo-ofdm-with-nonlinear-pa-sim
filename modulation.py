@@ -16,6 +16,7 @@ def _modulate(constellation, n_bits_per_symbol, input_bits):
     return baseband_symbols
 
 
+
 # @jit(nopython=True)
 def _demodulate(constellation, n_bits_per_symbol, input_symbols):
     index_list = np.abs(input_symbols - constellation[:, None]).argmin(0)
@@ -114,7 +115,7 @@ class QamModem(Modem):
 
 
 @jit(nopython=True)
-def _tx_ofdm_symbol(mod_symbols, n_fft: int, n_sub_carr: int, cp_length: int, precoding_vec=None):
+def _tx_ofdm_symbol(mod_symbols, n_fft: int, n_sub_carr: int, cp_length: int):
     # generate OFDM symbol block - size given by n_sub_carr size
     if len(mod_symbols) != n_sub_carr:
         raise ValueError('mod_symbols length must match n_sub_carr value')
@@ -125,14 +126,8 @@ def _tx_ofdm_symbol(mod_symbols, n_fft: int, n_sub_carr: int, cp_length: int, pr
     ofdm_sym_freq[-(n_sub_carr // 2):] = mod_symbols[0:n_sub_carr // 2]
     ofdm_sym_freq[1:(n_sub_carr // 2) + 1] = mod_symbols[n_sub_carr // 2:]
 
-    # apply precoding if any
-    if precoding_vec is not None:
-        ofdm_sym_freq_postprocessed = np.multiply(ofdm_sym_freq, precoding_vec)
-    else:
-        ofdm_sym_freq_postprocessed = ofdm_sym_freq
-
     with objmode(ofdm_sym_time='complex128[:]'):
-        ofdm_sym_time = torch.fft.ifft(torch.from_numpy(ofdm_sym_freq_postprocessed), norm="ortho").numpy()
+        ofdm_sym_time = torch.fft.ifft(torch.from_numpy(ofdm_sym_freq), norm="ortho").numpy()
 
     # add cyclic prefix
     return np.concatenate((ofdm_sym_time[-cp_length:], ofdm_sym_time))
@@ -164,7 +159,15 @@ class OfdmQamModem(QamModem):
         self.n_users = n_users
 
     def set_precoding(self, precoding_mat):
+        # each row represents channel to each user
         self.precoding_mat = precoding_mat
+
+    def precode_symbols(self, in_symbols, precoding_mat=None):
+        # apply precoding if any
+        if precoding_mat is not None:
+            return np.multiply(in_symbols, precoding_mat)
+        else:
+            return in_symbols
 
     def modulate(self, input_bits, get_symbols_only=False):
         if self.n_users == 1:
@@ -172,22 +175,18 @@ class OfdmQamModem(QamModem):
             if get_symbols_only:
                 return modulated_symbols
             else:
-                return _tx_ofdm_symbol(modulated_symbols, self.n_fft, self.n_sub_carr, self.cp_len, self.precoding_mat)
+                precoded_symbols = self.precode_symbols(modulated_symbols, self.precoding_mat)
+                return _tx_ofdm_symbol(precoded_symbols, self.n_fft, self.n_sub_carr, self.cp_len)
         else:
-            modulated_symbols = np.empty(self.n_users, self.n_sub_carr)
+            modulated_symbols = np.empty((self.n_users, self.n_sub_carr), dtype=np.complex128)
             for user_idx in range(self.n_users):
                 modulated_symbols[user_idx, :] = _modulate(self._constellation, self.n_bits_per_symbol,
                                                            input_bits[user_idx, :])
             if get_symbols_only:
                 return modulated_symbols
             else:
-                ofdm_symbol_mat = np.empty(self.n_users, self.n_fft)
-                for user_idx in range(self.n_users):
-                    ofdm_symbol_mat[user_idx, :] = _tx_ofdm_symbol(modulated_symbols, self.n_fft, self.n_sub_carr,
-                                                                   self.cp_len,
-                                                                   self.precoding_mat[user_idx, :])
-                # sum the ofdm symbols of all users
-                return np.sum(ofdm_symbol_mat, axis=0)
+                combined_mu_symbols = np.sum(self.precode_symbols(modulated_symbols, self.precoding_mat), axis=0)
+                return _tx_ofdm_symbol(combined_mu_symbols, self.n_fft, self.n_sub_carr, self.cp_len)
 
     def demodulate(self, ofdm_symbol, get_symbols_only=False):
         baseband_symbols = _rx_ofdm_symbol(ofdm_symbol, self.n_fft, self.n_sub_carr, self.cp_len)

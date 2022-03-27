@@ -30,8 +30,14 @@ bit_rng = np.random.default_rng(4321)
 
 ibo_val_db = 5
 
+# Multiple users data
+usr_angles = [90, 45]
+usr_distances = [100, 150]
+n_users = len(usr_angles)
+max_point_idx = usr_angles[0]
+
 # for run_idx in range(1):
-my_mod = modulation.OfdmQamModem(constel_size=64, n_fft=4096, n_sub_carr=1024, cp_len=128)
+my_mod = modulation.OfdmQamModem(constel_size=64, n_fft=4096, n_sub_carr=1024, cp_len=128, n_users=n_users)
 my_distortion = distortion.SoftLimiter(ibo_db=ibo_val_db, avg_samp_pow=my_mod.avg_sample_power)
 my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion), center_freq=int(3.5e9),
                                 carrier_spacing=int(15e3))
@@ -58,11 +64,7 @@ n_snapshots = 10
 # %%
 # plot PSD for chosen point/angle
 point_idx_psd = 78
-n_ant_vec = [16]
-
-usr_distance = 300
-usr_angles = [15, 60, 135]
-max_point_idx = usr_angles[0]
+n_ant_vec = [32]
 
 desired_psd_at_angle_lst = []
 distortion_psd_at_angle_lst = []
@@ -79,19 +81,18 @@ for n_ant in n_ant_vec:
                                           wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
     my_miso_chan = channel.MisoTwoPathFd()
 
-    combined_channel_mat = np.zeros((n_ant, my_mod.n_fft), dtype=np.complex128)
-    # multiple user/angle precoding
+    #get channel matrix to all users
+    mu_channel_mat = []
     for usr_idx, usr_angle in enumerate(usr_angles):
-        usr_pos_x = np.cos(usr_angle) * usr_distance
-        usr_pos_y = np.sin(usr_angle) * usr_distance
+        usr_pos_x = np.cos(usr_angle) * usr_distances[usr_idx]
+        usr_pos_y = np.sin(usr_angle) * usr_distances[usr_idx]
 
         my_rx.set_position(cord_x=usr_pos_x, cord_y=usr_pos_y, cord_z=1.5)
         my_miso_chan.calc_channel_mat(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx, skip_attenuation=False)
-        combined_channel_mat += my_miso_chan.get_channel_mat_fd()
+        mu_channel_mat.append(my_miso_chan.get_channel_mat_fd())
 
-    my_array.set_precoding_matrix(channel_mat_fd=combined_channel_mat, mr_precoding=True)
-    my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power,
-                               channel_mat_fd=combined_channel_mat)
+    my_array.set_precoding_matrix(channel_mat_fd=mu_channel_mat, mr_precoding=True)
+    my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
 
     psd_at_angle_desired = np.empty(radian_vals.shape)
     psd_at_angle_dist = np.empty(radian_vals.shape)
@@ -108,8 +109,10 @@ for n_ant in n_ant_vec:
         clean_rx_sig_accum = []
         for snap_idx in range(n_snapshots):
 
-            tx_bits = bit_rng.choice((0, 1), my_tx.modem.n_bits_per_ofdm_sym)
+            tx_bits = bit_rng.choice((0, 1), (n_users, my_tx.modem.n_bits_per_ofdm_sym))
             arr_tx_sig_fd, clean_sig_mat_fd = my_array.transmit(in_bits=tx_bits, out_domain_fd=True, return_both=True)
+            # print(utilities.td_signal_power(utilities.to_time_domain(arr_tx_sig_fd[0,:])))
+
 
             rx_sig_fd = my_miso_chan.propagate(in_sig_mat=arr_tx_sig_fd)
             rx_sig_td = utilities.to_time_domain(rx_sig_fd)
@@ -182,6 +185,10 @@ ax1.yaxis.set_major_locator(MaxNLocator(5))
 dist_lines_lst = []
 for idx, n_ant in enumerate(n_ant_vec):
     ax1.plot(radian_vals, desired_psd_at_angle_lst[idx], label=n_ant, linewidth=1.5)
+# plot reference angles/directions
+(y_min, y_max) = ax1.get_ylim()
+ax1.vlines(np.deg2rad(usr_angles), y_min, y_max, colors='k', linestyles='--') # label="Users")
+ax1.margins(0.0, 0.0)
 ax1.set_title("Desired signal PSD at angle [dB]", pad=-15)
 ax1.legend(title="N antennas:", ncol=len(n_ant_vec), loc='lower center', borderaxespad=0)
 ax1.grid(True)
@@ -206,6 +213,10 @@ ax2.yaxis.set_major_locator(MaxNLocator(5))
 dist_lines_lst = []
 for idx, n_ant in enumerate(n_ant_vec):
     ax2.plot(radian_vals, distortion_psd_at_angle_lst[idx], label=n_ant, linewidth=1.5)
+# plot reference angles/directions
+(y_min, y_max) = ax2.get_ylim()
+ax2.vlines(np.deg2rad(usr_angles), y_min, y_max, colors='k', linestyles='--')  # label="Users")
+ax2.margins(0.0, 0.0)
 ax2.set_title("Distortion signal PSD at angle [dB]", pad=-15)
 ax2.legend(title="N antennas:", ncol=len(n_ant_vec), loc='lower center', borderaxespad=0)
 ax2.grid(True)
@@ -230,6 +241,10 @@ dist_lines_lst = []
 sel_idx = 0
 ax3.plot(radian_vals, desired_psd_at_angle_lst[sel_idx], label="Desired", linewidth=1.5)
 ax3.plot(radian_vals, distortion_psd_at_angle_lst[sel_idx], label="Distortion", linewidth=1.5)
+# plot reference angles/directions
+(y_min, y_max) = ax3.get_ylim()
+ax3.vlines(np.deg2rad(usr_angles), y_min, y_max, colors='k', linestyles='--') # label="Users")
+ax3.margins(0.0, 0.0)
 ax3.set_title("Power spectral density at angle [dB]", pad=-15)
 ax3.legend(title="N antennas = %d, signals:" % n_ant_vec[sel_idx], ncol=2, loc='lower center', borderaxespad=0)
 ax3.grid(True)
@@ -251,6 +266,10 @@ else:
 
 for idx, n_ant in enumerate(n_ant_vec):
     ax4.plot(radian_vals, desired_psd_at_angle_lst[idx] - distortion_psd_at_angle_lst[idx], label=n_ant, linewidth=1.5)
+# plot reference angles/directions
+(y_min, y_max) = ax4.get_ylim()
+ax4.vlines(np.deg2rad(usr_angles), y_min, y_max, colors='k', linestyles='--')  # label="Users")
+ax4.margins(0.0, 0.0)
 ax4.set_title("Signal to distortion ratio at angle [dB]", pad=-15)
 ax4.legend(title="N antennas:", ncol=len(n_ant_vec), loc='lower center', borderaxespad=0)
 ax4.grid(True)

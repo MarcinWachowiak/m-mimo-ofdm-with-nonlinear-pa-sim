@@ -122,8 +122,7 @@ for ibo_idx, ibo_val_db in enumerate(ibo_arr):
     start_time = time.time()
     print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
-    my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power,
-                               channel_mat_fd=chan_mat_at_point)
+    my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
     for snr_idx, snr_val_db in enumerate(snr_db_vals):
         my_noise.snr_db = snr_val_db
 
