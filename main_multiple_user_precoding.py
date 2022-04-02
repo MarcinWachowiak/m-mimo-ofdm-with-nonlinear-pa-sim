@@ -15,7 +15,7 @@ import modulation
 import transceiver
 import utilities
 from plot_settings import set_latex_plot_style
-from utilities import to_db, pts_on_circum, pts_on_semicircum
+from utilities import to_db, pts_on_circum, pts_on_semicircum, td_signal_power
 from matplotlib.ticker import MaxNLocator
 
 set_latex_plot_style()
@@ -31,8 +31,8 @@ bit_rng = np.random.default_rng(4321)
 ibo_val_db = 5
 
 # Multiple users data
-usr_angles = [30, 90, 135]
-usr_distances = [30, 60, 150]
+usr_angles = [15, 45, 90, 160]
+usr_distances = [150, 100, 200, 175]
 n_users = len(usr_angles)
 max_point_idx = usr_angles[0]
 
@@ -64,7 +64,7 @@ n_snapshots = 10
 # %%
 # plot PSD for chosen point/angle
 point_idx_psd = 78
-n_ant_vec = [16]
+n_ant_vec = [32]
 
 desired_psd_at_angle_lst = []
 distortion_psd_at_angle_lst = []
@@ -84,8 +84,8 @@ for n_ant in n_ant_vec:
     #get channel matrix to all users
     mu_channel_mat = []
     for usr_idx, usr_angle in enumerate(usr_angles):
-        usr_pos_x = np.cos(usr_angle) * usr_distances[usr_idx]
-        usr_pos_y = np.sin(usr_angle) * usr_distances[usr_idx]
+        usr_pos_x = np.cos(np.deg2rad(usr_angle)) * usr_distances[usr_idx]
+        usr_pos_y = np.sin(np.deg2rad(usr_angle))* usr_distances[usr_idx]
 
         my_rx.set_position(cord_x=usr_pos_x, cord_y=usr_pos_y, cord_z=1.5)
         my_miso_chan.calc_channel_mat(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx, skip_attenuation=False)
@@ -109,7 +109,7 @@ for n_ant in n_ant_vec:
         clean_rx_sig_accum = []
         for snap_idx in range(n_snapshots):
 
-            tx_bits = bit_rng.choice((0, 1), (n_users, my_tx.modem.n_bits_per_ofdm_sym))
+            tx_bits = np.squeeze(bit_rng.choice((0, 1), (n_users, my_tx.modem.n_bits_per_ofdm_sym)))
             arr_tx_sig_fd, clean_sig_mat_fd = my_array.transmit(in_bits=tx_bits, out_domain_fd=True, return_both=True)
             # print(utilities.td_signal_power(utilities.to_time_domain(arr_tx_sig_fd[0,:])))
 

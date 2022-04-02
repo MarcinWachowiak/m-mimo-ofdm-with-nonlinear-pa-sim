@@ -95,6 +95,7 @@ class LinearArray:
                 tx_n_sc = tx_transceiver.modem.n_sub_carr
                 precoding_vec = precoding_mat_fd[idx, :]
                 tx_transceiver.modem.set_precoding(precoding_vec)
+
         # multiple user precoding
         else:
             n_users = len(channel_mat_fd)
@@ -109,6 +110,14 @@ class LinearArray:
             #     ant_norm_mat[usr_idx, :] = np.sum(np.power(np.abs(sc_channel_mat_fd), 2), axis=1)
             # ant_norm_coeff_vec = 1/np.sqrt(np.sum(ant_norm_mat, axis=0))
 
+            # calculate the normalizing factor K
+            usrs_vects = np.empty((n_users, tx_n_sc))
+            for usr_idx, usr_chan_mat_fd in enumerate(channel_mat_fd):
+                sc_channel_mat_fd = np.concatenate(
+                    (usr_chan_mat_fd[:, 1:(tx_n_sc // 2) + 1], usr_chan_mat_fd[:, -tx_n_sc // 2:]), axis=1)
+                usrs_vects[usr_idx, :] = np.sum(np.power(np.abs(sc_channel_mat_fd), 2), axis=0)
+            nsc_power_normalzing_vec = np.sqrt(np.sum(usrs_vects, axis=0))
+
             for usr_idx, usr_chan_mat_fd in enumerate(channel_mat_fd):
                 sc_channel_mat_fd = np.concatenate(
                     (usr_chan_mat_fd[:, 1:(tx_n_sc // 2) + 1], usr_chan_mat_fd[:, -tx_n_sc // 2:]), axis=1)
@@ -117,8 +126,7 @@ class LinearArray:
                 if mr_precoding is True:
                     # normalize the precoding vector in regard to number of antennas and power
                     # equal sum of TX power MR precoding
-                    usr_precoding_mat_fd = np.divide(sc_channel_mat_fd_conjugate,
-                                                     np.sqrt(np.sum(np.power(np.abs(sc_channel_mat_fd), 2), axis=0)))
+                    usr_precoding_mat_fd = np.divide(sc_channel_mat_fd_conjugate, nsc_power_normalzing_vec)
                     # equal sum of RX power MR precoding
                     # precoding_mat_fd = np.divide(sc_channel_mat_fd_conjugate, np.sum(np.power(np.abs(sc_channel_mat_fd), 2), axis=0))
 
@@ -128,18 +136,12 @@ class LinearArray:
                     usr_precoding_mat_fd = np.exp(1j * np.angle(sc_channel_mat_fd_conjugate))
                 precoding_mat_fd[usr_idx, :, :] = usr_precoding_mat_fd
 
-            # normalize the precoding
-            # #multiple user TX power normalization factor
-            ant_norm_mat = np.empty((n_users, self.n_elements))
-            for usr_idx, usr_chan_mat_fd in enumerate(channel_mat_fd):
-                ant_norm_mat[usr_idx, :] = np.sum(np.power(np.abs(precoding_mat_fd[usr_idx, :, :]), 2), axis=1)
-            ant_norm_coeff_vec = 1/np.sqrt(np.sum(ant_norm_mat, axis=0))
 
             # apply precoding matrix to each tx node
             for tx_idx, tx_transceiver in enumerate(self.array_elements):
                 # select coefficients based on carrier frequencies
                 mu_precoding_slice = precoding_mat_fd[:, tx_idx, :]
-                tx_transceiver.modem.set_precoding(mu_precoding_slice * ant_norm_coeff_vec[tx_idx])
+                tx_transceiver.modem.set_precoding(mu_precoding_slice)
 
     def update_distortion(self, ibo_db, avg_sample_pow):
         # calculate the avg precoding gain only for the desired signal - withing the idx range of subcarriers
@@ -161,6 +163,7 @@ class LinearArray:
             for idx, array_tx in enumerate(self.array_elements):
                 precoding_matrix[idx, :] = np.sum(array_tx.modem.precoding_mat, axis=0)
             avg_precoding_gain = np.average(np.divide(np.power(np.abs(precoding_matrix), 2), np.sum(np.power(np.abs(precoding_matrix), 2), axis=0)))
+
         # Equal total RX power precoding distortion normalization
         # sc_channel_mat = np.concatenate((channel_mat_fd[:, 1:(tx_n_sc // 2) + 1], channel_mat_fd[:, -tx_n_sc // 2:]), axis=1)
         #

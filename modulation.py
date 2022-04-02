@@ -117,6 +117,7 @@ class QamModem(Modem):
 @jit(nopython=True)
 def _tx_ofdm_symbol(mod_symbols, n_fft: int, n_sub_carr: int, cp_length: int):
     # generate OFDM symbol block - size given by n_sub_carr size
+
     if len(mod_symbols) != n_sub_carr:
         raise ValueError('mod_symbols length must match n_sub_carr value')
 
@@ -175,7 +176,7 @@ class OfdmQamModem(QamModem):
             if get_symbols_only:
                 return modulated_symbols
             else:
-                precoded_symbols = self.precode_symbols(modulated_symbols, self.precoding_mat)
+                precoded_symbols = np.squeeze(self.precode_symbols(modulated_symbols, self.precoding_mat))
                 return _tx_ofdm_symbol(precoded_symbols, self.n_fft, self.n_sub_carr, self.cp_len)
         else:
             modulated_symbols = np.empty((self.n_users, self.n_sub_carr), dtype=np.complex128)
