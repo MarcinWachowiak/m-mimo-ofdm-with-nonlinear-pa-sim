@@ -35,6 +35,9 @@ class SoftLimiter:
         ax.set_xlabel("Input signal amplitude [V]")
         ax.set_ylabel("Output signal amplitude [V]")
         ax.legend(title="IBO [dB]")
+        props = dict(boxstyle="round", fc="w", ec="0.5", alpha=0.9)
+        ax.text(0.46, 0.05, ("Average sample power = %2.1f" % self.avg_samp_pow), transform=ax.transAxes,
+                       fontsize=8, verticalalignment='bottom', bbox=props)
         ax.grid()
         plt.tight_layout()
         plt.savefig("figs/soft_lim_tf_ibo%d.png" % self.ibo_db, dpi=600, bbox_inches='tight')
