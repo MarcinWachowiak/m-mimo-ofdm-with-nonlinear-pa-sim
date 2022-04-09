@@ -32,7 +32,7 @@ my_mod = modulation.OfdmQamModem(constel_size=64, n_fft=4096, n_sub_carr=1024, c
 my_distortion = distortion.SoftLimiter(ibo_db=0, avg_samp_pow=my_mod.avg_sample_power)
 my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion), center_freq=int(3.5e9),
                                 carrier_spacing=int(15e3))
-my_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=None, cord_x=100, cord_y=100, cord_z=1.5,
+my_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion), cord_x=100, cord_y=100, cord_z=1.5,
                                 center_freq=int(3.5e9), carrier_spacing=int(15e3))
 
 my_miso_chan = channel.MisoTwoPathFd()
@@ -79,7 +79,7 @@ for ibo_idx, ibo_val_db in enumerate(ibo_arr):
 
     chan_mat_at_point = my_miso_chan.get_channel_mat_fd()
     my_array.set_precoding_matrix(channel_mat_fd=chan_mat_at_point, mr_precoding=True)
-    my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power, channel_mat_fd=chan_mat_at_point)
+    my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
     # correct avg sample power in nonlinearity after precoding
 
     # estimate lambda correcting coefficient

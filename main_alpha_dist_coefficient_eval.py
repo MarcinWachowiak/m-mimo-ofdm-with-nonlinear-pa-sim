@@ -38,9 +38,9 @@ my_rx.correct_constellation()
 
 
 # %%
-n_ant_arr = [1, 2, 3, 4] # 16, 32, 64, 128]
+n_ant_arr = [1] # 16, 32, 64, 128]
 print("N antennas values:", n_ant_arr)
-ibo_arr = np.arange(0, 11.0, 1)
+ibo_arr = np.arange(0.25, 10.25, 0.25)
 print("IBO values:", ibo_arr)
 
 abs_lambda_per_nant_per_ibo = np.zeros((len(n_ant_arr), len(ibo_arr)))
@@ -98,27 +98,51 @@ for n_ant_idx, n_ant_val in enumerate(n_ant_arr):
     print("--- Computation time: %f ---" % (time.time() - start_time))
 
 # %%
-fig1, ax1 = plt.subplots(1, 1)
+# fig1, ax1 = plt.subplots(1, 1)
+
+# # plot analytical
+# ax1.plot(ibo_arr, abs_lambda_per_ibo_analytical, label="Analytical")
+#
+# for n_ant_idx, n_ant_val in enumerate(n_ant_arr):
+#     ax1.plot(ibo_arr, abs_lambda_per_nant_per_ibo[n_ant_idx, :], label=n_ant_val)
+#
+#
+# ax1.set_title("Constellation shrinking coefficient - alpha for N antennas [-]")
+# ax1.set_xlabel("IBO [dB]")
+# ax1.set_ylabel("Alpha [-]")
+# ax1.grid()
+# ax1.legend(title="N antennas:")
+#
+# plt.tight_layout()
+# plt.savefig(
+#     "figs/constel_shrinking_coeff_nant%dto%d_ibo%1.1fto%1.1f.png" % (min(n_ant_arr), max(n_ant_arr), min(ibo_arr), max(ibo_arr)),
+#     dpi=600, bbox_inches='tight')
+# plt.show()
+#
+# print("Finished execution!")
+
+# %%
+# calculate the SDR
+theoretical_sdr_analytical_alpha = 20*np.log10(np.array(abs_lambda_per_ibo_analytical)**2/(1-np.array(abs_lambda_per_ibo_analytical)**2))
+theoretical_sdr_alpha_estimate = 20*np.log10(np.squeeze(abs_lambda_per_nant_per_ibo)**2/(1-np.squeeze(abs_lambda_per_nant_per_ibo)**2))
+# Expected SDR plot
+fig2, ax2 = plt.subplots(1, 1)
 
 # plot analytical
-ax1.plot(ibo_arr, abs_lambda_per_ibo_analytical, label="Analytical")
-
-for n_ant_idx, n_ant_val in enumerate(n_ant_arr):
-    ax1.plot(ibo_arr, abs_lambda_per_nant_per_ibo[n_ant_idx, :], label=n_ant_val)
-
-
-ax1.set_title("Constellation shrinking coefficient - alpha for N antennas [-]")
-ax1.set_xlabel("IBO [dB]")
-ax1.set_ylabel("Alpha [-]")
-ax1.grid()
-ax1.legend(title="N antennas:")
+ax2.plot(ibo_arr, theoretical_sdr_analytical_alpha, label="Analytical alpha")
+ax2.plot(ibo_arr, theoretical_sdr_alpha_estimate, label="Estimated alpha")
+ax2.legend()
+ax2.set_title("Expected signal to distortion ratio (SDR)")
+ax2.set_xlabel("IBO [dB]")
+ax2.set_ylabel("SDR [dB]")
+ax2.grid()
 
 plt.tight_layout()
 plt.savefig(
-    "figs/constel_shrinking_coeff_nant%dto%d_ibo%1.1fto%1.1f.png" % (min(n_ant_arr), max(n_ant_arr), min(ibo_arr), max(ibo_arr)),
+    "figs/expected_sdr_ibo%1.1fto%1.1f.png" % (min(ibo_arr), max(ibo_arr)),
     dpi=600, bbox_inches='tight')
 plt.show()
 
-print("Finished execution!")
+
 
 #%%

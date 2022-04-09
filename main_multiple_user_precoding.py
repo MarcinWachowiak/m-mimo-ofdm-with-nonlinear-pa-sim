@@ -31,8 +31,8 @@ bit_rng = np.random.default_rng(4321)
 ibo_val_db = 5
 
 # Multiple users data
-usr_angles = [15, 45, 90, 160]
-usr_distances = [150, 100, 200, 175]
+usr_angles = [45, 140]
+usr_distances = [200, 150]
 n_users = len(usr_angles)
 max_point_idx = usr_angles[0]
 

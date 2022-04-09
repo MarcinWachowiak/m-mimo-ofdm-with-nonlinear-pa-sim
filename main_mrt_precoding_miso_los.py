@@ -34,8 +34,12 @@ my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.dee
 my_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion), cord_x=30, cord_y=30, cord_z=1.5, center_freq=int(3.5e9),
                                 carrier_spacing=int(15e3))
 my_rx.correct_constellation()
-
 my_miso_chan = channel.MisoLosFd()
+
+alpha_val = my_mod.calc_alpha(ibo_db=ibo_val_db)
+print("Alpha value: ", alpha_val)
+print("Expected SDR value: %2.2f [dB]" % (20*np.log10(alpha_val**2/(1-alpha_val**2))))
+
 
 # %%
 plot_full_circle = False
