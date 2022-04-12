@@ -25,22 +25,22 @@ class SoftLimiter:
         self.avg_samp_pow = avg_samp_pow
         self.sat_pow = np.power(10, self.ibo_db / 10) * avg_samp_pow
 
-    def plot_characteristics(self, in_ampl_min=-10, in_ampl_max=10, step=0.1):
+    def plot_characteristics(self, in_ampl_min=0, in_ampl_max=6.33, step=0.01):
         in_sig_ampl = np.arange(in_ampl_min, in_ampl_max + step, step)
         out_sig_ampl = self.process(in_sig_ampl)
 
         fig, ax = plt.subplots(1, 1)
-        ax.plot(in_sig_ampl, out_sig_ampl, label=self.ibo_db)
-        ax.set_title("Soft limiter transfer characteristic")
-        ax.set_xlabel("Input signal amplitude [V]")
-        ax.set_ylabel("Output signal amplitude [V]")
+        ax.plot(in_sig_ampl**2, out_sig_ampl**2, label=self.ibo_db)
+        ax.set_title("Charakterystyka przejściowa modelu wzmacniacza")
+        ax.set_xlabel("Moc sygnału wejściowego [dBm]")
+        ax.set_ylabel("Moc sygnału wyjściowego [dBm]")
         ax.legend(title="IBO [dB]")
         props = dict(boxstyle="round", fc="w", ec="0.5", alpha=0.9)
-        ax.text(0.46, 0.05, ("Average sample power = %2.1f" % self.avg_samp_pow), transform=ax.transAxes,
+        ax.text(0.38, 0.05, ("Średnia moc sygnału = %2.1f [dBm]" % self.avg_samp_pow), transform=ax.transAxes,
                        fontsize=8, verticalalignment='bottom', bbox=props)
         ax.grid()
         plt.tight_layout()
-        plt.savefig("figs/soft_lim_tf_ibo%d.png" % self.ibo_db, dpi=600, bbox_inches='tight')
+        plt.savefig("figs/soft_lim_tf_ibo%d.pdf" % self.ibo_db, dpi=600, bbox_inches='tight')
         plt.show()
 
     def process(self, in_sig):

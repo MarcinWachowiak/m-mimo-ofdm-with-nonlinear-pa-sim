@@ -179,8 +179,8 @@ ax1.yaxis.set_major_locator(MaxNLocator(5))
 dist_lines_lst = []
 for idx, n_ant in enumerate(n_ant_vec):
     ax1.plot(radian_vals, desired_sc_psd_at_angle_lst[idx], label=n_ant, linewidth=1.5)
-ax1.set_title("Desired signal PSD at angle [dB]", pad=-15)
-ax1.legend(title="N antennas:", ncol=len(n_ant_vec), loc='lower center', borderaxespad=0)
+ax1.set_title("Moc sygnału pożądanego [dB]", pad=-15)
+ax1.legend(title="Liczba anten:", ncol=len(n_ant_vec), loc='lower center', borderaxespad=0)
 ax1.grid(True)
 plt.savefig("figs/rayleigh_desired_signal_beampattern_ibo%d_%dto%dant_sweep.png" % (
     my_tx.impairment.ibo_db, np.min(n_ant_vec), np.max(n_ant_vec)), dpi=600, bbox_inches='tight')
@@ -202,8 +202,8 @@ ax2.yaxis.set_major_locator(MaxNLocator(5))
 dist_lines_lst = []
 for idx, n_ant in enumerate(n_ant_vec):
     ax2.plot(radian_vals, distortion_sc_psd_at_angle_lst[idx], label=n_ant, linewidth=1.5)
-ax2.set_title("Distortion signal PSD at angle [dB]", pad=-15)
-ax2.legend(title="N antennas:", ncol=len(n_ant_vec), loc='lower center', borderaxespad=0)
+ax2.set_title("Moc sygnału zniekształcenia [dB]", pad=-15)
+ax2.legend(title="Liczba anten:", ncol=len(n_ant_vec), loc='lower center', borderaxespad=0)
 ax2.grid(True)
 plt.savefig("figs/rayleigh_distortion_signal_beampattern_ibo%d_%dto%dant_sweep.png" % (
     my_tx.impairment.ibo_db, np.min(n_ant_vec), np.max(n_ant_vec)), dpi=600, bbox_inches='tight')
@@ -225,10 +225,10 @@ ax3.yaxis.set_major_locator(MaxNLocator(5))
 dist_lines_lst = []
 # select index to plot
 sel_idx = -1
-ax3.plot(radian_vals, desired_sc_psd_at_angle_lst[sel_idx], label="Desired", linewidth=1.5)
-ax3.plot(radian_vals, distortion_sc_psd_at_angle_lst[sel_idx], label="Distortion", linewidth=1.5)
-ax3.set_title("Power spectral density at angle [dB]", pad=-15)
-ax3.legend(title="N antennas = %d, signals:" % n_ant_vec[sel_idx], ncol=2, loc='lower center', borderaxespad=0)
+ax3.plot(radian_vals, desired_sc_psd_at_angle_lst[sel_idx], label="Pożądany", linewidth=1.5)
+ax3.plot(radian_vals, distortion_sc_psd_at_angle_lst[sel_idx], label="Zniekształcenia", linewidth=1.5)
+ax3.set_title("Moc sygnału [dB]", pad=-15)
+ax3.legend(title="Liczba anten = %d, sygnał:" % n_ant_vec[sel_idx], ncol=2, loc='lower center', borderaxespad=0)
 ax3.grid(True)
 plt.savefig(
     "figs/rayleigh_desired_vs_distortion_beampattern_ibo%d_%dant.png" % (my_tx.impairment.ibo_db, np.max(n_ant_vec)),
@@ -251,8 +251,8 @@ ax4.yaxis.set_major_locator(MaxNLocator(5))
 for idx, n_ant in enumerate(n_ant_vec):
     ax4.plot(radian_vals, desired_sc_psd_at_angle_lst[idx] - distortion_sc_psd_at_angle_lst[idx], label=n_ant,
              linewidth=1.5)
-ax4.set_title("Signal to distortion ratio at angle [dB]", pad=-15)
-ax4.legend(title="N antennas:", ncol=len(n_ant_vec), loc='lower center', borderaxespad=0)
+ax4.set_title("Stosunek mocy sygnału pożądanego do zniekształcenia [dB]", pad=-15)
+ax4.legend(title="Liczba anten:", ncol=len(n_ant_vec), loc='lower center', borderaxespad=0)
 ax4.grid(True)
 plt.savefig("figs/rayleigh_sdr_at_angle_polar_ibo%d_%dto%dant_sweep.png" % (
     my_tx.impairment.ibo_db, np.min(n_ant_vec), np.max(n_ant_vec)), dpi=600, bbox_inches='tight')
@@ -268,11 +268,11 @@ for idx, n_ant in enumerate(n_ant_vec):
              linewidth=1.5)
 
 ax5.set_xlim([40, 50])
-ax5.set_xlabel("Angle [$\degree$]")
-ax5.set_ylabel("Signal to distortion ratio [dB]")
+ax5.set_xlabel("Kąt [$\degree$]")
+ax5.set_ylabel("SDR [dB]")
 
-ax5.set_title("Signal to distortion ratio at angle", pad=-15)
-ax5.legend(title="N antennas:")
+ax5.set_title("Stosunek mocy sygnału pożądanego do zniekształcenia [dB]", pad=-15)
+ax5.legend(title="Liczba anten:")
 ax5.grid(True)
 plt.savefig("figs/rayleigh_sdr_at_angle_cartesian_ibo%d_%dto%dant_sweep.png" % (
     my_tx.impairment.ibo_db, np.min(n_ant_vec), np.max(n_ant_vec)), dpi=600, bbox_inches='tight')
@@ -283,15 +283,15 @@ plt.show()
 fig6, ax6 = plt.subplots(1, 1)
 sorted_clean_rx_at_point_freq_arr, sorted_clean_psd_at_point_arr = zip(
     *sorted(zip(rx_clean_at_point_freq_arr, rx_clean_at_point_psd)))
-ax6.plot(np.array(sorted_clean_rx_at_point_freq_arr), to_db(np.array(sorted_clean_psd_at_point_arr)), label="Desired")
+ax6.plot(np.array(sorted_clean_rx_at_point_freq_arr), to_db(np.array(sorted_clean_psd_at_point_arr)), label="Pożądany")
 sorted_dist_rx_at_point_freq_arr, sorted_dist_psd_at_point_arr = zip(
     *sorted(zip(rx_dist_at_point_freq_arr, rx_dist_at_point_psd)))
-ax6.plot(np.array(sorted_dist_rx_at_point_freq_arr), to_db(np.array(sorted_dist_psd_at_point_arr)), label="Distorted")
+ax6.plot(np.array(sorted_dist_rx_at_point_freq_arr), to_db(np.array(sorted_dist_psd_at_point_arr)), label="Zniekształcenia")
 
-ax6.set_title("Power spectral density at angle %d$\degree$" % point_idx_psd)
-ax6.set_xlabel("Subcarrier index [-]")
-ax6.set_ylabel("Power [dB]")
-ax6.legend(title="IBO = %d [dB]" % my_tx.impairment.ibo_db)
+ax6.set_title("Widmowa gęstość mocy dla kąta %d$\degree$" % point_idx_psd)
+ax6.set_xlabel("Indeks podnośnej [-]")
+ax6.set_ylabel("Moc [dB]")
+ax6.legend(title="IBO = %d [dB], sygnał:" % my_tx.impairment.ibo_db)
 ax6.grid()
 plt.tight_layout()
 plt.savefig(
@@ -306,16 +306,16 @@ fig7, ax7 = plt.subplots(1, 1)
 sorted_clean_rx_at_max_point_freq_arr, sorted_clean_psd_at_max_point_arr = zip(
     *sorted(zip(rx_clean_at_max_point_freq_arr, rx_clean_at_max_point_psd)))
 ax7.plot(np.array(sorted_clean_rx_at_max_point_freq_arr), to_db(np.array(sorted_clean_psd_at_max_point_arr)),
-         label="Desired", linewidth=1.5)
+         label="Pożądany", linewidth=1.5)
 sorted_dist_rx_at_max_point_freq_arr, sorted_dist_psd_at_max_point_arr = zip(
     *sorted(zip(rx_dist_at_max_point_freq_arr, rx_dist_at_max_point_psd)))
 ax7.plot(np.array(sorted_dist_rx_at_max_point_freq_arr), to_db(np.array(sorted_dist_psd_at_max_point_arr)),
-         label="Distorted", linewidth=1.5)
+         label="Zniekształcenia", linewidth=1.5)
 
-ax7.set_title("Power spectral density at angle %d$\degree$" % precoding_point_idx)
-ax7.set_xlabel("Subcarrier index [-]")
-ax7.set_ylabel("Power [dB]")
-ax7.legend(title="IBO = %d [dB]" % my_tx.impairment.ibo_db)
+ax7.set_title("Widmowa gęstość mocy dla kąta %d$\degree$" % precoding_point_idx)
+ax7.set_xlabel("Indeks podnośnej [-]")
+ax7.set_ylabel("Moc [dB]")
+ax7.legend(title="IBO = %d [dB], sygnał:" % my_tx.impairment.ibo_db)
 ax7.grid()
 plt.tight_layout()
 plt.savefig("figs/rayleigh_psd_at_angle_%ddeg_ibo%d_ant%d.png" % (

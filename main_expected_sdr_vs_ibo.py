@@ -31,7 +31,7 @@ fig1, ax1 = plt.subplots(1, 1)
 
 # plot analytical
 ax1.plot(ibo_vec, sdr_vec, label="Analytical SDR")
-ax1.set_title("Expected signal to distortion ratio (SDR)")
+ax1.set_title("Analitycznie wyznaczony stosunek\nsygnału do zniekształcenia (SDR)")
 ax1.set_xlabel("IBO [dB]")
 ax1.set_ylabel("SDR [dB]")
 ax1.grid()
