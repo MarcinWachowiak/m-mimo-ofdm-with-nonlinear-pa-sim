@@ -64,7 +64,7 @@ n_snapshots = 10
 # %%
 # plot PSD for chosen point/angle
 point_idx_psd = 78
-n_ant_vec = [32]
+n_ant_vec = [8]
 
 desired_psd_at_angle_lst = []
 distortion_psd_at_angle_lst = []
