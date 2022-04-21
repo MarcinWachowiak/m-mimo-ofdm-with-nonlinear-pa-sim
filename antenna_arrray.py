@@ -156,13 +156,13 @@ class LinearArray:
             precoding_matrix = np.empty((self.n_elements, self.base_transceiver.modem.n_sub_carr), dtype=np.complex128)
             for idx, array_tx in enumerate(self.array_elements):
                 precoding_matrix[idx, :] = array_tx.modem.precoding_mat
-            avg_precoding_gain = np.average(np.divide(np.power(np.abs(precoding_matrix), 2), np.sum(np.power(np.abs(precoding_matrix), 2), axis=0)))
+            avg_precoding_gain = np.average(np.power(np.abs(precoding_matrix), 2))
         else:
             # multiple user scenario
-            precoding_matrix = np.empty((self.n_elements, n_users, self.base_transceiver.modem.n_sub_carr), dtype=np.complex128)
+            precoding_matrix_pwr = np.empty((self.n_elements, self.base_transceiver.modem.n_sub_carr), dtype=np.float64)
             for idx, array_tx in enumerate(self.array_elements):
-                precoding_matrix[idx, :] = np.sum(array_tx.modem.precoding_mat, axis=0)
-            avg_precoding_gain = np.average(np.divide(np.power(np.abs(precoding_matrix), 2), np.sum(np.power(np.abs(precoding_matrix), 2), axis=0)))
+                precoding_matrix_pwr[idx, :] = np.sum(np.power(np.abs(array_tx.modem.precoding_mat),2), axis=0)
+            avg_precoding_gain = np.average(precoding_matrix_pwr)
 
         # Equal total RX power precoding distortion normalization
         # sc_channel_mat = np.concatenate((channel_mat_fd[:, 1:(tx_n_sc // 2) + 1], channel_mat_fd[:, -tx_n_sc // 2:]), axis=1)
