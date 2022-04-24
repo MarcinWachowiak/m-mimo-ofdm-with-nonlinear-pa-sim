@@ -38,111 +38,86 @@ my_rx.correct_constellation()
 
 
 # %%
-n_ant_arr = [1] # 16, 32, 64, 128]
-print("N antennas values:", n_ant_arr)
-ibo_arr = np.arange(0.25, 10.25, 0.25)
+n_ant_val = 8
+print("N antennas values:", n_ant_val)
+ibo_arr = np.arange(0.25, 10.25, 1)
 print("IBO values:", ibo_arr)
 
-abs_lambda_per_nant_per_ibo = np.zeros((len(n_ant_arr), len(ibo_arr)))
-abs_lambda_per_ibo_analytical = []
+lambda_per_nant_per_ibo = np.zeros((len(ibo_arr), n_ant_val))
+lambda_per_ibo_analytical = []
 
 # get analytical value of alpha
 for ibo_idx, ibo_val_db in enumerate(ibo_arr):
-    abs_lambda_per_ibo_analytical.append(my_mod.calc_alpha(ibo_val_db))
+    lambda_per_ibo_analytical.append(my_mod.calc_alpha(ibo_val_db))
 # %%
 # lambda estimation phase
-for n_ant_idx, n_ant_val in enumerate(n_ant_arr):
-    start_time = time.time()
-    print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+start_time = time.time()
+print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
-    for ibo_idx, ibo_val_db in enumerate(ibo_arr):
-        lambda_corr_estimate = []
-        my_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(3.5e9),
-                                              wav_len_spacing=0.5,
-                                              cord_x=0, cord_y=0, cord_z=15)
-        my_miso_chan = channel.RayleighMisoFd(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx, seed=1234)
+my_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(3.5e9),
+                                      wav_len_spacing=0.5,
+                                      cord_x=0, cord_y=0, cord_z=15)
+# my_miso_chan = channel.MisoLosFd(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx, seed=1234)
+my_miso_chan = channel.MisoTwoPathFd()
 
-        chan_mat_at_point = my_miso_chan.get_channel_mat_fd()
-        my_array.set_precoding_matrix(channel_mat_fd=chan_mat_at_point, mr_precoding=True)
-        my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
-        # correct avg sample power in nonlinearity after precoding
+#%%
+# chan_mat_at_point = my_miso_chan.get_channel_mat_fd()
+my_miso_chan.calc_channel_mat(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx, skip_attenuation=False)
+chan_mat_at_point = my_miso_chan.get_channel_mat_fd()
+my_array.set_precoding_matrix(channel_mat_fd=chan_mat_at_point, mr_precoding=True)
+# averaging length
+n_ofdm_symb = 1e3
 
-        # estimate lambda correcting coefficient
-        # same seed is required
-        bit_rng = np.random.default_rng(4321)
-        n_ofdm_symb = 5e2
-        ofdm_symb_idx = 0
-        lambda_numerator_vecs = []
-        lambda_denominator_vecs = []
-        while ofdm_symb_idx < n_ofdm_symb:
-            tx_bits = bit_rng.choice((0, 1), my_tx.modem.n_bits_per_ofdm_sym)
-            tx_ofdm_symbol_fd, clean_ofdm_symbol_fd = my_array.transmit(tx_bits, out_domain_fd=True, return_both=True)
+for ibo_idx, ibo_val_db in enumerate(ibo_arr):
+    my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
+    # correct avg sample power in nonlinearity after precoding
 
-            rx_sig_fd = my_miso_chan.propagate(in_sig_mat=tx_ofdm_symbol_fd)
-            rx_sig_clean_fd = my_miso_chan.propagate(in_sig_mat=clean_ofdm_symbol_fd)
+    # estimate lambda correcting coefficient
+    # same seed is required
+    bit_rng = np.random.default_rng(4321)
+    ofdm_symb_idx = 0
+    lambda_numerator_vecs = []
+    lambda_denominator_vecs = []
+    while ofdm_symb_idx < n_ofdm_symb:
+        tx_bits = bit_rng.choice((0, 1), my_tx.modem.n_bits_per_ofdm_sym)
+        tx_ofdm_symbol_fd, clean_ofdm_symbol_fd = my_array.transmit(tx_bits, out_domain_fd=True, return_both=True)
 
-            clean_nsc_ofdm_symb_fd = np.concatenate(
-                (rx_sig_clean_fd[-my_mod.n_sub_carr // 2:], rx_sig_clean_fd[1:(my_mod.n_sub_carr // 2) + 1]))
-            rx_nsc_ofdm_symb_fd = np.concatenate(
-                (rx_sig_fd[-my_mod.n_sub_carr // 2:], rx_sig_fd[1:(my_mod.n_sub_carr // 2) + 1]))
+        clean_nsc_ofdm_symb_fd = np.concatenate(
+            (clean_ofdm_symbol_fd[:, -my_mod.n_sub_carr // 2:], clean_ofdm_symbol_fd[:, 1:(my_mod.n_sub_carr // 2) + 1,]), axis=1)
+        rx_nsc_ofdm_symb_fd = np.concatenate(
+            (tx_ofdm_symbol_fd[:, -my_mod.n_sub_carr // 2:], tx_ofdm_symbol_fd[:, 1:(my_mod.n_sub_carr // 2) + 1]), axis=1)
+        # estimate lambda parameters for each antenna and compare in regard to the average
+        lambda_numerator_vecs.append(np.multiply(rx_nsc_ofdm_symb_fd, np.conjugate(clean_nsc_ofdm_symb_fd)))
+        lambda_denominator_vecs.append(np.multiply(clean_nsc_ofdm_symb_fd, np.conjugate(clean_nsc_ofdm_symb_fd)))
 
-            lambda_numerator_vecs.append(np.multiply(rx_nsc_ofdm_symb_fd, np.conjugate(clean_nsc_ofdm_symb_fd)))
-            lambda_denominator_vecs.append(np.multiply(clean_nsc_ofdm_symb_fd, np.conjugate(clean_nsc_ofdm_symb_fd)))
+        ofdm_symb_idx += 1
 
-            ofdm_symb_idx += 1
+        # calculate lambda estimate
+    lambda_num = np.average(np.hstack(lambda_numerator_vecs), axis=1)
+    lambda_denum = np.average(np.hstack(lambda_denominator_vecs), axis=1)
+    lambda_per_nant_per_ibo[ibo_idx, :] = np.abs(lambda_num / lambda_denum)
 
-            # calculate lambda estimate
-        lambda_num = np.average(np.vstack(lambda_numerator_vecs), axis=0)
-        lambda_denum = np.average(np.vstack(lambda_denominator_vecs), axis=0)
-        abs_lambda_per_nant_per_ibo[n_ant_idx, ibo_idx] = (np.abs(np.average(lambda_num / lambda_denum)))
-    print("--- Computation time: %f ---" % (time.time() - start_time))
-
-# %%
-# fig1, ax1 = plt.subplots(1, 1)
-
-# # plot analytical
-# ax1.plot(ibo_arr, abs_lambda_per_ibo_analytical, label="Analytical")
-#
-# for n_ant_idx, n_ant_val in enumerate(n_ant_arr):
-#     ax1.plot(ibo_arr, abs_lambda_per_nant_per_ibo[n_ant_idx, :], label=n_ant_val)
-#
-#
-# ax1.set_title("Constellation shrinking coefficient - alpha for N antennas [-]")
-# ax1.set_xlabel("IBO [dB]")
-# ax1.set_ylabel("Alpha [-]")
-# ax1.grid()
-# ax1.legend(title="N antennas:")
-#
-# plt.tight_layout()
-# plt.savefig(
-#     "figs/constel_shrinking_coeff_nant%dto%d_ibo%1.1fto%1.1f.png" % (min(n_ant_arr), max(n_ant_arr), min(ibo_arr), max(ibo_arr)),
-#     dpi=600, bbox_inches='tight')
-# plt.show()
-#
-# print("Finished execution!")
+print("--- Computation time: %f ---" % (time.time() - start_time))
 
 # %%
-# calculate the SDR
-theoretical_sdr_analytical_alpha = 20*np.log10(np.array(abs_lambda_per_ibo_analytical)**2/(1-np.array(abs_lambda_per_ibo_analytical)**2))
-theoretical_sdr_alpha_estimate = 20*np.log10(np.squeeze(abs_lambda_per_nant_per_ibo)**2/(1-np.squeeze(abs_lambda_per_nant_per_ibo)**2))
-# Expected SDR plot
-fig2, ax2 = plt.subplots(1, 1)
+fig1, ax1 = plt.subplots(1, 1)
 
 # plot analytical
-ax2.plot(ibo_arr, theoretical_sdr_analytical_alpha, label="Analytical alpha")
-ax2.plot(ibo_arr, theoretical_sdr_alpha_estimate, label="Estimated alpha")
-ax2.legend()
-ax2.set_title("Expected signal to distortion ratio (SDR)")
-ax2.set_xlabel("IBO [dB]")
-ax2.set_ylabel("SDR [dB]")
-ax2.grid()
+ax1.plot(ibo_arr, lambda_per_ibo_analytical, label="Analytical", zorder=256)
+
+for ant_idx in range(n_ant_val):
+    ax1.plot(ibo_arr, lambda_per_nant_per_ibo[:, ant_idx], label=ant_idx)
+
+ax1.set_title("Constellation shrinking coefficient - alpha[-]")
+ax1.set_xlabel("IBO [dB]")
+ax1.set_ylabel("Alpha [-]")
+ax1.grid()
+ax1.legend(title="Antenna idx:")
 
 plt.tight_layout()
 plt.savefig(
-    "figs/expected_sdr_ibo%1.1fto%1.1f.png" % (min(ibo_arr), max(ibo_arr)),
+    "figs/%s_alpha_per_antenna_n_ant%d_ibo%1.1fto%1.1f.png" % (str(my_miso_chan), n_ant_val, min(ibo_arr), max(ibo_arr)),
     dpi=600, bbox_inches='tight')
 plt.show()
 
-
-
-#%%
+print("Finished execution!")
