@@ -141,7 +141,7 @@ class RayleighMisoFd:
     def __str__(self):
         return "rayleigh"
 
-    def set_channel_mat_fd(self, fd_chan_mat=None, skip_attenuation=True):
+    def set_channel_mat_fd(self, fd_chan_mat=None, skip_attenuation=False):
         if fd_chan_mat is None:
             # generate rayleigh channel coefficients
             fd_rayleigh_coeffs = self.rng_gen.standard_normal(size=(self.n_inputs, self.fd_samp_size * 2)).view(
@@ -156,7 +156,7 @@ class RayleighMisoFd:
     def get_channel_mat_fd(self):
         return self.fd_chan_mat
 
-    def reroll_channel_coeffs(self, skip_attenuation=True):
+    def reroll_channel_coeffs(self, skip_attenuation=False):
         fd_rayleigh_coeffs = self.rng_gen.standard_normal(size=(self.n_inputs, self.fd_samp_size * 2)).view(
                 dtype=np.complex128) / np.sqrt(2.0)
         if skip_attenuation:
