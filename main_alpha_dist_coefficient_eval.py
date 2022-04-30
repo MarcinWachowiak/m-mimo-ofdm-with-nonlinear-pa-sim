@@ -105,11 +105,11 @@ for chan_idx, chan_obj in enumerate(chan_lst):
 # %%
 fig1, ax1 = plt.subplots(1, 1)
 ax1.fill_between(ibo_arr, np.amin(lambda_per_nant_per_ibo[0, :, :], axis=1), np.amax(lambda_per_nant_per_ibo[0, :, :], axis=1), alpha=0.9, label="Rayleigh")
-ax1.fill_between(ibo_arr, np.amin(lambda_per_nant_per_ibo[1, :, :], axis=1), np.amax(lambda_per_nant_per_ibo[1, :, :], axis=1), alpha=0.9, label="Two path")
+ax1.fill_between(ibo_arr, np.amin(lambda_per_nant_per_ibo[1, :, :], axis=1), np.amax(lambda_per_nant_per_ibo[1, :, :], axis=1), alpha=0.9, label="Two-path")
 ax1.fill_between(ibo_arr, np.amin(lambda_per_nant_per_ibo[2, :, :], axis=1), np.amax(lambda_per_nant_per_ibo[2, :, :], axis=1), alpha=0.9, label="LOS")
 ax1.plot(ibo_arr, lambda_per_ibo_analytical, 'k--', label="Analytical", linewidth=0.5,)
 
-ax1.set_title(r"Attenuation coefficient $\alpha$ [-]")
+ax1.set_title(r"Coefficient $\alpha$ [-]")
 ax1.set_xlabel("IBO [dB]")
 ax1.set_ylabel(r"$\alpha$ [-]")
 ax1.grid()
