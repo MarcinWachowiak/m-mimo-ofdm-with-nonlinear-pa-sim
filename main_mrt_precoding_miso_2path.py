@@ -227,7 +227,7 @@ max_val = np.max(desired_sc_psd_at_angle_lst[sel_idx])
 ax3.plot(radian_vals, desired_sc_psd_at_angle_lst[sel_idx]-max_val, label="Pożądany", linewidth=1.5)
 ax3.plot(radian_vals, distortion_sc_psd_at_angle_lst[sel_idx]-max_val, label="Zniekształcenia", linewidth=1.5)
 ax3.yaxis.set_major_locator(MaxNLocator(4))
-ax3.set_title("Moc sygnału [dB]", pad=-15)
+ax3.set_title("Znormalizowana charakterysytka promieniowania [dB]", pad=-15)
 ax3.legend(title="Liczba anten = %d, sygnał:" % n_ant_vec[sel_idx], ncol=2, loc='lower center', borderaxespad=0)
 ax3.grid(True)
 plt.savefig("figs/2path_desired_vs_distortion_beampattern_ibo%d_%dant.pdf" % (my_tx.impairment.ibo_db, np.max(n_ant_vec)),
