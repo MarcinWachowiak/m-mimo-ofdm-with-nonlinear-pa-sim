@@ -38,11 +38,11 @@ my_rx.correct_constellation()
 
 
 # %%
-n_ant_val = 64
+n_ant_val = 8
 # averaging length
 n_ofdm_symb = 1e2
 print("N antennas values:", n_ant_val)
-ibo_arr = np.linspace(0.01, 10.0, 20)
+ibo_arr = np.linspace(0.01, 10.0, 10)
 print("IBO values:", ibo_arr)
 lambda_per_ibo_analytical = []
 
@@ -73,7 +73,6 @@ for chan_idx, chan_obj in enumerate(chan_lst):
     my_array.set_precoding_matrix(channel_mat_fd=tmp_chan_mat, mr_precoding=True)
 
     for ibo_idx, ibo_val_db in enumerate(ibo_arr):
-        # correct avg sample power in nonlinearity after precoding
         my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
 
         # estimate lambda correcting coefficient
@@ -83,6 +82,13 @@ for chan_idx, chan_obj in enumerate(chan_lst):
         lambda_numerator_vecs = []
         lambda_denominator_vecs = []
         while ofdm_symb_idx < n_ofdm_symb:
+            # reroll coeffs for each symbol for rayleigh chan
+            # if chan_idx == 0:
+            #     chan_obj.reroll_channel_coeffs()
+            #     tmp_chan_mat = chan_obj.get_channel_mat_fd()
+            #     my_array.set_precoding_matrix(channel_mat_fd=tmp_chan_mat, mr_precoding=True)
+            #     my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
+
             tx_bits = bit_rng.choice((0, 1), my_tx.modem.n_bits_per_ofdm_sym)
             tx_ofdm_symbol_fd, clean_ofdm_symbol_fd = my_array.transmit(tx_bits, out_domain_fd=True, return_both=True)
 
