@@ -174,3 +174,21 @@ class LinearArray:
         for idx, array_transceiver in enumerate(self.array_elements):
             array_transceiver.impairment.set_ibo(ibo_db)
             array_transceiver.impairment.set_avg_sample_power(avg_sample_pow * avg_precoding_gain)
+
+    def get_avg_precoding_gain(self):
+
+        n_users = self.base_transceiver.modem.n_users
+        if n_users == 1:
+            # get precoding matrix
+            precoding_matrix = np.empty((self.n_elements, self.base_transceiver.modem.n_sub_carr), dtype=np.complex128)
+            for idx, array_tx in enumerate(self.array_elements):
+                precoding_matrix[idx, :] = array_tx.modem.precoding_mat
+            avg_precoding_gain = np.average(np.power(np.abs(precoding_matrix), 2))
+        else:
+            # multiple user scenario
+            precoding_matrix_pwr = np.empty((self.n_elements, self.base_transceiver.modem.n_sub_carr), dtype=np.float64)
+            for idx, array_tx in enumerate(self.array_elements):
+                precoding_matrix_pwr[idx, :] = np.sum(np.power(np.abs(array_tx.modem.precoding_mat),2), axis=0)
+            avg_precoding_gain = np.average(precoding_matrix_pwr)
+
+        return avg_precoding_gain
