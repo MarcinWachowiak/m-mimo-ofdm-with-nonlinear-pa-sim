@@ -9,8 +9,10 @@ def set_latex_plot_style():
                       '#999999', '#e41a1c', '#dede00']
     rcParams['axes.prop_cycle'] = cycler(color=CB_color_cycle)
 
-    rc('text', usetex=True)
-    rc('text.latex', preamble=r'\usepackage{gensymb}')
+    # uncomment only for final hq plots with latex fonts - latex fonts highly slow down plotting
+    # rc('text', usetex=True)
+    # rc('text.latex', preamble=r'\usepackage{gensymb}')
+    # rcParams["font.family"] = ["Latin Modern Roman"]
 
     # fig_width_pt = 426.0  # Get this from LaTeX using \showthe\columnwidth result:
     # inches_per_pt = 1.0 / 72.27  # Convert pt to inches
@@ -25,9 +27,8 @@ def set_latex_plot_style():
               'legend.fontsize': 8,
               'xtick.labelsize': 8,
               'ytick.labelsize': 8,
-              'text.usetex': True,
               'figure.figsize': fig_size}
+    rcParams['path.simplify'] = True
 
     rcParams.update(params)
-    rcParams["font.family"] = ["Latin Modern Roman"]
-    rcParams['path.simplify'] = True
+

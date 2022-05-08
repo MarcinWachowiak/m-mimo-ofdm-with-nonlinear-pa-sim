@@ -14,7 +14,7 @@ import modulation
 import noise
 import transceiver
 from plot_settings import set_latex_plot_style
-from utilities import count_mismatched_bits, ebn0_to_snr
+from utilities import count_mismatched_bits, ebn0_to_snr, td_signal_power
 
 set_latex_plot_style()
 
@@ -26,13 +26,13 @@ my_distortion = distortion.SoftLimiter(0, my_mod.avg_sample_power)
 my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion))
 # my_tx.impairment.plot_characteristics()
 
-my_standard_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=None)
+my_standard_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion))
 my_cnc_rx = corrector.CncReceiver(copy.deepcopy(my_mod), copy.deepcopy(my_distortion))
 
 my_noise = noise.Awgn(snr_db=10, seed=1234)
 bit_rng = np.random.default_rng(4321)
 
-ebn0_arr = np.arange(0, 21, 1)
+ebn0_arr = np.arange(0, 21, 2)
 print("Eb/n0 values:", ebn0_arr)
 snr_arr = ebn0_to_snr(ebn0_arr, my_mod.n_fft, my_mod.n_sub_carr, my_mod.constel_size)
 print("SNR values:", snr_arr)
@@ -63,9 +63,8 @@ if include_clean_run:
 
 ber_per_dist, freq_arr, clean_ofdm_psd, distortion_psd, tx_ofdm_psd = ([] for i in range(5))
 
-start_time = time.time()
 for run_idx, cnc_n_iter_val in enumerate(cnc_n_iters_lst):
-
+    start_time = time.time()
     if not (include_clean_run and run_idx == 0):
         my_standard_rx.modem.correct_constellation(ibo_val_db)
         my_tx.impairment.set_ibo(ibo_val_db)
@@ -80,7 +79,6 @@ for run_idx, cnc_n_iter_val in enumerate(cnc_n_iters_lst):
         while bits_sent < bits_sent_max and n_err < n_err_min:
             tx_bits = bit_rng.choice((0, 1), my_tx.modem.n_bits_per_ofdm_sym)
             tx_ofdm_symbol, clean_ofdm_symbol = my_tx.transmit(tx_bits, out_domain_fd=False, return_both=True)
-
             if include_clean_run and run_idx == 0:
                 rx_ofdm_symbol = my_noise.process(clean_ofdm_symbol, my_mod.avg_sample_power)
             else:
@@ -115,8 +113,7 @@ for run_idx, cnc_n_iter_val in enumerate(cnc_n_iters_lst):
 
         bers[idx] = n_err / bits_sent
     ber_per_dist.append(bers)
-
-print("--- Computation time: %f ---" % (time.time() - start_time))
+    print("--- Computation time: %f ---" % (time.time() - start_time))
 
 # %%
 fig1, ax1 = plt.subplots(1, 1)
