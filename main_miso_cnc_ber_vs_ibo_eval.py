@@ -29,9 +29,8 @@ set_latex_plot_style()
 # arbitrarly set params:
 estimate_lambda = False
 n_ant_val = 1
-ebn0_val_db = 15
+ebn0_val_db = 20
 print("Eb/n0 value:", ebn0_val_db)
-
 cnc_n_iter_vals = [0,1,2,3,4]
 print("CNC N iterations:", cnc_n_iter_vals)
 cnc_n_upsamp_val = 4
@@ -61,7 +60,7 @@ my_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.dee
 my_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(3.5e9),
                                       wav_len_spacing=0.5,
                                       cord_x=0, cord_y=0, cord_z=15)
-my_miso_chan = channel.MisoLosFd()
+my_miso_chan = channel.MisoTwoPathFd()
 # my_miso_chan = channel.RayleighMisoFd(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx, seed=1234)
 my_noise = noise.Awgn(snr_db=20, noise_p_dbm=-90, seed=1234)
 my_cnc_rx = corrector.CncReceiver(copy.deepcopy(my_mod), copy.deepcopy(my_distortion))
@@ -147,11 +146,10 @@ for ibo_idx, ibo_val_db in enumerate(ibo_arr):
             # print("TX power", n_ant_val*utilities.td_signal_power(utilities.to_time_domain(tx_ofdm_symbol_fd)))
             rx_ofdm_symbol_fd = my_miso_chan.propagate(in_sig_mat=tx_ofdm_symbol_fd)
             # print("RX power", utilities.td_signal_power(utilities.to_time_domain(rx_ofdm_symbol_fd)))
+            rx_ofdm_symbol_fd = my_noise.process(rx_ofdm_symbol_fd, avg_sample_pow=my_mod.avg_symbol_power*(np.average(agc_corr_vec)**2)*abs_lambda_per_ibo[ibo_idx]**2, disp_data=False)
+
             rx_ofdm_symbol_fd = np.divide(rx_ofdm_symbol_fd, agc_corr_vec)
             # print("RX power after AGC", utilities.td_signal_power(utilities.to_time_domain(rx_ofdm_symbol_fd)))
-
-            rx_ofdm_symbol_fd = my_noise.process(rx_ofdm_symbol_fd, avg_sample_pow=my_mod.avg_sample_power*(abs_lambda_per_ibo[ibo_idx]**2), disp_data=False)
-
 
             # enchanced CNC reception
             rx_bits = my_cnc_rx.receive(n_iters=cnc_iters_val, upsample_factor=cnc_n_upsamp_val,

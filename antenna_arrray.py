@@ -61,12 +61,12 @@ class LinearArray:
                                                                                      out_domain_fd=out_domain_fd,
                                                                                      return_both=True)
 
-            return out_sig_mat, clean_sig_mat
+            return np.squeeze(out_sig_mat), np.squeeze(clean_sig_mat)
         else:
             for idx, tx_transceiver in enumerate(self.array_elements):
                 out_sig_mat[idx, :] = tx_transceiver.transmit(in_bits, out_domain_fd=out_domain_fd,
                                                               return_both=return_both)
-            return out_sig_mat
+            return np.squeeze(out_sig_mat)
 
     def set_precoding_matrix(self, channel_mat_fd=None, mr_precoding=False):
         # set precoding vector based on provided channel mat coefficients

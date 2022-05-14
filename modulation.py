@@ -93,7 +93,7 @@ class Modem:
             raise ValueError('Constellation length must be a power of 2.')
 
         self._constellation = np.array(value)
-        self.avg_sample_power = td_signal_power(self.constellation)
+        self.avg_symbol_power = td_signal_power(self.constellation)
         self.constellation_size = self._constellation.size
         self.n_bits_per_symbol = int(n_bits_per_symbol)
 
@@ -200,4 +200,4 @@ class OfdmQamModem(QamModem):
         return _demodulate(self._constellation, self.n_bits_per_symbol, input_symbols)
 
     def ofdm_avg_sample_pow(self):
-        return self.avg_sample_power * (self.n_sub_carr / self.n_fft)
+        return self.avg_symbol_power * (self.n_sub_carr / self.n_fft)

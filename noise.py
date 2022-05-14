@@ -21,7 +21,7 @@ class Awgn(Noise):
     def __init__(self, snr_db=None, noise_p_dbm=None, seed=None):
         super().__init__(snr_db, noise_p_dbm, seed)
 
-    def process(self, in_sig, avg_sample_pow=1, fixed_noise_power=False, disp_data=False):
+    def process(self, in_sig, avg_sample_pow=1, fixed_noise_power=False, disp_data=False, alpha_pwr_val=1.0, param=None):
         n_sampl = len(in_sig)
 
         # use noise_p_dbm to generate noise - limited and constant noise power
@@ -36,7 +36,11 @@ class Awgn(Noise):
 
         # check resultant SNR
         if disp_data:
-            print("Signal power:[dBm]", to_db(fd_signal_power(in_sig))+30)
+            # calculate SNR only for SC
+            # nsc=1024
+            # ofdm_sig_nsc_fd = np.concatenate((param[-nsc // 2:], param[1:(nsc // 2) + 1]))
+            # noise_nsc = np.concatenate((noise[-nsc // 2:], noise[1:(nsc // 2) + 1]))
+            print("Signal power:[dBm]", to_db(alpha_pwr_val * fd_signal_power(in_sig))+30)
             print("Noise power:[dBm]", to_db(fd_signal_power(noise))+30)
             print("SNR: ", to_db(fd_signal_power(in_sig)/fd_signal_power(noise)))
 
