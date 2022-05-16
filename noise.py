@@ -3,7 +3,7 @@ import abc
 import numpy as np
 
 #
-from utilities import to_db, fd_signal_power
+from utilities import to_db, fd_signal_power, td_signal_power, to_time_domain
 
 
 class Noise(metaclass=abc.ABCMeta):
@@ -21,7 +21,7 @@ class Awgn(Noise):
     def __init__(self, snr_db=None, noise_p_dbm=None, seed=None):
         super().__init__(snr_db, noise_p_dbm, seed)
 
-    def process(self, in_sig, avg_sample_pow=1, fixed_noise_power=False, disp_data=False, alpha_pwr_val=1.0, param=None):
+    def process(self, in_sig, avg_sample_pow=1, fixed_noise_power=False, disp_data=False):
         n_sampl = len(in_sig)
 
         # use noise_p_dbm to generate noise - limited and constant noise power
@@ -37,16 +37,17 @@ class Awgn(Noise):
         # check resultant SNR
         if disp_data:
             # calculate SNR only for SC
-            # nsc=1024
-            # ofdm_sig_nsc_fd = np.concatenate((param[-nsc // 2:], param[1:(nsc // 2) + 1]))
+            # nsc=2048
+            # ofdm_sig_nsc_fd = np.concatenate((in_sig[-nsc // 2:], in_sig[1:(nsc // 2) + 1]))
             # noise_nsc = np.concatenate((noise[-nsc // 2:], noise[1:(nsc // 2) + 1]))
-            print("Signal power:[dBm]", to_db(alpha_pwr_val * fd_signal_power(in_sig))+30)
-            print("Noise power:[dBm]", to_db(fd_signal_power(noise))+30)
-            print("SNR: ", to_db(fd_signal_power(in_sig)/fd_signal_power(noise)))
-
-        # print("Signal power:[dBm]", to_db(td_signal_power(to_time_domain(in_sig)))+30)
-        # print("Noise power:[dBm]", to_db(td_signal_power(to_time_domain(noise)))+30)
-        # print("SNR: ", to_db(td_signal_power(to_time_domain(in_sig))/td_signal_power(to_time_domain(noise))))
+            # Frequency domain
+            # print("Signal power:[dBm]", to_db(fd_signal_power(ofdm_sig_nsc_fd))+30)
+            # print("Noise power:[dBm]", to_db(fd_signal_power(noise_nsc))+30)
+            # print("SNR: ", to_db(fd_signal_power(ofdm_sig_nsc_fd)/fd_signal_power(noise_nsc)))
+            #
+            print("Signal power:[dBm]", to_db(td_signal_power(to_time_domain(in_sig)))+30)
+            print("Noise power:[dBm]", to_db(td_signal_power(to_time_domain(noise)))+30)
+            print("SNR: ", to_db(td_signal_power(to_time_domain(in_sig))/td_signal_power(to_time_domain(noise))))
 
         return in_sig + noise
 
