@@ -22,7 +22,7 @@ set_latex_plot_style()
 
 # %%
 
-my_mod = modulation.OfdmQamModem(constel_size=64, n_fft=4096, n_sub_carr=1024, cp_len=128)
+my_mod = modulation.OfdmQamModem(constel_size=64, n_fft=4096, n_sub_carr=2048, cp_len=128)
 my_distortion = distortion.SoftLimiter(0, my_mod.avg_sample_power)
 # my_mod.plot_constellation()
 my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion))
@@ -30,7 +30,7 @@ my_array = antenna_arrray.LinearArray(n_elements=1, base_transceiver=my_tx, cent
                                       wav_len_spacing=0.5,
                                       cord_x=0, cord_y=0, cord_z=15)
 my_standard_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
-                                         cord_x=1212, cord_y=1212, cord_z=1.5,
+                                         cord_x=212, cord_y=212, cord_z=1.5,
                                          center_freq=int(3.5e9), carrier_spacing=int(15e3))
 my_cnc_rx = corrector.CncReceiver(copy.deepcopy(my_mod), copy.deepcopy(my_distortion))
 
@@ -40,7 +40,7 @@ my_miso_chan = channel.RayleighMisoFd(tx_transceivers=my_array.array_elements, r
 my_noise = noise.Awgn(snr_db=10, seed=1234)
 bit_rng = np.random.default_rng(4321)
 
-ebn0_arr = np.arange(0, 21, 2)
+ebn0_arr = np.arange(0, 51, 2)
 print("Eb/n0 values:", ebn0_arr)
 snr_arr = ebn0_to_snr(ebn0_arr, my_mod.n_fft, my_mod.n_sub_carr, my_mod.constel_size)
 print("SNR values:", snr_arr)
@@ -68,6 +68,7 @@ conv_ite_th = np.inf  # number of iterations after the convergence threshold is 
 # Number of CNC iterations eval, upsample ratio fixed
 ibo_val_db = 0
 my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
+my_cnc_rx.impairment.set_ibo(ibo_val_db)
 
 print("Distortion IBO/TOI value:", ibo_val_db)
 cnc_n_iters_lst = [1, 2, 3, 4, 8, 16]
@@ -106,8 +107,9 @@ for run_idx, cnc_n_iter_val in enumerate(cnc_n_iters_lst):
                     agc_corr_nsc ** 2), disp_data=False)
             else:
                 rx_ofdm_symbol = my_miso_chan.propagate(in_sig_mat=tx_ofdm_symbol)
-                rx_ofdm_symbol = my_noise.process(rx_ofdm_symbol, avg_sample_pow=my_mod.avg_sample_power * (
-                        np.average(agc_corr_vec) ** 2) * abs_lambda ** 2)
+                rx_ofdm_symbol = my_noise.process(rx_ofdm_symbol, avg_sample_pow=my_mod.avg_sample_power *
+                                                                                 np.average(np.power(agc_corr_vec,
+                                                                                                     2)) * abs_lambda ** 2)
             # apply AGC
             rx_ofdm_symbol = rx_ofdm_symbol / agc_corr_vec
 
@@ -166,8 +168,9 @@ ax1.grid()
 ax1.legend()
 
 plt.tight_layout()
-plt.savefig("./figs/ber_soft_lim_siso_cnc_ibo%d_niter%d_sweep_nupsamp%d.png" % (
-    my_tx.impairment.ibo_db, np.max(cnc_n_iters_lst), cnc_n_upsamp), dpi=600, bbox_inches='tight')
+plt.savefig("../figs/cnc_%s_ber_ibo%d_niter%d_sweep_nupsamp%d.png" % (my_miso_chan,
+                                                                      my_tx.impairment.ibo_db, np.max(cnc_n_iters_lst),
+                                                                      cnc_n_upsamp), dpi=600, bbox_inches='tight')
 plt.show()
 
 #
@@ -262,7 +265,7 @@ plt.show()
 # ax1.legend()
 #
 # plt.tight_layout()
-# plt.savefig("./figs/ber_soft_lim_siso_cnc_ibo%d_niter%d_nupsamp%d_sweep.png" % (
+# plt.savefig("../figs/ber_soft_lim_siso_cnc_ibo%d_niter%d_nupsamp%d_sweep.png" % (
 # my_tx.impairment.ibo_db, cnc_n_iter_val, np.max(cnc_n_upsamp_lst)), dpi=600, bbox_inches='tight')
 # plt.show()
 #

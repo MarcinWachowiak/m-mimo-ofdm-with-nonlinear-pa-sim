@@ -123,7 +123,7 @@ ax1.legend(title="Channel:")
 
 plt.tight_layout()
 plt.savefig(
-    "./figs/alpha_per_antenna_n_ant%d_ibo%1.1fto%1.1f.png" % (n_ant_val, min(ibo_arr), max(ibo_arr)),
+    "../figs/alpha_per_antenna_n_ant%d_ibo%1.1fto%1.1f.png" % (n_ant_val, min(ibo_arr), max(ibo_arr)),
     dpi=600, bbox_inches='tight')
 plt.show()
 

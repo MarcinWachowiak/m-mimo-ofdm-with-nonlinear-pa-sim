@@ -183,7 +183,7 @@ for idx, n_ant in enumerate(n_ant_vec):
 ax1.set_title("Desired signal PSD at angle [dB]", pad=-15)
 ax1.legend(title="N antennas:", ncol=len(n_ant_vec), loc='lower center', borderaxespad=0)
 ax1.grid(True)
-plt.savefig("./figs/los_desired_signal_beampattern_ibo%d_%dto%dant_sweep.png" % (
+plt.savefig("../figs/los_desired_signal_beampattern_ibo%d_%dto%dant_sweep.png" % (
     my_tx.impairment.ibo_db, np.min(n_ant_vec), np.max(n_ant_vec)), dpi=600, bbox_inches='tight')
 plt.show()
 
@@ -205,7 +205,7 @@ for idx, n_ant in enumerate(n_ant_vec):
 ax2.set_title("Distortion signal PSD at angle [dB]", pad=-15)
 ax2.legend(title="N antennas:", ncol=len(n_ant_vec), loc='lower center', borderaxespad=0)
 ax2.grid(True)
-plt.savefig("./figs/los_distortion_signal_beampattern_ibo%d_%dto%dant_sweep.png" % (
+plt.savefig("../figs/los_distortion_signal_beampattern_ibo%d_%dto%dant_sweep.png" % (
     my_tx.impairment.ibo_db, np.min(n_ant_vec), np.max(n_ant_vec)), dpi=600, bbox_inches='tight')
 plt.show()
 
@@ -232,7 +232,7 @@ ax3.grid(True)
 plt.tight_layout()
 
 plt.savefig(
-    "./figs/los_desired_vs_distortion_beampattern_ibo%d_%dant.png" % (my_tx.impairment.ibo_db, np.max(n_ant_vec)),
+    "../figs/los_desired_vs_distortion_beampattern_ibo%d_%dant.png" % (my_tx.impairment.ibo_db, np.max(n_ant_vec)),
     dpi=600, bbox_inches='tight')
 plt.show()
 
@@ -254,7 +254,7 @@ ax4.set_title("Signal to distortion ratio at angle [dB]", pad=-15)
 ax4.legend(title="N antennas:", ncol=len(n_ant_vec), loc='lower center', borderaxespad=0)
 ax4.grid(True)
 plt.tight_layout()
-plt.savefig("./figs/los_sdr_at_angle_polar_ibo%d_%dto%dant_sweep.png" % (
+plt.savefig("../figs/los_sdr_at_angle_polar_ibo%d_%dto%dant_sweep.png" % (
     my_tx.impairment.ibo_db, np.min(n_ant_vec), np.max(n_ant_vec)), dpi=600, bbox_inches='tight')
 plt.show()
 
@@ -277,7 +277,7 @@ ax5.legend(title="IBO = %d [dB]" % my_tx.impairment.ibo_db)
 ax5.grid()
 plt.tight_layout()
 plt.savefig(
-    "./figs/los_psd_at_angle_%ddeg_ibo%d_ant%d.png" % (point_idx_psd, my_tx.impairment.ibo_db, np.max(n_ant_vec)),
+    "../figs/los_psd_at_angle_%ddeg_ibo%d_ant%d.png" % (point_idx_psd, my_tx.impairment.ibo_db, np.max(n_ant_vec)),
     dpi=600, bbox_inches='tight')
 plt.show()
 
@@ -300,7 +300,7 @@ ax6.legend(title="IBO = %d [dB]" % my_tx.impairment.ibo_db)
 ax6.grid()
 plt.tight_layout()
 plt.savefig(
-    "./figs/los_psd_at_angle_%ddeg_ibo%d_ant%d.png" % (max_point_idx, my_tx.impairment.ibo_db, np.max(n_ant_vec)),
+    "../figs/los_psd_at_angle_%ddeg_ibo%d_ant%d.png" % (max_point_idx, my_tx.impairment.ibo_db, np.max(n_ant_vec)),
     dpi=600, bbox_inches='tight')
 plt.show()
 print("Finished processing!")

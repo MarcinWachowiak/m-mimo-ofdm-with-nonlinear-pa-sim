@@ -188,7 +188,7 @@ ax1.grid()
 ax1.legend(title="CNC N iterations")
 plt.tight_layout()
 plt.savefig(
-    "./figs/ber_vs_ibo%dto%d_soft_lim_miso_cnc_%debn0_%dqam_%dnant.png" % (
+    "../figs/ber_vs_ibo%dto%d_soft_lim_miso_cnc_%debn0_%dqam_%dnant.png" % (
         min(ibo_arr), max(ibo_arr), ebn0_val_db, my_mod.constel_size, n_ant_val),
     dpi=600, bbox_inches='tight')
 plt.show()
@@ -257,7 +257,7 @@ print("Finished execution!")
 #
 # plt.tight_layout()
 # plt.savefig(
-#     "./figs/ber_soft_lim_miso_cnc_ibo%d_niter%d_nupsamp%d_niter_sweep.png" % (ibo_db_val, cnc_n_iter_lst[-1], cnc_n_upsamp_val),
+#     "../figs/ber_soft_lim_miso_cnc_ibo%d_niter%d_nupsamp%d_niter_sweep.png" % (ibo_db_val, cnc_n_iter_lst[-1], cnc_n_upsamp_val),
 #     dpi=600, bbox_inches='tight')
 # plt.show()
 #

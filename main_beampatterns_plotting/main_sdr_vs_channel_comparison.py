@@ -339,7 +339,7 @@ axins.grid()
 ax3.indicate_inset_zoom(axins, edgecolor="black")
 
 plt.tight_layout()
-plt.savefig("./figs/sdr_at_angle_ibo%d_%dto%dant_sweep.pdf" % (
+plt.savefig("../figs/sdr_at_angle_ibo%d_%dto%dant_sweep.pdf" % (
     my_tx.impairment.ibo_db, np.min(n_ant_vec), np.max(n_ant_vec)), dpi=600, bbox_inches='tight')
 plt.show()
 

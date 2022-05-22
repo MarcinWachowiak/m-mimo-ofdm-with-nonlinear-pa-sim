@@ -29,7 +29,7 @@ my_cnc_rx = corrector.CncReceiver(copy.deepcopy(my_mod), copy.deepcopy(my_distor
 my_noise = noise.Awgn(snr_db=10, seed=4321)
 bit_rng = np.random.default_rng(4321)
 
-snr_arr = np.arange(15, 31, 1)
+snr_arr = np.arange(15, 31, 2)
 print("SNR values:", snr_arr)
 ebn0_arr = snr_to_ebn0(snr_arr, my_mod.n_fft, my_mod.n_sub_carr, my_mod.constel_size)
 print("SNR values:", snr_arr)
@@ -161,7 +161,7 @@ ax1.grid()
 ax1.legend()
 ax1.set_xlim([15, 30])
 plt.tight_layout()
-plt.savefig("./figs/ser_soft_lim_siso_cnc_ibo%d_niter%d_sweep_nupsamp%d_nsc%d.png" % (
+plt.savefig("../figs/ser_soft_lim_siso_cnc_ibo%d_niter%d_sweep_nupsamp%d_nsc%d.png" % (
     my_tx.impairment.ibo_db, np.max(cnc_n_iters_lst), cnc_n_upsamp, my_mod.n_sub_carr), dpi=600, bbox_inches='tight')
 plt.show()
 

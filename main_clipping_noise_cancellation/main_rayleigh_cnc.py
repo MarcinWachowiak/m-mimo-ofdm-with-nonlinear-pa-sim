@@ -164,7 +164,7 @@ ax1.grid()
 ax1.legend()
 
 plt.tight_layout()
-plt.savefig("./figs/ber_soft_lim_siso_cnc_ibo%d_niter%d_sweep_nupsamp%d.png" % (
+plt.savefig("../figs/ber_soft_lim_siso_cnc_ibo%d_niter%d_sweep_nupsamp%d.png" % (
     my_tx.impairment.ibo_db, np.max(cnc_n_iters_lst), cnc_n_upsamp), dpi=600, bbox_inches='tight')
 plt.show()
 
@@ -260,7 +260,7 @@ plt.show()
 # ax1.legend()
 #
 # plt.tight_layout()
-# plt.savefig("./figs/ber_soft_lim_siso_cnc_ibo%d_niter%d_nupsamp%d_sweep.png" % (
+# plt.savefig("../figs/ber_soft_lim_siso_cnc_ibo%d_niter%d_nupsamp%d_sweep.png" % (
 # my_tx.impairment.ibo_db, cnc_n_iter_val, np.max(cnc_n_upsamp_lst)), dpi=600, bbox_inches='tight')
 # plt.show()
 #

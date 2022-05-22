@@ -40,7 +40,7 @@ class SoftLimiter:
                 fontsize=8, verticalalignment='bottom', bbox=props)
         ax.grid()
         plt.tight_layout()
-        plt.savefig("./figs/soft_lim_tf_ibo%d.png" % self.ibo_db, dpi=600, bbox_inches='tight')
+        plt.savefig("../figs/soft_lim_tf_ibo%d.png" % self.ibo_db, dpi=600, bbox_inches='tight')
         plt.show()
 
     def process(self, in_sig):
@@ -79,7 +79,7 @@ class Rapp:
         ax.legend(title="IBO [dB]")
         ax.grid()
         plt.tight_layout()
-        plt.savefig("./figs/rapp_lim_tf_ibo%d.png" % self.ibo_db, dpi=600, bbox_inches='tight')
+        plt.savefig("../figs/rapp_lim_tf_ibo%d.png" % self.ibo_db, dpi=600, bbox_inches='tight')
         plt.show()
 
     def process(self, in_sig):
@@ -118,7 +118,7 @@ class ThirdOrderNonLin:
         ax.legend(title="TOI [dB]")
         ax.grid()
         plt.tight_layout()
-        plt.savefig("./figs/toi_tf_toi%d.png" % self.toi_db, dpi=600, bbox_inches='tight')
+        plt.savefig("../figs/toi_tf_toi%d.png" % self.toi_db, dpi=600, bbox_inches='tight')
         plt.show()
 
     def process(self, in_sig):

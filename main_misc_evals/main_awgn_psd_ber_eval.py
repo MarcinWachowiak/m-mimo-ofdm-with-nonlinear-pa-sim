@@ -147,7 +147,7 @@ if plot_psd:
     ax1.grid()
 
     plt.tight_layout()
-    plt.savefig("./figs/psd_soft_lim_combined.png", dpi=600, bbox_inches='tight')
+    plt.savefig("../figs/psd_soft_lim_combined.png", dpi=600, bbox_inches='tight')
     plt.show()
 
     # Plot decomposed PSD of desired signal and distortion separately
@@ -168,7 +168,7 @@ if plot_psd:
     ax2.grid()
 
     plt.tight_layout()
-    plt.savefig("./figs/psd_soft_lim_decomposed.png", dpi=600, bbox_inches='tight')
+    plt.savefig("../figs/psd_soft_lim_decomposed.png", dpi=600, bbox_inches='tight')
     plt.show()
 
 # %%
@@ -190,7 +190,7 @@ ax3.grid()
 ax3.legend(title="IBO [dB]")
 
 plt.tight_layout()
-plt.savefig("./figs/ber_soft_lim_siso.png", dpi=600, bbox_inches='tight')
+plt.savefig("../figs/ber_soft_lim_siso.png", dpi=600, bbox_inches='tight')
 plt.show()
 
 print("Finished execution!")

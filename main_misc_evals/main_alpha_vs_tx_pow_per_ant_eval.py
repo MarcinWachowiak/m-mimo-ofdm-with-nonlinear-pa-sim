@@ -125,7 +125,7 @@ ax1.legend(title="Channel:")
 
 plt.tight_layout()
 plt.savefig(
-    "./figs/alpha_vs_tx_power_per_ant%d_ibo%1.1f.png" % (n_ant_val, ibo_val_db),
+    "../figs/alpha_vs_tx_power_per_ant%d_ibo%1.1f.png" % (n_ant_val, ibo_val_db),
     dpi=600, bbox_inches='tight')
 plt.show()
 

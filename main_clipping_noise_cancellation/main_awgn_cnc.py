@@ -20,7 +20,7 @@ set_latex_plot_style()
 
 # %%
 
-my_mod = modulation.OfdmQamModem(constel_size=64, n_fft=4096, n_sub_carr=1024, cp_len=128)
+my_mod = modulation.OfdmQamModem(constel_size=64, n_fft=4096, n_sub_carr=2048, cp_len=128)
 my_distortion = distortion.SoftLimiter(0, my_mod.avg_sample_power)
 # my_mod.plot_constellation()
 my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion))
@@ -53,7 +53,7 @@ ibo_val_db = 0
 print("Distortion IBO/TOI value:", ibo_val_db)
 cnc_n_iters_lst = [1, 2, 3, 4, 8, 16]
 print("CNC number of iteration list:", cnc_n_iters_lst)
-cnc_n_upsamp = 4
+cnc_n_upsamp = 2
 # Single CNC iteration is equal to standard reception without distortion compensation
 cnc_n_iters_lst = np.insert(cnc_n_iters_lst, 0, 0)
 
@@ -139,7 +139,7 @@ ax1.grid()
 ax1.legend()
 
 plt.tight_layout()
-plt.savefig("./figs/ber_soft_lim_siso_cnc_ibo%d_niter%d_sweep_nupsamp%d.png" % (
+plt.savefig("../figs/cnc_awgn_ber_ibo%d_niter%d_sweep_nupsamp%d.png" % (
     my_tx.impairment.ibo_db, np.max(cnc_n_iters_lst), cnc_n_upsamp), dpi=600, bbox_inches='tight')
 plt.show()
 
@@ -235,7 +235,7 @@ plt.show()
 # ax1.legend()
 #
 # plt.tight_layout()
-# plt.savefig("./figs/ber_soft_lim_siso_cnc_ibo%d_niter%d_nupsamp%d_sweep.png" % (
+# plt.savefig("../figs/ber_soft_lim_siso_cnc_ibo%d_niter%d_nupsamp%d_sweep.png" % (
 # my_tx.impairment.ibo_db, cnc_n_iter_val, np.max(cnc_n_upsamp_lst)), dpi=600, bbox_inches='tight')
 # plt.show()
 #

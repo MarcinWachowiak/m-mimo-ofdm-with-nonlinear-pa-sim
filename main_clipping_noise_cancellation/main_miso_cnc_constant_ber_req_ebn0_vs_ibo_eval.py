@@ -229,7 +229,7 @@ ax1.legend(title="CNC N iterations")
 
 plt.tight_layout()
 plt.savefig(
-    "./figs/constant_ber%1.0e_req_ebn0_vs_ibo%dto%d_soft_lim_miso_cnc_%dqam_%dnant.png" % (
+    "../figs/constant_ber%1.0e_req_ebn0_vs_ibo%dto%d_soft_lim_miso_cnc_%dqam_%dnant.png" % (
         target_ber, min(ibo_arr), max(ibo_arr), my_mod.constel_size, n_ant_val),
     dpi=600, bbox_inches='tight')
 plt.show()
