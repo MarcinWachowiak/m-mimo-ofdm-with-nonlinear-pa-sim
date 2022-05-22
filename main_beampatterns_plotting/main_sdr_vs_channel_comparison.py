@@ -6,7 +6,6 @@ from datetime import datetime
 
 import matplotlib.pyplot as plt
 import numpy as np
-import torch
 from scipy.signal import welch
 
 import antenna_arrray
@@ -17,7 +16,7 @@ import transceiver
 import utilities
 from plot_settings import set_latex_plot_style
 from utilities import to_db, pts_on_circum, pts_on_semicircum
-from matplotlib.ticker import MaxNLocator
+
 # TODO: consider logger
 set_latex_plot_style()
 # %%
@@ -28,10 +27,12 @@ ibo_val_db = 5
 
 my_mod = modulation.OfdmQamModem(constel_size=64, n_fft=4096, n_sub_carr=1024, cp_len=128)
 my_distortion = distortion.SoftLimiter(ibo_db=ibo_val_db, avg_samp_pow=my_mod.avg_sample_power)
-my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion), center_freq=int(3.5e9),
+my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
+                                center_freq=int(3.5e9),
                                 carrier_spacing=int(15e3))
 
-my_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion), cord_x=30, cord_y=30, cord_z=1.5, center_freq=int(3.5e9),
+my_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion), cord_x=30,
+                                cord_y=30, cord_z=1.5, center_freq=int(3.5e9),
                                 carrier_spacing=int(15e3))
 my_rx.correct_constellation()
 my_miso_chan = channel.MisoLosFd()
@@ -72,7 +73,7 @@ for n_ant in n_ant_vec:
                                           wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
     my_rx.set_position(cord_x=212, cord_y=212, cord_z=1.5)
 
-    max_point_idx = int(np.degrees(np.arctan(my_rx.cord_y/my_rx.cord_x)))
+    max_point_idx = int(np.degrees(np.arctan(my_rx.cord_y / my_rx.cord_x)))
 
     my_miso_chan.calc_channel_mat(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx, skip_attenuation=False)
     channel_mat_at_point_fd = my_miso_chan.get_channel_mat_fd()
@@ -91,7 +92,6 @@ for n_ant in n_ant_vec:
         clean_rx_ofdm_sc_accum = []
 
         for snap_idx in range(n_snapshots):
-
             tx_bits = bit_rng.choice((0, 1), my_tx.modem.n_bits_per_ofdm_sym)
             arr_tx_sig_fd, clean_sig_mat_fd = my_array.transmit(in_bits=tx_bits, out_domain_fd=True, return_both=True)
             rx_sig_fd = my_miso_chan.propagate(in_sig_mat=arr_tx_sig_fd)
@@ -114,9 +114,9 @@ for n_ant in n_ant_vec:
         sc_ofdm_distortion_sig = rx_sig_accum_arr - my_rx.modem.alpha * clean_rx_sig_accum_arr
 
         dist_ofdm_symb_freq_arr, dist_ofdm_symb_psd_arr = welch(sc_ofdm_distortion_sig, fs=psd_nfft, nfft=psd_nfft,
-                                                          nperseg=n_samp_per_seg, return_onesided=False)
+                                                                nperseg=n_samp_per_seg, return_onesided=False)
         clean_ofdm_symb_freq_arr, clean_ofdm_symb_psd_arr = welch(clean_rx_sig_accum_arr, fs=psd_nfft, nfft=psd_nfft,
-                                                            nperseg=n_samp_per_seg, return_onesided=False)
+                                                                  nperseg=n_samp_per_seg, return_onesided=False)
 
         psd_at_angle_desired[pt_idx] = to_db(np.sum(np.array(clean_ofdm_symb_psd_arr)))
         psd_at_angle_dist[pt_idx] = to_db(np.sum(np.array(dist_ofdm_symb_psd_arr)))
@@ -139,7 +139,7 @@ for n_ant in n_ant_vec:
     my_miso_chan = channel.MisoTwoPathFd()
 
     my_rx.set_position(cord_x=212, cord_y=212, cord_z=1.5)
-    max_point_idx = int(np.degrees(np.arctan(my_rx.cord_y/my_rx.cord_x)))
+    max_point_idx = int(np.degrees(np.arctan(my_rx.cord_y / my_rx.cord_x)))
 
     my_miso_chan.calc_channel_mat(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx, skip_attenuation=False)
     channel_mat_at_point_fd = my_miso_chan.get_channel_mat_fd()
@@ -193,9 +193,9 @@ for n_ant in n_ant_vec:
         sc_ofdm_distortion_sig = rx_ofdm_symb_accum_arr - my_rx.modem.alpha * clean_ofdm_symb_accum_arr
 
         dist_ofdm_symb_freq_arr, dist_ofdm_symb_psd_arr = welch(sc_ofdm_distortion_sig, fs=psd_nfft, nfft=psd_nfft,
-                                                          nperseg=n_samp_per_seg, return_onesided=False)
+                                                                nperseg=n_samp_per_seg, return_onesided=False)
         clean_ofdm_symb_freq_arr, clean_ofdm_symb_psd_arr = welch(clean_ofdm_symb_accum_arr, fs=psd_nfft, nfft=psd_nfft,
-                                                            nperseg=n_samp_per_seg, return_onesided=False)
+                                                                  nperseg=n_samp_per_seg, return_onesided=False)
 
         sc_psd_at_angle_desired[pt_idx] = to_db(np.sum(np.array(clean_ofdm_symb_psd_arr)))
         sc_psd_at_angle_dist[pt_idx] = to_db(np.sum(np.array(dist_ofdm_symb_psd_arr)))
@@ -284,7 +284,6 @@ for n_ant in n_ant_vec:
 
 rayleigh_sdr_at_angle = np.subtract(np.array(desired_sc_psd_at_angle_lst), np.array(distortion_sc_psd_at_angle_lst))
 
-
 # %%
 # plot signal to distortion ratio
 fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(3.5, 5), sharex=True, gridspec_kw={'height_ratios': [1, 1, 2]})
@@ -314,7 +313,7 @@ ax3.legend(title="Number of antennas:", ncol=len(n_ant_vec), loc=(0.05, -0.6), b
 ax3.set_xlabel("Angle [°]", fontsize=8)
 ax3.set_ylabel("SDR [dB]", fontsize=8)
 ax3.set_xlim([0, 180])
-ax3.set_ylim([24,50])
+ax3.set_ylim([24, 50])
 ax3.set_yticks([26, 32, 38, 44, 50])
 ax3.set_xticks(np.linspace(0, 180, 7, endpoint=True))
 fig.suptitle("Signal to distortion ratio")
@@ -339,10 +338,9 @@ axins.grid()
 
 ax3.indicate_inset_zoom(axins, edgecolor="black")
 
-
 plt.tight_layout()
-plt.savefig("figs/sdr_at_angle_ibo%d_%dto%dant_sweep.pdf" % (
-my_tx.impairment.ibo_db, np.min(n_ant_vec), np.max(n_ant_vec)), dpi=600, bbox_inches='tight')
+plt.savefig("./figs/sdr_at_angle_ibo%d_%dto%dant_sweep.pdf" % (
+    my_tx.impairment.ibo_db, np.min(n_ant_vec), np.max(n_ant_vec)), dpi=600, bbox_inches='tight')
 plt.show()
 
 print("Finished processing!")

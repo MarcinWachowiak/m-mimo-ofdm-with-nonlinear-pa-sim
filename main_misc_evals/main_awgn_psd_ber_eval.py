@@ -46,7 +46,6 @@ n_err_min = 1000
 convergence_epsilon = 0.001  # e.g. 0.1%
 conv_ite_th = 10  # number of iterations after the convergence threshold is activated
 
-
 # %%
 dist_vals_db = [3, 5, 7]
 include_clean_run = True
@@ -95,11 +94,11 @@ for dist_idx, dist_val_db in enumerate(dist_vals_db):
             # check convergence
             # calc tmp ber
             if ite_cnt > conv_ite_th:
-                prev_step_ber = n_err/bits_sent
+                prev_step_ber = n_err / bits_sent
 
             bits_sent += my_mod.n_bits_per_ofdm_sym
             n_err += n_bit_err
-            curr_ber = n_err/bits_sent
+            curr_ber = n_err / bits_sent
             if ite_cnt > conv_ite_th and prev_step_ber != 0:
                 rel_change = np.abs(curr_ber - prev_step_ber) / prev_step_ber
                 if rel_change < convergence_epsilon:
@@ -148,7 +147,7 @@ if plot_psd:
     ax1.grid()
 
     plt.tight_layout()
-    plt.savefig("figs/psd_soft_lim_combined.png", dpi=600, bbox_inches='tight')
+    plt.savefig("./figs/psd_soft_lim_combined.png", dpi=600, bbox_inches='tight')
     plt.show()
 
     # Plot decomposed PSD of desired signal and distortion separately
@@ -169,7 +168,7 @@ if plot_psd:
     ax2.grid()
 
     plt.tight_layout()
-    plt.savefig("figs/psd_soft_lim_decomposed.png", dpi=600, bbox_inches='tight')
+    plt.savefig("./figs/psd_soft_lim_decomposed.png", dpi=600, bbox_inches='tight')
     plt.show()
 
 # %%
@@ -191,7 +190,7 @@ ax3.grid()
 ax3.legend(title="IBO [dB]")
 
 plt.tight_layout()
-plt.savefig("figs/ber_soft_lim_siso.png", dpi=600, bbox_inches='tight')
+plt.savefig("./figs/ber_soft_lim_siso.png", dpi=600, bbox_inches='tight')
 plt.show()
 
 print("Finished execution!")

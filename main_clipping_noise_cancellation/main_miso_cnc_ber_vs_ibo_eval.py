@@ -6,8 +6,6 @@ from datetime import datetime
 
 import matplotlib.pyplot as plt
 import numpy as np
-import torch
-from scipy.signal import welch
 
 import antenna_arrray
 import channel
@@ -16,10 +14,8 @@ import distortion
 import modulation
 import noise
 import transceiver
-import utilities
 from plot_settings import set_latex_plot_style
-from utilities import count_mismatched_bits, ebn0_to_snr, to_db, td_signal_power, to_time_domain
-from matplotlib.ticker import MaxNLocator
+from utilities import count_mismatched_bits, ebn0_to_snr
 
 # TODO: consider logger
 
@@ -29,9 +25,9 @@ set_latex_plot_style()
 # arbitrarly set params:
 estimate_lambda = False
 n_ant_val = 1
-ebn0_val_db = 20
+ebn0_val_db = 30
 print("Eb/n0 value:", ebn0_val_db)
-cnc_n_iter_vals = [0,1,2,3,4]
+cnc_n_iter_vals = [0, 1, 2, 3, 4]
 print("CNC N iterations:", cnc_n_iter_vals)
 cnc_n_upsamp_val = 4
 print("CNC upsample factor:", cnc_n_upsamp_val)
@@ -46,22 +42,23 @@ convergence_epsilon = 0.001  # e.g. 0.1%
 conv_ite_th = np.inf  # number of iterations after the convergence threshold is activated
 bers_per_ibo = np.zeros((len(cnc_n_iter_vals), len(ibo_arr)))
 
-
 print("Multi antenna processing init!")
 # remember to copy objects not to avoid shared properties modifications!
 # check modifications before copy and what you copy!
 my_mod = modulation.OfdmQamModem(constel_size=64, n_fft=4096, n_sub_carr=1024, cp_len=128)
 my_distortion = distortion.SoftLimiter(ibo_db=0, avg_samp_pow=my_mod.avg_sample_power)
-my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion), center_freq=int(3.5e9),
+my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
+                                center_freq=int(3.5e9),
                                 carrier_spacing=int(15e3))
-my_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion), cord_x=212, cord_y=212, cord_z=1.5,
+my_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion), cord_x=212,
+                                cord_y=212, cord_z=1.5,
                                 center_freq=int(3.5e9), carrier_spacing=int(15e3))
 
 my_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(3.5e9),
                                       wav_len_spacing=0.5,
                                       cord_x=0, cord_y=0, cord_z=15)
-my_miso_chan = channel.MisoTwoPathFd()
-# my_miso_chan = channel.RayleighMisoFd(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx, seed=1234)
+# my_miso_chan = channel.MisoTwoPathFd()
+my_miso_chan = channel.RayleighMisoFd(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx, seed=1234)
 my_noise = noise.Awgn(snr_db=20, noise_p_dbm=-90, seed=1234)
 my_cnc_rx = corrector.CncReceiver(copy.deepcopy(my_mod), copy.deepcopy(my_distortion))
 
@@ -74,8 +71,9 @@ if not isinstance(my_miso_chan, channel.RayleighMisoFd):
 chan_mat_at_point = my_miso_chan.get_channel_mat_fd()
 my_array.set_precoding_matrix(channel_mat_fd=chan_mat_at_point, mr_precoding=True)
 agc_corr_vec = np.sqrt(np.sum(np.power(np.abs(chan_mat_at_point), 2), axis=0))
+agc_corr_nsc = np.concatenate((agc_corr_vec[-my_mod.n_sub_carr // 2:], agc_corr_vec[1:(my_mod.n_sub_carr // 2) + 1]))
 
-#%%
+# %%
 # lambda estimation phase
 if estimate_lambda:
     abs_lambda_per_ibo = []
@@ -119,7 +117,6 @@ if estimate_lambda:
 else:
     abs_lambda_per_ibo = my_mod.calc_alpha(ibo_arr)
 
-
 # %%
 # BER vs IBO eval
 for ibo_idx, ibo_val_db in enumerate(ibo_arr):
@@ -146,7 +143,8 @@ for ibo_idx, ibo_val_db in enumerate(ibo_arr):
             # print("TX power", n_ant_val*utilities.td_signal_power(utilities.to_time_domain(tx_ofdm_symbol_fd)))
             rx_ofdm_symbol_fd = my_miso_chan.propagate(in_sig_mat=tx_ofdm_symbol_fd)
             # print("RX power", utilities.td_signal_power(utilities.to_time_domain(rx_ofdm_symbol_fd)))
-            rx_ofdm_symbol_fd = my_noise.process(rx_ofdm_symbol_fd, avg_sample_pow=my_mod.avg_symbol_power*(np.average(agc_corr_vec)**2)*abs_lambda_per_ibo[ibo_idx]**2, disp_data=False)
+            rx_ofdm_symbol_fd = my_noise.process(rx_ofdm_symbol_fd, avg_sample_pow=my_mod.avg_sample_power * (
+                np.average(agc_corr_vec ** 2)) * abs_lambda_per_ibo[ibo_idx] ** 2, disp_data=False)
 
             rx_ofdm_symbol_fd = np.divide(rx_ofdm_symbol_fd, agc_corr_vec)
             # print("RX power after AGC", utilities.td_signal_power(utilities.to_time_domain(rx_ofdm_symbol_fd)))
@@ -178,10 +176,10 @@ for ibo_idx, ibo_val_db in enumerate(ibo_arr):
 fig1, ax1 = plt.subplots(1, 1)
 ax1.set_yscale('log')
 for ite_idx, ite_val in enumerate(cnc_n_iter_vals):
-    #read by columns
+    # read by columns
     if ite_idx == 0:
         ite_val = "0 - standard"
-    ax1.plot(ibo_arr, bers_per_ibo[ite_idx,:], label=ite_val)
+    ax1.plot(ibo_arr, bers_per_ibo[ite_idx, :], label=ite_val)
 
 ax1.set_title("BER, QAM %d, Eb/n0 = %d [dB], N ant = %d" % (my_mod.constellation_size, ebn0_val_db, n_ant_val))
 ax1.set_xlabel("IBO [dB]")
@@ -190,7 +188,8 @@ ax1.grid()
 ax1.legend(title="CNC N iterations")
 plt.tight_layout()
 plt.savefig(
-    "figs/ber_vs_ibo%dto%d_soft_lim_miso_cnc_%debn0_%dqam_%dnant.png" % (min(ibo_arr), max(ibo_arr), ebn0_val_db, my_mod.constel_size, n_ant_val),
+    "./figs/ber_vs_ibo%dto%d_soft_lim_miso_cnc_%debn0_%dqam_%dnant.png" % (
+        min(ibo_arr), max(ibo_arr), ebn0_val_db, my_mod.constel_size, n_ant_val),
     dpi=600, bbox_inches='tight')
 plt.show()
 
@@ -258,7 +257,7 @@ print("Finished execution!")
 #
 # plt.tight_layout()
 # plt.savefig(
-#     "figs/ber_soft_lim_miso_cnc_ibo%d_niter%d_nupsamp%d_niter_sweep.png" % (ibo_db_val, cnc_n_iter_lst[-1], cnc_n_upsamp_val),
+#     "./figs/ber_soft_lim_miso_cnc_ibo%d_niter%d_nupsamp%d_niter_sweep.png" % (ibo_db_val, cnc_n_iter_lst[-1], cnc_n_upsamp_val),
 #     dpi=600, bbox_inches='tight')
 # plt.show()
 #

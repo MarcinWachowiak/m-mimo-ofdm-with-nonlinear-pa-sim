@@ -174,7 +174,7 @@ def td_signal_power(signal):
 
 @jit(nopython=True)
 def fd_signal_power(signal):
-    sig_power = np.sum(np.abs(signal) ** 2) / (len(signal) ** 2)
+    sig_power = np.sum(np.abs(signal) ** 2)
     return sig_power
 
 

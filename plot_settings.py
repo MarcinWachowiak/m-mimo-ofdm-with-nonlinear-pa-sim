@@ -1,6 +1,6 @@
 from math import sqrt
 
-from matplotlib import rcParams, cycler, rc
+from matplotlib import rcParams, cycler
 
 
 def set_latex_plot_style():
@@ -31,4 +31,3 @@ def set_latex_plot_style():
     rcParams['path.simplify'] = True
 
     rcParams.update(params)
-

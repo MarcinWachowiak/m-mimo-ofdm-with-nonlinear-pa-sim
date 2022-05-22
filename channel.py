@@ -2,7 +2,6 @@ import numpy as np
 import torch
 from scipy import constants as scp_constants
 
-import matplotlib.pyplot as plt
 
 class MisoLosFd:
     def __init__(self):
@@ -133,8 +132,7 @@ class RayleighMisoFd:
                 tx_transceiver.cord_y - rx_transceiver.cord_y, 2) + np.power(
                 tx_transceiver.cord_z - rx_transceiver.cord_z, 2))
         self.los_fd_att_mat = np.sqrt(np.power(10, (tx_ant_gains[:, np.newaxis] + rx_transceiver.rx_ant_gain_db) / 10)) \
-                         * (scp_constants.c / (4 * np.pi * np.outer(los_distances, sig_freq_vals)))
-
+                              * (scp_constants.c / (4 * np.pi * np.outer(los_distances, sig_freq_vals)))
 
         self.set_channel_mat_fd()
 
@@ -158,7 +156,7 @@ class RayleighMisoFd:
 
     def reroll_channel_coeffs(self, skip_attenuation=False):
         fd_rayleigh_coeffs = self.rng_gen.standard_normal(size=(self.n_inputs, self.fd_samp_size * 2)).view(
-                dtype=np.complex128) / np.sqrt(2.0)
+            dtype=np.complex128) / np.sqrt(2.0)
         if skip_attenuation:
             self.fd_chan_mat = fd_rayleigh_coeffs
         else:

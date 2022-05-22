@@ -6,20 +6,13 @@ from datetime import datetime
 
 import matplotlib.pyplot as plt
 import numpy as np
-import torch
-from scipy.signal import welch
 
 import antenna_arrray
 import channel
-import corrector
 import distortion
 import modulation
-import noise
 import transceiver
-import utilities
 from plot_settings import set_latex_plot_style
-from utilities import count_mismatched_bits, ebn0_to_snr, to_db, td_signal_power, to_time_domain
-from matplotlib.ticker import MaxNLocator
 
 # TODO: consider logger
 
@@ -30,12 +23,13 @@ print("Multi antenna processing init!")
 # check modifications before copy and what you copy!
 my_mod = modulation.OfdmQamModem(constel_size=64, n_fft=4096, n_sub_carr=1024, cp_len=128)
 my_distortion = distortion.SoftLimiter(ibo_db=0, avg_samp_pow=my_mod.avg_sample_power)
-my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion), center_freq=int(3.5e9),
+my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
+                                center_freq=int(3.5e9),
                                 carrier_spacing=int(15e3))
-my_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion), cord_x=212, cord_y=212, cord_z=1.5,
+my_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion), cord_x=212,
+                                cord_y=212, cord_z=1.5,
                                 center_freq=int(3.5e9), carrier_spacing=int(15e3))
 my_rx.correct_constellation()
-
 
 # %%
 n_ant_val = 64
@@ -54,9 +48,10 @@ my_miso_los_chan = channel.MisoLosFd()
 my_miso_two_path_chan = channel.MisoTwoPathFd()
 
 my_miso_los_chan.calc_channel_mat(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx, skip_attenuation=False)
-my_miso_two_path_chan.calc_channel_mat(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx, skip_attenuation=False)
+my_miso_two_path_chan.calc_channel_mat(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx,
+                                       skip_attenuation=False)
 
-#list of channel objects
+# list of channel objects
 chan_lst = [my_miso_rayleigh_chan, my_miso_two_path_chan, my_miso_los_chan]
 
 lambda_per_nant_per_ibo = np.zeros((len(chan_lst), n_ant_val))
@@ -90,9 +85,11 @@ for chan_idx, chan_obj in enumerate(chan_lst):
         tx_ofdm_symbol_fd, clean_ofdm_symbol_fd = my_array.transmit(tx_bits, out_domain_fd=True, return_both=True)
 
         clean_nsc_ofdm_symb_fd = np.concatenate(
-            (clean_ofdm_symbol_fd[:, -my_mod.n_sub_carr // 2:], clean_ofdm_symbol_fd[:, 1:(my_mod.n_sub_carr // 2) + 1,]), axis=1)
+            (clean_ofdm_symbol_fd[:, -my_mod.n_sub_carr // 2:],
+             clean_ofdm_symbol_fd[:, 1:(my_mod.n_sub_carr // 2) + 1, ]), axis=1)
         tx_nsc_ofdm_symb_fd = np.concatenate(
-            (tx_ofdm_symbol_fd[:, -my_mod.n_sub_carr // 2:], tx_ofdm_symbol_fd[:, 1:(my_mod.n_sub_carr // 2) + 1]), axis=1)
+            (tx_ofdm_symbol_fd[:, -my_mod.n_sub_carr // 2:], tx_ofdm_symbol_fd[:, 1:(my_mod.n_sub_carr // 2) + 1]),
+            axis=1)
 
         # estimate lambda parameters for each antenna and compare in regard to the average
         lambda_numerator_vecs.append(np.multiply(tx_nsc_ofdm_symb_fd, np.conjugate(clean_nsc_ofdm_symb_fd)))
@@ -100,7 +97,7 @@ for chan_idx, chan_obj in enumerate(chan_lst):
         ofdm_symb_pow_lst.append(np.sum(np.abs(clean_nsc_ofdm_symb_fd) ** 2, axis=1) / my_mod.n_fft)
         ofdm_symb_idx += 1
 
-    #calculate the power of signal for each antenna
+    # calculate the power of signal for each antenna
     tx_pow_arr[chan_idx, :] = np.average(ofdm_symb_pow_lst, axis=0)
 
     # calculate lambda estimate
@@ -128,7 +125,7 @@ ax1.legend(title="Channel:")
 
 plt.tight_layout()
 plt.savefig(
-    "figs/alpha_vs_tx_power_per_ant%d_ibo%1.1f.png" % (n_ant_val, ibo_val_db),
+    "./figs/alpha_vs_tx_power_per_ant%d_ibo%1.1f.png" % (n_ant_val, ibo_val_db),
     dpi=600, bbox_inches='tight')
 plt.show()
 

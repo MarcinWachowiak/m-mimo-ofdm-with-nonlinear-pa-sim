@@ -3,20 +3,18 @@
 # %%
 import copy
 import time
+from datetime import datetime
 
 import matplotlib.pyplot as plt
 import numpy as np
-import torch
 
 import corrector
 import distortion
 import modulation
 import noise
 import transceiver
-import utilities
 from plot_settings import set_latex_plot_style
-from utilities import count_mismatched_bits, snr_to_ebn0, fd_signal_power
-from datetime import datetime
+from utilities import count_mismatched_bits, snr_to_ebn0
 
 set_latex_plot_style()
 
@@ -77,12 +75,12 @@ if estimate_eta:
 
         ofdm_symb_idx += 1
 
-    eta_pwr_ratio = (np.sum(np.power(np.abs(np.hstack(nsc_sig_after_dist_fd)),2))/n_ofdm_symb) / (my_mod.n_sub_carr*my_mod.avg_symbol_power)
+    eta_pwr_ratio = (np.sum(np.power(np.abs(np.hstack(nsc_sig_after_dist_fd)), 2)) / n_ofdm_symb) / (
+            my_mod.n_sub_carr * my_mod.avg_symbol_power)
 
     print("--- Computation time: %f ---" % (time.time() - start_time))
 else:
-    eta_pwr_ratio = my_mod.calc_alpha(ibo_db=ibo_val_db)**2
-
+    eta_pwr_ratio = my_mod.calc_alpha(ibo_db=ibo_val_db) ** 2
 
 print("Eta ratio: ", eta_pwr_ratio)
 
@@ -107,9 +105,12 @@ for run_idx, cnc_n_iter_val in enumerate(cnc_n_iters_lst):
             tx_ofdm_symbol_fd, clean_ofdm_symbol_fd = my_tx.transmit(tx_bits, out_domain_fd=True, return_both=True)
 
             if include_clean_run and run_idx == 0:
-                rx_ofdm_symbol = my_noise.process(clean_ofdm_symbol_fd, avg_sample_pow=my_mod.avg_symbol_power, disp_data=False)
+                rx_ofdm_symbol = my_noise.process(clean_ofdm_symbol_fd, avg_sample_pow=my_mod.avg_symbol_power,
+                                                  disp_data=False)
             else:
-                rx_ofdm_symbol = my_noise.process(tx_ofdm_symbol_fd, avg_sample_pow=my_mod.avg_symbol_power*eta_pwr_ratio, disp_data=False)
+                rx_ofdm_symbol = my_noise.process(tx_ofdm_symbol_fd,
+                                                  avg_sample_pow=my_mod.avg_symbol_power * eta_pwr_ratio,
+                                                  disp_data=False)
 
             if include_clean_run and run_idx == 0:
                 # standard reception - no distortion
@@ -132,8 +133,8 @@ for run_idx, cnc_n_iter_val in enumerate(cnc_n_iters_lst):
 
 # %%
 tmp = np.array(ser_qam_per_ncnc)
-ser_pam_per_ncn = 1-np.sqrt(1-np.array(ser_qam_per_ncnc))
-fig1, ax1 = plt.subplots(1, 1, figsize=(6,4))
+ser_pam_per_ncn = 1 - np.sqrt(1 - np.array(ser_qam_per_ncnc))
+fig1, ax1 = plt.subplots(1, 1, figsize=(6, 4))
 ax1.set_yscale('log')
 for idx, cnc_iter_val in enumerate(cnc_n_iters_lst):
     if include_clean_run:
@@ -150,16 +151,17 @@ for idx, cnc_iter_val in enumerate(cnc_n_iters_lst):
             ax1.plot(snr_arr, ser_pam_per_ncn[idx],
                      label="CNC NI = %d, J = %d" % (cnc_iter_val, cnc_n_upsamp))
 
-ax1.plot(snr_arr+0.17, ser_pam_per_ncn[0], 'k--', label="FD Lower Bound")
+ax1.plot(snr_arr + 0.17, ser_pam_per_ncn[0], 'k--', label="FD Lower Bound")
 # fix log scaling
-ax1.set_title("Symbol error rate, PAM (QAM) %d, NSC = %d, IBO = %d [dB]" % (np.sqrt(my_mod.constellation_size), my_mod.n_sub_carr, ibo_val_db))
+ax1.set_title("Symbol error rate, PAM (QAM) %d, NSC = %d, IBO = %d [dB]" % (
+    np.sqrt(my_mod.constellation_size), my_mod.n_sub_carr, ibo_val_db))
 ax1.set_xlabel("SNR [dB]")
 ax1.set_ylabel("SER")
 ax1.grid()
 ax1.legend()
-ax1.set_xlim([15,30])
+ax1.set_xlim([15, 30])
 plt.tight_layout()
-plt.savefig("figs/ser_soft_lim_siso_cnc_ibo%d_niter%d_sweep_nupsamp%d_nsc%d.png" % (
+plt.savefig("./figs/ser_soft_lim_siso_cnc_ibo%d_niter%d_sweep_nupsamp%d_nsc%d.png" % (
     my_tx.impairment.ibo_db, np.max(cnc_n_iters_lst), cnc_n_upsamp, my_mod.n_sub_carr), dpi=600, bbox_inches='tight')
 plt.show()
 

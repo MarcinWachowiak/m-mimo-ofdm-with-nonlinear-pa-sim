@@ -16,7 +16,6 @@ def _modulate(constellation, n_bits_per_symbol, input_bits):
     return baseband_symbols
 
 
-
 # @jit(nopython=True)
 def _demodulate(constellation, n_bits_per_symbol, input_symbols):
     index_list = np.abs(input_symbols - constellation[:, None]).argmin(0)

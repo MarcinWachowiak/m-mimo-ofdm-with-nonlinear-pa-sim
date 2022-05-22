@@ -20,7 +20,7 @@ class CncReceiver():
         # strip input fd signal of the OOB - include only the symbol data
         n_sub_carr = self.modem.n_sub_carr
         # update the distortion expected input power depending on the upsample factor
-        self.impairment.set_avg_sample_power(avg_samp_pow=self.modem.avg_symbol_power * (1/upsample_factor))
+        self.impairment.set_avg_sample_power(avg_samp_pow=self.modem.avg_symbol_power * (1 / upsample_factor))
 
         rx_ofdm_nsc_fd = np.concatenate((in_sig_fd[-n_sub_carr // 2:], in_sig_fd[1:(n_sub_carr // 2) + 1]))
 

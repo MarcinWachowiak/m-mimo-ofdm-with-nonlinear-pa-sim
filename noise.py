@@ -3,7 +3,7 @@ import abc
 import numpy as np
 
 #
-from utilities import to_db, fd_signal_power, td_signal_power, to_time_domain
+from utilities import to_db, fd_signal_power
 
 
 class Noise(metaclass=abc.ABCMeta):
@@ -36,18 +36,13 @@ class Awgn(Noise):
 
         # check resultant SNR
         if disp_data:
-            # calculate SNR only for SC
-            # nsc=2048
-            # ofdm_sig_nsc_fd = np.concatenate((in_sig[-nsc // 2:], in_sig[1:(nsc // 2) + 1]))
-            # noise_nsc = np.concatenate((noise[-nsc // 2:], noise[1:(nsc // 2) + 1]))
             # Frequency domain
-            # print("Signal power:[dBm]", to_db(fd_signal_power(ofdm_sig_nsc_fd))+30)
-            # print("Noise power:[dBm]", to_db(fd_signal_power(noise_nsc))+30)
-            # print("SNR: ", to_db(fd_signal_power(ofdm_sig_nsc_fd)/fd_signal_power(noise_nsc)))
+            print("Signal power:[dBm]", to_db(fd_signal_power(in_sig)) + 30)
+            print("Noise power:[dBm]", to_db(fd_signal_power(noise)) + 30)
+            print("SNR: ", to_db(fd_signal_power(in_sig) / fd_signal_power(noise)))
             #
-            print("Signal power:[dBm]", to_db(td_signal_power(to_time_domain(in_sig)))+30)
-            print("Noise power:[dBm]", to_db(td_signal_power(to_time_domain(noise)))+30)
-            print("SNR: ", to_db(td_signal_power(to_time_domain(in_sig))/td_signal_power(to_time_domain(noise))))
+            # print("Signal power:[dBm]", to_db(td_signal_power((in_sig)))+30)
+            # print("Noise power:[dBm]", to_db(td_signal_power((noise)))+30)
+            # print("SNR: ", to_db(td_signal_power((in_sig))/td_signal_power((noise))))
 
         return in_sig + noise
-

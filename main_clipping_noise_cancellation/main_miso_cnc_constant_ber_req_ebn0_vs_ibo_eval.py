@@ -53,7 +53,8 @@ my_distortion = distortion.SoftLimiter(ibo_db=5, avg_samp_pow=my_mod.avg_sample_
 my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
                                 center_freq=int(3.5e9),
                                 carrier_spacing=int(15e3))
-my_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion), cord_x=100, cord_y=100, cord_z=1.5,
+my_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion), cord_x=100,
+                                cord_y=100, cord_z=1.5,
                                 center_freq=int(3.5e9), carrier_spacing=int(15e3))
 
 my_noise = noise.Awgn(snr_db=20, noise_p_dbm=-90, seed=1234)
@@ -151,7 +152,7 @@ for ibo_idx, ibo_val_db in enumerate(ibo_arr):
                 rx_sig_fd = np.divide(rx_sig_fd, agc_corr_vec)
 
                 rx_ofdm_symbol_fd = my_noise.process(rx_sig_fd, avg_sample_pow=my_mod.avg_sample_power * (
-                            abs_lambda_per_ibo[ibo_idx] ** 2), fixed_noise_power=False)
+                        abs_lambda_per_ibo[ibo_idx] ** 2), fixed_noise_power=False)
 
                 # enchanced CNC reception
                 rx_bits = my_cnc_rx.receive(n_iters=cnc_iters_val, upsample_factor=cnc_n_upsamp_val,
@@ -228,8 +229,8 @@ ax1.legend(title="CNC N iterations")
 
 plt.tight_layout()
 plt.savefig(
-    "figs/constant_ber%1.0e_req_ebn0_vs_ibo%dto%d_soft_lim_miso_cnc_%dqam_%dnant.png" % (
-    target_ber, min(ibo_arr), max(ibo_arr), my_mod.constel_size, n_ant_val),
+    "./figs/constant_ber%1.0e_req_ebn0_vs_ibo%dto%d_soft_lim_miso_cnc_%dqam_%dnant.png" % (
+        target_ber, min(ibo_arr), max(ibo_arr), my_mod.constel_size, n_ant_val),
     dpi=600, bbox_inches='tight')
 plt.show()
 

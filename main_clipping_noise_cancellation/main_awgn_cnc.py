@@ -8,15 +8,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 
-import antenna_arrray
-import channel
 import corrector
 import distortion
 import modulation
 import noise
 import transceiver
 from plot_settings import set_latex_plot_style
-from utilities import count_mismatched_bits, ebn0_to_snr, td_signal_power
+from utilities import count_mismatched_bits, ebn0_to_snr
 
 set_latex_plot_style()
 
@@ -27,25 +25,9 @@ my_distortion = distortion.SoftLimiter(0, my_mod.avg_sample_power)
 # my_mod.plot_constellation()
 my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion))
 # my_tx.impairment.plot_characteristics()
-my_array = antenna_arrray.LinearArray(n_elements=1, base_transceiver=my_tx, center_freq=int(3.5e9),
-                                      wav_len_spacing=0.5,
-                                      cord_x=0, cord_y=0, cord_z=15)
-my_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion), cord_x=212, cord_y=212, cord_z=1.5,
-                                center_freq=int(3.5e9), carrier_spacing=int(15e3))
 
 my_standard_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion))
 my_cnc_rx = corrector.CncReceiver(copy.deepcopy(my_mod), copy.deepcopy(my_distortion))
-
-my_miso_chan = channel.MisoTwoPathFd()
-# my_miso_chan = channel.RayleighMisoFd(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx, seed=1234)
-
-if not isinstance(my_miso_chan, channel.RayleighMisoFd):
-    my_miso_chan.calc_channel_mat(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx, skip_attenuation=False)
-
-chan_mat_at_point = my_miso_chan.get_channel_mat_fd()
-my_array.set_precoding_matrix(channel_mat_fd=chan_mat_at_point, mr_precoding=True)
-agc_corr_vec = np.sqrt(np.sum(np.power(np.abs(chan_mat_at_point), 2), axis=0))
-
 
 my_noise = noise.Awgn(snr_db=10, seed=1234)
 bit_rng = np.random.default_rng(4321)
@@ -74,8 +56,6 @@ print("CNC number of iteration list:", cnc_n_iters_lst)
 cnc_n_upsamp = 4
 # Single CNC iteration is equal to standard reception without distortion compensation
 cnc_n_iters_lst = np.insert(cnc_n_iters_lst, 0, 0)
-my_cnc_rx.impairment.set_ibo(ibo_val_db)
-my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
 
 include_clean_run = True
 if include_clean_run:
@@ -98,17 +78,11 @@ for run_idx, cnc_n_iter_val in enumerate(cnc_n_iters_lst):
         ite_cnt = 0
         while bits_sent < bits_sent_max and n_err < n_err_min:
             tx_bits = bit_rng.choice((0, 1), my_tx.modem.n_bits_per_ofdm_sym)
-            tx_ofdm_symbol_fd, clean_ofdm_symbol = my_array.transmit(tx_bits, out_domain_fd=True, return_both=True)
-            rx_ofdm_symbol_fd = my_miso_chan.propagate(in_sig_mat=tx_ofdm_symbol_fd)
-            rx_ofdm_symbol_fd = np.divide(rx_ofdm_symbol_fd, agc_corr_vec)
-
-            clean_rx_ofdm_symbol_fd = my_miso_chan.propagate(in_sig_mat=clean_ofdm_symbol)
-            clean_rx_ofdm_symbol_fd = np.divide(clean_rx_ofdm_symbol_fd, agc_corr_vec)
-
+            tx_ofdm_symbol, clean_ofdm_symbol = my_tx.transmit(tx_bits, out_domain_fd=False, return_both=True)
             if include_clean_run and run_idx == 0:
-                rx_ofdm_symbol = my_noise.process(clean_rx_ofdm_symbol_fd, avg_sample_pow=my_mod.avg_sample_power*(my_cnc_rx.modem.calc_alpha(ibo_val_db)**2))
+                rx_ofdm_symbol = my_noise.process(clean_ofdm_symbol, my_mod.avg_sample_power)
             else:
-                rx_ofdm_symbol = my_noise.process(rx_ofdm_symbol_fd, avg_sample_pow=my_mod.avg_sample_power*(my_cnc_rx.modem.calc_alpha(ibo_val_db)**2))
+                rx_ofdm_symbol = my_noise.process(tx_ofdm_symbol, my_mod.avg_sample_power)
 
             if include_clean_run and run_idx == 0:
                 # standard reception
@@ -116,8 +90,10 @@ for run_idx, cnc_n_iter_val in enumerate(cnc_n_iters_lst):
             else:
                 # enchanced CNC reception
                 # Change domain TD of RX signal to FD
+                no_cp_fd_sig_mat = torch.fft.fft(torch.from_numpy(rx_ofdm_symbol[my_cnc_rx.modem.cp_len:]),
+                                                 norm="ortho").numpy()
                 rx_bits = my_cnc_rx.receive(n_iters=cnc_n_iter_val, upsample_factor=cnc_n_upsamp,
-                                            in_sig_fd=rx_ofdm_symbol_fd)
+                                            in_sig_fd=no_cp_fd_sig_mat)
 
             n_bit_err = count_mismatched_bits(tx_bits, rx_bits)
             # check convergence
@@ -133,7 +109,6 @@ for run_idx, cnc_n_iter_val in enumerate(cnc_n_iters_lst):
                 if rel_change < convergence_epsilon:
                     break
             ite_cnt += 1
-
 
         bers[idx] = n_err / bits_sent
     ber_per_dist.append(bers)
@@ -164,7 +139,7 @@ ax1.grid()
 ax1.legend()
 
 plt.tight_layout()
-plt.savefig("figs/ber_soft_lim_siso_cnc_ibo%d_niter%d_sweep_nupsamp%d.png" % (
+plt.savefig("./figs/ber_soft_lim_siso_cnc_ibo%d_niter%d_sweep_nupsamp%d.png" % (
     my_tx.impairment.ibo_db, np.max(cnc_n_iters_lst), cnc_n_upsamp), dpi=600, bbox_inches='tight')
 plt.show()
 
@@ -260,7 +235,7 @@ plt.show()
 # ax1.legend()
 #
 # plt.tight_layout()
-# plt.savefig("figs/ber_soft_lim_siso_cnc_ibo%d_niter%d_nupsamp%d_sweep.png" % (
+# plt.savefig("./figs/ber_soft_lim_siso_cnc_ibo%d_niter%d_nupsamp%d_sweep.png" % (
 # my_tx.impairment.ibo_db, cnc_n_iter_val, np.max(cnc_n_upsamp_lst)), dpi=600, bbox_inches='tight')
 # plt.show()
 #
