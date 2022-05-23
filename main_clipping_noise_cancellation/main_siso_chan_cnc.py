@@ -36,11 +36,10 @@ my_cnc_rx = corrector.CncReceiver(copy.deepcopy(my_mod), copy.deepcopy(my_distor
 
 # my_miso_chan = channel.MisoTwoPathFd()
 my_miso_chan = channel.RayleighMisoFd(tx_transceivers=my_array.array_elements, rx_transceiver=my_standard_rx, seed=1234)
-
 my_noise = noise.Awgn(snr_db=10, seed=1234)
 bit_rng = np.random.default_rng(4321)
 
-ebn0_arr = np.arange(0, 51, 2)
+ebn0_arr = np.arange(0, 21, 2)
 print("Eb/n0 values:", ebn0_arr)
 snr_arr = ebn0_to_snr(ebn0_arr, my_mod.n_fft, my_mod.n_sub_carr, my_mod.constel_size)
 print("SNR values:", snr_arr)
@@ -52,7 +51,15 @@ if not isinstance(my_miso_chan, channel.RayleighMisoFd):
 chan_mat_at_point = my_miso_chan.get_channel_mat_fd()
 my_array.set_precoding_matrix(channel_mat_fd=chan_mat_at_point, mr_precoding=True)
 agc_corr_vec = np.sqrt(np.sum(np.power(np.abs(chan_mat_at_point), 2), axis=0))
+
+# # DSP test
 agc_corr_nsc = np.concatenate((agc_corr_vec[-my_mod.n_sub_carr // 2:], agc_corr_vec[1:(my_mod.n_sub_carr // 2) + 1]))
+# chan_mat_nsc = np.hstack(
+#     (chan_mat_at_point[:, -my_mod.n_sub_carr // 2:], chan_mat_at_point[:, 1:(my_mod.n_sub_carr // 2) + 1]))
+# precoding_mat = my_array.array_elements[0].modem.precoding_mat
+#
+# tf_fd_precod_after_chan = chan_mat_nsc * precoding_mat
+# tf_fd_after_agc = tf_fd_precod_after_chan / agc_corr_nsc
 
 plot_psd = False
 n_collected_snapshots = 100
@@ -71,7 +78,7 @@ my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_p
 my_cnc_rx.impairment.set_ibo(ibo_val_db)
 
 print("Distortion IBO/TOI value:", ibo_val_db)
-cnc_n_iters_lst = [1, 2, 3, 4, 8, 16]
+cnc_n_iters_lst = [1, 2, 3, 5, 12]
 print("CNC number of iteration list:", cnc_n_iters_lst)
 cnc_n_upsamp = 2
 # Single CNC iteration is equal to standard reception without distortion compensation
