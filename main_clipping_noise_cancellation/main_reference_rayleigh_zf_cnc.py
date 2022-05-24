@@ -40,7 +40,7 @@ my_miso_chan = channel.RayleighMisoFd(tx_transceivers=my_array.array_elements, r
 my_noise = noise.Awgn(snr_db=10, seed=1234)
 bit_rng = np.random.default_rng(4321)
 
-snr_arr = np.arange(15, 41, 2)
+snr_arr = np.arange(15, 41, 5)
 print("SNR values:", snr_arr)
 n_symb_sent_max = int(1e6)
 n_symb_err_min = 10e3
@@ -124,6 +124,9 @@ for run_idx, cnc_n_iter_val in enumerate(cnc_n_iters_lst):
         n_symb_err = 0
         n_symb_sent = 0
         while n_symb_sent < n_symb_sent_max and n_symb_err < n_symb_err_min:
+            my_miso_chan.reroll_channel_coeffs()
+            chan_mat_at_point = my_miso_chan.get_channel_mat_fd()
+
             tx_bits = bit_rng.choice((0, 1), my_tx.modem.n_bits_per_ofdm_sym)
             tx_symbols = np.split(tx_bits, my_mod.n_sub_carr)
 
@@ -131,14 +134,14 @@ for run_idx, cnc_n_iter_val in enumerate(cnc_n_iters_lst):
 
             if include_clean_run and run_idx == 0:
                 rx_ofdm_symbol = my_miso_chan.propagate(in_sig_mat=clean_ofdm_symbol_fd)
-                rx_ofdm_symbol = my_noise.process(rx_ofdm_symbol, avg_sample_pow=my_mod.avg_sample_power * np.average(
+                rx_ofdm_symbol = my_noise.process(rx_ofdm_symbol, avg_sample_pow=my_mod.avg_symbol_power * np.average(
                     np.power(chan_mat_at_point, 2)), disp_data=False)
             else:
                 rx_ofdm_symbol = my_miso_chan.propagate(in_sig_mat=tx_ofdm_symbol_fd)
-                rx_ofdm_symbol = my_noise.process(rx_ofdm_symbol, avg_sample_pow=my_mod.avg_sample_power *
+                rx_ofdm_symbol = my_noise.process(rx_ofdm_symbol, avg_sample_pow=my_mod.avg_symbol_power *
                                                                                  np.average(np.power(chan_mat_at_point,
                                                                                                      2)) * eta_pwr_ratio)
-            # apply AGC
+            # apply ZF
             rx_ofdm_symbol = np.squeeze(np.divide(rx_ofdm_symbol, chan_mat_at_point))
 
             if include_clean_run and run_idx == 0:
