@@ -39,9 +39,9 @@ my_miso_chan = channel.RayleighMisoFd(tx_transceivers=my_array.array_elements, r
 my_noise = noise.Awgn(snr_db=10, seed=1234)
 bit_rng = np.random.default_rng(4321)
 
-ebn0_arr = np.arange(0, 21, 2)
+ebn0_arr = np.arange(0, 31, 2)
 print("Eb/n0 values:", ebn0_arr)
-snr_arr = ebn0_to_snr(ebn0_arr, my_mod.n_fft, my_mod.n_sub_carr, my_mod.constel_size)
+snr_arr = ebn0_arr
 print("SNR values:", snr_arr)
 
 if not isinstance(my_miso_chan, channel.RayleighMisoFd):
@@ -51,6 +51,8 @@ if not isinstance(my_miso_chan, channel.RayleighMisoFd):
 chan_mat_at_point = my_miso_chan.get_channel_mat_fd()
 my_array.set_precoding_matrix(channel_mat_fd=chan_mat_at_point, mr_precoding=True)
 agc_corr_vec = np.sqrt(np.sum(np.power(np.abs(chan_mat_at_point), 2), axis=0))
+
+my_extended_cnc_rx = corrector.CncReceiverExtended(antenna_array=my_array, channel=my_miso_chan)
 
 # # DSP test
 agc_corr_nsc = np.concatenate((agc_corr_vec[-my_mod.n_sub_carr // 2:], agc_corr_vec[1:(my_mod.n_sub_carr // 2) + 1]))
@@ -76,7 +78,7 @@ conv_ite_th = np.inf  # number of iterations after the convergence threshold is 
 ibo_val_db = 0
 my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
 my_cnc_rx.impairment.set_ibo(ibo_val_db)
-
+my_extended_cnc_rx.update_distortion(ibo_val_db=ibo_val_db)
 print("Distortion IBO/TOI value:", ibo_val_db)
 cnc_n_iters_lst = [1, 2, 3, 5, 12]
 print("CNC number of iteration list:", cnc_n_iters_lst)
@@ -110,11 +112,11 @@ for run_idx, cnc_n_iter_val in enumerate(cnc_n_iters_lst):
 
             if include_clean_run and run_idx == 0:
                 rx_ofdm_symbol = my_miso_chan.propagate(in_sig_mat=clean_ofdm_symbol)
-                rx_ofdm_symbol = my_noise.process(rx_ofdm_symbol, avg_sample_pow=my_mod.avg_sample_power * np.average(
+                rx_ofdm_symbol = my_noise.process(rx_ofdm_symbol, avg_sample_pow=my_mod.avg_symbol_power * np.average(
                     agc_corr_nsc ** 2), disp_data=False)
             else:
                 rx_ofdm_symbol = my_miso_chan.propagate(in_sig_mat=tx_ofdm_symbol)
-                rx_ofdm_symbol = my_noise.process(rx_ofdm_symbol, avg_sample_pow=my_mod.avg_sample_power *
+                rx_ofdm_symbol = my_noise.process(rx_ofdm_symbol, avg_sample_pow=my_mod.avg_symbol_power *
                                                                                  np.average(np.power(agc_corr_vec,
                                                                                                      2)) * abs_lambda ** 2)
             # apply AGC
@@ -128,8 +130,9 @@ for run_idx, cnc_n_iter_val in enumerate(cnc_n_iters_lst):
             else:
                 # enchanced CNC reception
                 # Change domain TD of RX signal to FD
-                rx_bits = my_cnc_rx.receive(n_iters=cnc_n_iter_val, upsample_factor=cnc_n_upsamp,
-                                            in_sig_fd=rx_ofdm_symbol)
+                # rx_bits = my_cnc_rx.receive(n_iters=cnc_n_iter_val, upsample_factor=cnc_n_upsamp,
+                #                             in_sig_fd=rx_ofdm_symbol)
+                rx_bits = my_extended_cnc_rx.receive(n_iters=cnc_n_iter_val, in_sig_fd=rx_ofdm_symbol)
 
             n_bit_err = count_mismatched_bits(tx_bits, rx_bits)
             # check convergence

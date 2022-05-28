@@ -151,7 +151,7 @@ for ibo_idx, ibo_val_db in enumerate(ibo_arr):
                 rx_sig_fd = my_miso_chan.propagate(in_sig_mat=tx_ofdm_symbol_fd)
                 rx_sig_fd = np.divide(rx_sig_fd, agc_corr_vec)
 
-                rx_ofdm_symbol_fd = my_noise.process(rx_sig_fd, avg_sample_pow=my_mod.avg_sample_power * (
+                rx_ofdm_symbol_fd = my_noise.process(rx_sig_fd, avg_sample_pow=my_mod.avg_symbol_power * (
                         abs_lambda_per_ibo[ibo_idx] ** 2), fixed_noise_power=False)
 
                 # enchanced CNC reception

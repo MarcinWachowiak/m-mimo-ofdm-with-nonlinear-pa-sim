@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 
+from antenna_arrray import LinearArray
 from distortion import SoftLimiter
 from modulation import OfdmQamModem
 
@@ -62,3 +63,58 @@ class CncReceiver():
                 distortion_estimate_fd = rx_symbols_estimate - (rx_symbols * self.modem.alpha)
 
         return self.modem.symbols_to_bits(rx_symbols)
+
+
+class CncReceiverExtended():
+    def __init__(self, antenna_array: LinearArray, channel):
+        self.antenna_array = antenna_array
+        self.channel = channel
+        channel_mat_at_point = self.channel.get_channel_mat_fd()
+        self.antenna_array.set_precoding_matrix(channel_mat_fd=channel_mat_at_point, mr_precoding=True)
+        self.agc_corr_vec = np.sqrt(np.sum(np.power(np.abs(channel_mat_at_point), 2), axis=0))
+
+    def update_distortion(self, ibo_val_db):
+        self.antenna_array.update_distortion(ibo_db=ibo_val_db,
+                                             avg_sample_pow=self.antenna_array.base_transceiver.modem.avg_sample_power)
+
+    def receive(self, n_iters: int, in_sig_fd, lambda_estimation=None):
+        # strip input fd signal of the OOB - include only the symbol data
+        n_sub_carr = self.antenna_array.array_elements[0].modem.n_sub_carr
+        rx_ofdm_nsc_fd = np.concatenate((in_sig_fd[-n_sub_carr // 2:], in_sig_fd[1:(n_sub_carr // 2) + 1]))
+
+        # allow a fixed number of iterations
+        for iter_idx in range(n_iters + 1):
+            # skip estimate subtraction for first iteration
+            if iter_idx != 0:
+                corr_in_sig_fd = rx_ofdm_nsc_fd - distortion_estimate_fd
+            else:
+                corr_in_sig_fd = rx_ofdm_nsc_fd
+
+            # perform detection with corrected RX constellation - get symbols
+            if lambda_estimation is not None:
+                rx_symbols = self.antenna_array.array_elements[0].modem.symbol_detection(
+                    corr_in_sig_fd / lambda_estimation)
+            else:
+                rx_symbols = self.antenna_array.array_elements[0].modem.symbol_detection(
+                    corr_in_sig_fd / self.antenna_array.array_elements[0].modem.alpha)
+
+            rx_bits = self.antenna_array.array_elements[0].modem.symbols_to_bits(rx_symbols)
+            # perform upsampled modulation
+            ofdm_sym_fd_upsampled = np.zeros(n_sub_carr, dtype=np.complex128)
+
+            tx_ofdm_symbol = self.antenna_array.transmit(rx_bits, out_domain_fd=True, return_both=False)
+            rx_ofdm_symbol = self.channel.propagate(in_sig_mat=tx_ofdm_symbol)
+
+            rx_ofdm_symbol = np.divide(rx_ofdm_symbol, self.agc_corr_vec)
+
+            rx_symbols_estimate = np.concatenate(
+                (rx_ofdm_symbol[-n_sub_carr // 2:], rx_ofdm_symbol[1:(n_sub_carr // 2) + 1]))
+
+            # calculate distortion estimate
+            if lambda_estimation is not None:
+                distortion_estimate_fd = rx_symbols_estimate - (rx_symbols * lambda_estimation)
+            else:
+                distortion_estimate_fd = rx_symbols_estimate - (
+                        rx_symbols * self.antenna_array.array_elements[0].modem.alpha)
+
+        return self.antenna_array.array_elements[0].modem.symbols_to_bits(rx_symbols)

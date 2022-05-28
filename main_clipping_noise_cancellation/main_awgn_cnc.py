@@ -34,7 +34,7 @@ bit_rng = np.random.default_rng(4321)
 
 ebn0_arr = np.arange(0, 21, 2)
 print("Eb/n0 values:", ebn0_arr)
-snr_arr = ebn0_to_snr(ebn0_arr, my_mod.n_fft, my_mod.n_sub_carr, my_mod.constel_size)
+snr_arr = ebn0_arr
 print("SNR values:", snr_arr)
 
 plot_psd = False
@@ -80,9 +80,9 @@ for run_idx, cnc_n_iter_val in enumerate(cnc_n_iters_lst):
             tx_bits = bit_rng.choice((0, 1), my_tx.modem.n_bits_per_ofdm_sym)
             tx_ofdm_symbol, clean_ofdm_symbol = my_tx.transmit(tx_bits, out_domain_fd=False, return_both=True)
             if include_clean_run and run_idx == 0:
-                rx_ofdm_symbol = my_noise.process(clean_ofdm_symbol, my_mod.avg_sample_power)
+                rx_ofdm_symbol = my_noise.process(clean_ofdm_symbol, my_mod.avg_symbol_power)
             else:
-                rx_ofdm_symbol = my_noise.process(tx_ofdm_symbol, my_mod.avg_sample_power)
+                rx_ofdm_symbol = my_noise.process(tx_ofdm_symbol, my_mod.avg_symbol_power)
 
             if include_clean_run and run_idx == 0:
                 # standard reception

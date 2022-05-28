@@ -143,7 +143,7 @@ for ibo_idx, ibo_val_db in enumerate(ibo_arr):
             # print("TX power", n_ant_val*utilities.td_signal_power(utilities.to_time_domain(tx_ofdm_symbol_fd)))
             rx_ofdm_symbol_fd = my_miso_chan.propagate(in_sig_mat=tx_ofdm_symbol_fd)
             # print("RX power", utilities.td_signal_power(utilities.to_time_domain(rx_ofdm_symbol_fd)))
-            rx_ofdm_symbol_fd = my_noise.process(rx_ofdm_symbol_fd, avg_sample_pow=my_mod.avg_sample_power * (
+            rx_ofdm_symbol_fd = my_noise.process(rx_ofdm_symbol_fd, avg_sample_pow=my_mod.avg_symbol_power * (
                 np.average(agc_corr_vec ** 2)) * abs_lambda_per_ibo[ibo_idx] ** 2, disp_data=False)
 
             rx_ofdm_symbol_fd = np.divide(rx_ofdm_symbol_fd, agc_corr_vec)
