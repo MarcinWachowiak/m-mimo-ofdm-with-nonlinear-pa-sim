@@ -139,32 +139,32 @@ class RayleighMisoFd:
     def __str__(self):
         return "rayleigh"
 
-    def set_channel_mat_fd(self, fd_chan_mat=None, skip_attenuation=False):
-        if fd_chan_mat is None:
+    def set_channel_mat_fd(self, channel_mat_fd=None, skip_attenuation=False):
+        if channel_mat_fd is None:
             # generate rayleigh channel coefficients
             fd_rayleigh_coeffs = self.rng_gen.standard_normal(size=(self.n_inputs, self.fd_samp_size * 2)).view(
                 dtype=np.complex128) / np.sqrt(2.0)
             if skip_attenuation:
-                self.fd_chan_mat = fd_rayleigh_coeffs
+                self.channel_mat_fd = fd_rayleigh_coeffs
             else:
-                self.fd_chan_mat = np.multiply(fd_rayleigh_coeffs, self.los_fd_att_mat)
+                self.channel_mat_fd = np.multiply(fd_rayleigh_coeffs, self.los_fd_att_mat)
         else:
-            self.fd_chan_mat = fd_chan_mat
+            self.channel_mat_fd = channel_mat_fd
 
     def get_channel_mat_fd(self):
-        return self.fd_chan_mat
+        return self.channel_mat_fd
 
     def reroll_channel_coeffs(self, skip_attenuation=False):
         fd_rayleigh_coeffs = self.rng_gen.standard_normal(size=(self.n_inputs, self.fd_samp_size * 2)).view(
             dtype=np.complex128) / np.sqrt(2.0)
         if skip_attenuation:
-            self.fd_chan_mat = fd_rayleigh_coeffs
+            self.channel_mat_fd = fd_rayleigh_coeffs
         else:
-            self.fd_chan_mat = np.multiply(fd_rayleigh_coeffs, self.los_fd_att_mat)
+            self.channel_mat_fd = np.multiply(fd_rayleigh_coeffs, self.los_fd_att_mat)
 
     def propagate(self, in_sig_mat):
         # channel in frequency domain
         # multiply signal by rayleigh channel coefficients in frequency domain
-        fd_sigmat_after_chan = np.multiply(in_sig_mat, self.fd_chan_mat)
+        fd_sigmat_after_chan = np.multiply(in_sig_mat, self.channel_mat_fd)
         # sum columns
         return np.sum(fd_sigmat_after_chan, axis=0)

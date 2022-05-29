@@ -26,9 +26,8 @@ my_mod = modulation.OfdmQamModem(constel_size=64, n_fft=4096, n_sub_carr=2048, c
 my_distortion = distortion.SoftLimiter(0, my_mod.avg_sample_power)
 # my_mod.plot_constellation()
 my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion))
-my_array = antenna_arrray.LinearArray(n_elements=1, base_transceiver=my_tx, center_freq=int(3.5e9),
-                                      wav_len_spacing=0.5,
-                                      cord_x=0, cord_y=0, cord_z=15)
+my_array = antenna_arrray.LinearArray(n_elements=4, base_transceiver=my_tx, center_freq=int(3.5e9),
+                                      wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
 my_standard_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
                                          cord_x=212, cord_y=212, cord_z=1.5,
                                          center_freq=int(3.5e9), carrier_spacing=int(15e3))
@@ -52,7 +51,8 @@ chan_mat_at_point = my_miso_chan.get_channel_mat_fd()
 my_array.set_precoding_matrix(channel_mat_fd=chan_mat_at_point, mr_precoding=True)
 agc_corr_vec = np.sqrt(np.sum(np.power(np.abs(chan_mat_at_point), 2), axis=0))
 
-my_extended_cnc_rx = corrector.CncReceiverExtended(antenna_array=my_array, channel=my_miso_chan)
+my_extended_cnc_rx = corrector.CncReceiverExtended(antenna_array=copy.deepcopy(my_array),
+                                                   channel=copy.deepcopy(my_miso_chan))
 
 # # DSP test
 agc_corr_nsc = np.concatenate((agc_corr_vec[-my_mod.n_sub_carr // 2:], agc_corr_vec[1:(my_mod.n_sub_carr // 2) + 1]))
@@ -129,7 +129,6 @@ for run_idx, cnc_n_iter_val in enumerate(cnc_n_iters_lst):
                 rx_bits = my_standard_rx.receive(rx_ofdm_symbol)
             else:
                 # enchanced CNC reception
-                # Change domain TD of RX signal to FD
                 # rx_bits = my_cnc_rx.receive(n_iters=cnc_n_iter_val, upsample_factor=cnc_n_upsamp,
                 #                             in_sig_fd=rx_ofdm_symbol)
                 rx_bits = my_extended_cnc_rx.receive(n_iters=cnc_n_iter_val, in_sig_fd=rx_ofdm_symbol)
