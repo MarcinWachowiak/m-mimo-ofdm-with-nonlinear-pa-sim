@@ -3,6 +3,7 @@
 # %%
 import copy
 import time
+from datetime import datetime
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -21,12 +22,12 @@ from utilities import count_mismatched_bits, ebn0_to_snr
 set_latex_plot_style()
 
 # %%
-
+n_ant = 4
 my_mod = modulation.OfdmQamModem(constel_size=64, n_fft=4096, n_sub_carr=2048, cp_len=128)
 my_distortion = distortion.SoftLimiter(0, my_mod.avg_sample_power)
 # my_mod.plot_constellation()
 my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion))
-my_array = antenna_arrray.LinearArray(n_elements=4, base_transceiver=my_tx, center_freq=int(3.5e9),
+my_array = antenna_arrray.LinearArray(n_elements=n_ant, base_transceiver=my_tx, center_freq=int(3.5e9),
                                       wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
 my_standard_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
                                          cord_x=212, cord_y=212, cord_z=1.5,
@@ -96,6 +97,8 @@ ber_per_dist, freq_arr, clean_ofdm_psd, distortion_psd, tx_ofdm_psd = ([] for i 
 
 for run_idx, cnc_n_iter_val in enumerate(cnc_n_iters_lst):
     start_time = time.time()
+    print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+
     if not (include_clean_run and run_idx == 0):
         my_standard_rx.modem.correct_constellation(ibo_val_db)
         my_cnc_rx.impairment.set_ibo(ibo_val_db)
@@ -109,16 +112,12 @@ for run_idx, cnc_n_iter_val in enumerate(cnc_n_iters_lst):
         while bits_sent < bits_sent_max and n_err < n_err_min:
             tx_bits = bit_rng.choice((0, 1), my_tx.modem.n_bits_per_ofdm_sym)
             tx_ofdm_symbol, clean_ofdm_symbol = my_array.transmit(tx_bits, out_domain_fd=True, return_both=True)
-
             if include_clean_run and run_idx == 0:
                 rx_ofdm_symbol = my_miso_chan.propagate(in_sig_mat=clean_ofdm_symbol)
-                rx_ofdm_symbol = my_noise.process(rx_ofdm_symbol, avg_sample_pow=my_mod.avg_symbol_power * np.average(
-                    agc_corr_nsc ** 2), disp_data=False)
+                rx_ofdm_symbol = my_noise.process(rx_ofdm_symbol, avg_sample_pow=my_mod.avg_symbol_power * np.mean(np.power(agc_corr_nsc,2)), disp_data=False)
             else:
                 rx_ofdm_symbol = my_miso_chan.propagate(in_sig_mat=tx_ofdm_symbol)
-                rx_ofdm_symbol = my_noise.process(rx_ofdm_symbol, avg_sample_pow=my_mod.avg_symbol_power *
-                                                                                 np.average(np.power(agc_corr_vec,
-                                                                                                     2)) * abs_lambda ** 2)
+                rx_ofdm_symbol = my_noise.process(rx_ofdm_symbol, avg_sample_pow=my_mod.avg_symbol_power * np.mean(np.power(agc_corr_nsc, 2)) * abs_lambda ** 2)
             # apply AGC
             rx_ofdm_symbol = rx_ofdm_symbol / agc_corr_vec
 
@@ -170,15 +169,15 @@ for idx, cnc_iter_val in enumerate(cnc_n_iters_lst):
             ax1.plot(ebn0_arr, ber_per_dist[idx],
                      label="CNC NI = %d, J = %d" % (cnc_iter_val, cnc_n_upsamp))
 # fix log scaling
-ax1.set_title("Bit error rate, QAM %d, IBO = %d [dB]" % (my_mod.constellation_size, ibo_val_db))
+ax1.set_title("Bit error rate, QAM %d, N_ANT = %d, IBO = %d [dB]" % (my_mod.constellation_size, n_ant, ibo_val_db))
 ax1.set_xlabel("Eb/N0 [dB]")
 ax1.set_ylabel("BER")
 ax1.grid()
 ax1.legend()
 
 plt.tight_layout()
-plt.savefig("../figs/cnc_%s_ber_ibo%d_niter%d_sweep_nupsamp%d.png" % (my_miso_chan,
-                                                                      my_tx.impairment.ibo_db, np.max(cnc_n_iters_lst),
+plt.savefig("../figs/cnc_%s_nant%d_ber_ibo%d_niter%d_sweep_nupsamp%d.png" % (my_miso_chan, n_ant,
+                                                                      ibo_val_db, np.max(cnc_n_iters_lst),
                                                                       cnc_n_upsamp), dpi=600, bbox_inches='tight')
 plt.show()
 

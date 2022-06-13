@@ -37,6 +37,10 @@ class Transceiver:
     def correct_constellation(self):
         self.modem.correct_constellation(ibo_db=self.impairment.ibo_db)
 
+    def update_distortion(self, ibo_db):
+        self.impairment.set_ibo(ibo_db=ibo_db)
+        self.modem.update_alpha(ibo_db=ibo_db)
+
     # legacy method -  in case amplification of signal is required (dBm scale)
     # def tx_amplify(self, in_sig):
     #     return in_sig * np.sqrt(1e-3 * 10 ** (self.tx_power_dbm / 10) / self.modem.avg_sample_power)
