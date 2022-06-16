@@ -1,4 +1,4 @@
-name: mimo_sim
+name: myenv
 channels:
   - pytorch
   - conda-forge
