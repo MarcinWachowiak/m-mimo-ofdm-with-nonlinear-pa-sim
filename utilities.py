@@ -1,5 +1,6 @@
+import csv
 import numpy as np
-
+from datetime import datetime
 vectorized_binary_repr = np.vectorize(np.binary_repr)
 
 from speedup import jit
@@ -312,3 +313,16 @@ def to_freq_domain(in_sig_td, remove_cp=True, cp_len=None):
 
 def to_time_domain(in_sig_mat_fd):
     return torch.fft.ifft(torch.from_numpy(in_sig_mat_fd), norm="ortho").numpy()
+
+
+def save_to_csv(data_lst, filename):
+    timestamp = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
+    with open("../figs/csv_results/%s_%s.csv" % (filename, timestamp), 'w', newline='') as csv_file:
+        writer = csv.writer(csv_file)
+        writer.writerows(data_lst)
+
+def read_from_csv(filename):
+    with open("../figs/csv_results/%s" % filename, 'r', newline='') as csv_file:
+        reader = csv.reader(csv_file)
+        data_lst = list(reader)
+    return data_lst
