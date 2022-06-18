@@ -1,6 +1,9 @@
 # SISO OFDM simulation with nonlinearity
 # Clipping noise cancellation eval
 # %%
+import os, sys
+sys.path.append(os.getcwd())
+
 import copy
 import time
 

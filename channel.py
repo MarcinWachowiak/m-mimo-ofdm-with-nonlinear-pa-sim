@@ -134,6 +134,7 @@ class RayleighMisoFd:
         self.los_fd_att_mat = np.sqrt(np.power(10, (tx_ant_gains[:, np.newaxis] + rx_transceiver.rx_ant_gain_db) / 10)) \
                               * (scp_constants.c / (4 * np.pi * np.outer(los_distances, sig_freq_vals)))
 
+
         self.set_channel_mat_fd()
 
     def __str__(self):

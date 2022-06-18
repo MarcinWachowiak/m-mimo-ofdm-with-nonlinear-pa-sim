@@ -1,4 +1,7 @@
 # %%
+import os, sys
+sys.path.append(os.getcwd())
+
 import copy
 
 import distortion
