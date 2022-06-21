@@ -25,7 +25,7 @@ from utilities import count_mismatched_bits, ebn0_to_snr
 set_latex_plot_style()
 
 # %%
-n_ant = 4
+n_ant = 1
 my_mod = modulation.OfdmQamModem(constel_size=64, n_fft=4096, n_sub_carr=2048, cp_len=128)
 my_distortion = distortion.SoftLimiter(0, my_mod.avg_sample_power)
 # my_mod.plot_constellation()
@@ -37,8 +37,8 @@ my_standard_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment
                                          center_freq=int(3.5e9), carrier_spacing=int(15e3))
 my_cnc_rx = corrector.CncReceiver(copy.deepcopy(my_mod), copy.deepcopy(my_distortion))
 
-# my_miso_chan = channel.MisoTwoPathFd()
-my_miso_chan = channel.RayleighMisoFd(tx_transceivers=my_array.array_elements, rx_transceiver=my_standard_rx, seed=1234)
+my_miso_chan = channel.MisoTwoPathFd()
+# my_miso_chan = channel.RayleighMisoFd(tx_transceivers=my_array.array_elements, rx_transceiver=my_standard_rx, seed=1234)
 my_noise = noise.Awgn(snr_db=10, seed=1234)
 bit_rng = np.random.default_rng(4321)
 

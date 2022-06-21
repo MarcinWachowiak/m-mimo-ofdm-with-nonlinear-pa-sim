@@ -8,7 +8,7 @@ class MisoLosFd:
         self.channel_mat_fd = None
 
     def __str__(self):
-        return "LOS"
+        return "los"
 
     def get_channel_mat_fd(self):
         return self.channel_mat_fd
@@ -52,7 +52,7 @@ class MisoLosFd:
 
 class MisoTwoPathFd:
     def __str__(self):
-        return "Two-path"
+        return "two_path"
 
     def get_channel_mat_fd(self):
         return self.channel_mat_fd
@@ -138,7 +138,7 @@ class RayleighMisoFd:
         self.set_channel_mat_fd()
 
     def __str__(self):
-        return "Rayleigh"
+        return "rayleigh"
 
     def set_channel_mat_fd(self, channel_mat_fd=None, skip_attenuation=False):
         if channel_mat_fd is None:
