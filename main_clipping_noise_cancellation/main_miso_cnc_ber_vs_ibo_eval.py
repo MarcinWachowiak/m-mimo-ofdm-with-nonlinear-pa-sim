@@ -1,6 +1,8 @@
 # antenna array evaluation
 # %%
-import os, sys
+import os
+import sys
+
 sys.path.append(os.getcwd())
 
 import copy
@@ -27,13 +29,11 @@ set_latex_plot_style()
 # Upsample ratio eval, number of iterations fixed
 # arbitrarly set params:
 estimate_lambda = False
-n_ant_val = 1
+n_ant_val = 2
 ebn0_val_db = 30
 print("Eb/n0 value:", ebn0_val_db)
 cnc_n_iter_vals = [0, 1, 2, 3, 4]
 print("CNC N iterations:", cnc_n_iter_vals)
-cnc_n_upsamp_val = 4
-print("CNC upsample factor:", cnc_n_upsamp_val)
 
 ibo_arr = np.arange(0, 11.0, 1)
 print("IBO values:", ibo_arr)
@@ -49,6 +49,7 @@ print("Multi antenna processing init!")
 # remember to copy objects not to avoid shared properties modifications!
 # check modifications before copy and what you copy!
 my_mod = modulation.OfdmQamModem(constel_size=64, n_fft=4096, n_sub_carr=1024, cp_len=128)
+
 my_distortion = distortion.SoftLimiter(ibo_db=0, avg_samp_pow=my_mod.avg_sample_power)
 my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
                                 center_freq=int(3.5e9),
@@ -63,10 +64,16 @@ my_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_
 # my_miso_chan = channel.MisoTwoPathFd()
 my_miso_chan = channel.RayleighMisoFd(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx, seed=1234)
 my_noise = noise.Awgn(snr_db=20, noise_p_dbm=-90, seed=1234)
+
 my_cnc_rx = corrector.CncReceiver(copy.deepcopy(my_mod), copy.deepcopy(my_distortion))
 
 snr_val_db = ebn0_to_snr(ebn0_val_db, my_mod.n_fft, my_mod.n_sub_carr, my_mod.constel_size)
 print("SNR value:", snr_val_db)
+
+cnc_n_upsamp_val = int(my_mod.n_fft / my_mod.n_sub_carr)
+
+my_mcnc_rx = corrector.CncReceiverExtended(antenna_array=copy.deepcopy(my_array),
+                                           channel=copy.deepcopy(my_miso_chan))
 
 if not isinstance(my_miso_chan, channel.RayleighMisoFd):
     my_miso_chan.calc_channel_mat(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx, skip_attenuation=False)
@@ -127,7 +134,8 @@ for ibo_idx, ibo_val_db in enumerate(ibo_arr):
     print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
     my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
-    my_cnc_rx.impairment.set_ibo(ibo_val_db)
+    my_cnc_rx.update_distortion(ibo_db=ibo_val_db)
+    my_mcnc_rx.update_distortion(ibo_val_db=ibo_val_db)
 
     bit_rng = np.random.default_rng(4321)
 
@@ -156,6 +164,7 @@ for ibo_idx, ibo_val_db in enumerate(ibo_arr):
             rx_bits = my_cnc_rx.receive(n_iters=cnc_iters_val, upsample_factor=cnc_n_upsamp_val,
                                         in_sig_fd=rx_ofdm_symbol_fd,
                                         lambda_estimation=abs_lambda_per_ibo[ibo_idx])
+            # rx_bits = my_mcnc_rx.receive(n_iters=cnc_iters_val, in_sig_fd=rx_ofdm_symbol_fd)
 
             n_bit_err = count_mismatched_bits(tx_bits, rx_bits)
             # check convergence

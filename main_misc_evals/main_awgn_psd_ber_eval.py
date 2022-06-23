@@ -1,7 +1,9 @@
 # SISO OFDM simulation with nonlinearity
 # Desired vs distorted signal PSD and BER comparison
 # %%
-import os, sys
+import os
+import sys
+
 sys.path.append(os.getcwd())
 
 import copy

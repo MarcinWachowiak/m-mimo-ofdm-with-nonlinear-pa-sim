@@ -1,6 +1,8 @@
 import csv
-import numpy as np
 from datetime import datetime
+
+import numpy as np
+
 vectorized_binary_repr = np.vectorize(np.binary_repr)
 
 from speedup import jit
@@ -320,6 +322,7 @@ def save_to_csv(data_lst, filename):
     with open("../figs/csv_results/%s_%s.csv" % (filename, timestamp), 'w', newline='') as csv_file:
         writer = csv.writer(csv_file)
         writer.writerows(data_lst)
+
 
 def read_from_csv(filename):
     with open("../figs/csv_results/%s" % filename, 'r', newline='') as csv_file:

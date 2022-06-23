@@ -1,6 +1,8 @@
 # antenna array evaluation
 # %%
-import os, sys
+import os
+import sys
+
 sys.path.append(os.getcwd())
 
 import copy
@@ -36,8 +38,6 @@ print("Eb/n0 values:", ebn0_db_vals)
 
 cnc_n_iter_vals = [0, 1, 2, 3, 4]
 print("CNC N iterations:", cnc_n_iter_vals)
-cnc_n_upsamp_val = 4
-print("CNC upsample factor:", cnc_n_upsamp_val)
 
 ibo_arr = np.arange(0, 6, 0.5)
 print("IBO values:", ibo_arr)
@@ -66,8 +66,13 @@ my_cnc_rx = corrector.CncReceiver(copy.deepcopy(my_mod), copy.deepcopy(my_distor
 my_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(3.5e9),
                                       wav_len_spacing=0.5,
                                       cord_x=0, cord_y=0, cord_z=15)
+cnc_n_upsamp_val = int(my_mod.n_fft / my_mod.n_sub_carr)
+
 # my_miso_chan = channel.RayleighMisoFd(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx, seed=1234)
 my_miso_chan = channel.MisoTwoPathFd()
+
+my_mcnc_rx = corrector.CncReceiverExtended(antenna_array=copy.deepcopy(my_array),
+                                           channel=copy.deepcopy(my_miso_chan))
 
 if not isinstance(my_miso_chan, channel.RayleighMisoFd):
     my_miso_chan.calc_channel_mat(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx, skip_attenuation=False)
@@ -131,7 +136,8 @@ for ibo_idx, ibo_val_db in enumerate(ibo_arr):
     start_time = time.time()
     print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
     my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
-    my_cnc_rx.impairment.set_ibo(ibo_val_db)
+    my_cnc_rx.update_distortion(ibo_db=ibo_val_db)
+    my_mcnc_rx.update_distortion(ibo_val_db=ibo_val_db)
 
     for snr_idx, snr_val_db in enumerate(snr_db_vals):
         my_noise.snr_db = snr_val_db
@@ -161,6 +167,7 @@ for ibo_idx, ibo_val_db in enumerate(ibo_arr):
                 rx_bits = my_cnc_rx.receive(n_iters=cnc_iters_val, upsample_factor=cnc_n_upsamp_val,
                                             in_sig_fd=rx_ofdm_symbol_fd,
                                             lambda_estimation=abs_lambda_per_ibo[ibo_idx])
+                # rx_bits = my_mcnc_rx.receive(n_iters=cnc_iters_val, in_sig_fd=rx_ofdm_symbol_fd)
 
                 n_bit_err = count_mismatched_bits(tx_bits, rx_bits)
                 # check convergence

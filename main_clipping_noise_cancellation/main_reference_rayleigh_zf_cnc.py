@@ -1,7 +1,9 @@
 # SISO OFDM simulation with nonlinearity
 # Clipping noise cancellation eval
 # %%
-import os, sys
+import os
+import sys
+
 sys.path.append(os.getcwd())
 
 import copy
@@ -18,9 +20,8 @@ import distortion
 import modulation
 import noise
 import transceiver
-import utilities
 from plot_settings import set_latex_plot_style
-from utilities import count_mismatched_bits, ebn0_to_snr
+from utilities import count_mismatched_bits
 
 set_latex_plot_style()
 
@@ -72,7 +73,7 @@ my_cnc_rx.impairment.set_ibo(ibo_val_db)
 print("Distortion IBO/TOI value:", ibo_val_db)
 cnc_n_iters_lst = [1, 2, 3, 5, 12]
 print("CNC number of iteration list:", cnc_n_iters_lst)
-cnc_n_upsamp = 2
+cnc_n_upsamp = int(my_mod.n_fft / my_mod.n_sub_carr)
 # Single CNC iteration is equal to standard reception without distortion compensation
 cnc_n_iters_lst = np.insert(cnc_n_iters_lst, 0, 0)
 

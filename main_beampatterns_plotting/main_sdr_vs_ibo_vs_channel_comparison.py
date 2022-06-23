@@ -1,6 +1,8 @@
 # antenna array evaluation
 # %%
-import os, sys
+import os
+import sys
+
 sys.path.append(os.getcwd())
 
 import copy
@@ -9,7 +11,6 @@ from datetime import datetime
 
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.signal import welch
 
 import antenna_arrray
 import channel
@@ -18,7 +19,7 @@ import modulation
 import transceiver
 import utilities
 from plot_settings import set_latex_plot_style
-from utilities import to_db, pts_on_circum, pts_on_semicircum
+from utilities import to_db
 
 # TODO: consider logger
 set_latex_plot_style()
@@ -195,7 +196,7 @@ plt.savefig(
     dpi=600, bbox_inches='tight')
 plt.show()
 
-#%%
+# %%
 # save data to csv file
 # data_lst = []
 # data_lst.append(ibo_arr)

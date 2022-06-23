@@ -69,15 +69,15 @@ dependencies:
   - zlib=1.2.11=h8cc25b3_4
   - zstd=1.4.9=h19a0ad4_0
   - pip:
-    - attrs==21.2.0
-    - click==8.0.3
-    - filelock==3.3.2
-    - grpcio==1.41.1
-    - jsonschema==4.2.1
-    - msgpack==1.0.2
-    - protobuf==3.19.1
-    - pyrsistent==0.18.0
-    - pyyaml==6.0
-    - ray==1.8.0
-    - redis==3.5.3
+      - attrs==21.2.0
+      - click==8.0.3
+      - filelock==3.3.2
+      - grpcio==1.41.1
+      - jsonschema==4.2.1
+      - msgpack==1.0.2
+      - protobuf==3.19.1
+      - pyrsistent==0.18.0
+      - pyyaml==6.0
+      - ray==1.8.0
+      - redis==3.5.3
 prefix: C:\Users\Marcin\anaconda3\envs\myenv
