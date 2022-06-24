@@ -24,6 +24,8 @@ import utilities
 from plot_settings import set_latex_plot_style
 from utilities import count_mismatched_bits
 
+from scipy import signal
+
 set_latex_plot_style()
 
 # %%
@@ -41,12 +43,38 @@ my_standard_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment
                                          center_freq=int(3.5e9), carrier_spacing=int(15e3))
 my_cnc_rx = corrector.CncReceiver(copy.deepcopy(my_mod), copy.deepcopy(my_distortion))
 
+#%%
 # my_miso_chan = channel.MisoLosFd()
 my_miso_chan = channel.RayleighMisoFd(tx_transceivers=my_array.array_elements, rx_transceiver=my_standard_rx, seed=1234)
-chan_mat = my_miso_chan.get_channel_mat_fd()
 
-bit_rng2 = np.random.default_rng(4321)
-my_miso_chan.channel_mat_fd = np.expand_dims(np.exp(1j * 2*np.pi * bit_rng2.random(my_mod.n_fft)), axis=1)
+if not isinstance(my_miso_chan, channel.RayleighMisoFd):
+    my_miso_chan.calc_channel_mat(tx_transceivers=my_array.array_elements, rx_transceiver=my_standard_rx,
+                                  skip_attenuation=False)
+
+# evaluate the CNC performance under channels of different phase characteristics
+# freq_bin_vec = np.fft.fftfreq(my_mod.n_fft, 1 / my_mod.n_fft)
+# bit_rng2 = np.random.default_rng(4321)
+# phase_vec = np.pi * 2 * freq_bin_vec / my_mod.n_fft * 1
+# ordered_phase_vec = np.concatenate((phase_vec[-my_mod.n_fft // 2:], phase_vec[1:(my_mod.n_fft // 2) + 1]))
+# # new_chan_fd = np.expand_dims(np.exp(1j* np.pi * np.sin(ordered_phase_vec)), axis=0)
+# new_chan_fd = np.expand_dims(np.exp(1j* np.pi * signal.sawtooth(ordered_phase_vec, width=1.0)), axis=0)
+# my_miso_chan.channel_mat_fd = new_chan_fd
+#
+# sorted_freqs, channel_tf_func = list(zip(*sorted(zip(freq_bin_vec, np.squeeze(my_miso_chan.channel_mat_fd)))))
+#
+# fig1, ax1 = plt.subplots(1, 1)
+# ax1.plot(sorted_freqs, np.rad2deg(np.angle(channel_tf_func)))
+#
+# ax1.set_title("Channel TF function")
+# ax1.set_xlabel("Frequency [subcarrier]")
+# ax1.set_ylabel("Phase [deg]")
+# ax1.grid()
+# plt.tight_layout()
+# plt.show()
+# plt.savefig("../figs/channel_phase_tf_%s.png" % (datetime.now().strftime("%Y-%m-%d-%H-%M-%S")), dpi=600, bbox_inches='tight')
+
+#%%
+
 
 my_noise = noise.Awgn(snr_db=10, seed=1234)
 bit_rng = np.random.default_rng(4321)
@@ -56,10 +84,6 @@ print("Eb/n0 values:", ebn0_arr)
 snr_arr = ebn0_arr
 print("SNR values:", snr_arr)
 
-if not isinstance(my_miso_chan, channel.RayleighMisoFd):
-    my_miso_chan.calc_channel_mat(tx_transceivers=my_array.array_elements, rx_transceiver=my_standard_rx,
-                                  skip_attenuation=False)
-
 chan_mat_at_point = my_miso_chan.get_channel_mat_fd()
 my_array.set_precoding_matrix(channel_mat_fd=chan_mat_at_point, mr_precoding=True)
 agc_corr_vec = np.sqrt(np.sum(np.power(np.abs(chan_mat_at_point), 2), axis=0))
@@ -67,19 +91,7 @@ agc_corr_vec = np.sqrt(np.sum(np.power(np.abs(chan_mat_at_point), 2), axis=0))
 my_mcnc_rx = corrector.CncReceiverExtended(antenna_array=copy.deepcopy(my_array),
                                            channel=copy.deepcopy(my_miso_chan))
 
-# # DSP test
 agc_corr_nsc = np.concatenate((agc_corr_vec[-my_mod.n_sub_carr // 2:], agc_corr_vec[1:(my_mod.n_sub_carr // 2) + 1]))
-# chan_mat_nsc = np.hstack(
-#     (chan_mat_at_point[:, -my_mod.n_sub_carr // 2:], chan_mat_at_point[:, 1:(my_mod.n_sub_carr // 2) + 1]))
-# precoding_mat = my_array.array_elements[0].modem.precoding_mat
-#
-# tf_fd_precod_after_chan = chan_mat_nsc * precoding_mat
-# tf_fd_after_agc = tf_fd_precod_after_chan / agc_corr_nsc
-
-plot_psd = False
-n_collected_snapshots = 100
-psd_nfft = 128
-n_samp_per_seg = 64
 
 bits_sent_max = int(1e6)
 n_err_min = 1000
@@ -192,8 +204,7 @@ ax1.legend()
 plt.tight_layout()
 plt.savefig("../figs/cnc_%s_nant%d_ber_ibo%d_niter%d_sweep_nupsamp%d.png" % (my_miso_chan, n_ant,
                                                                              ibo_val_db, np.max(cnc_n_iters_lst),
-                                                                             cnc_n_upsamp), dpi=600,
-            bbox_inches='tight')
+                                                                             cnc_n_upsamp), dpi=600, bbox_inches='tight')
 plt.show()
 
 #%%
