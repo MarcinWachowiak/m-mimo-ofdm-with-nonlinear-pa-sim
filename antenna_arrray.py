@@ -175,6 +175,7 @@ class LinearArray:
         # print("AVG precoding gain: ", avg_precoding_gain)
 
         for idx, array_transceiver in enumerate(self.array_elements):
+            array_transceiver.modem.alpha = array_transceiver.modem.calc_alpha(ibo_db=ibo_db)
             array_transceiver.impairment.set_ibo(ibo_db)
             array_transceiver.impairment.set_avg_sample_power(avg_sample_pow * avg_precoding_gain)
 

@@ -150,12 +150,10 @@ for run_idx, cnc_n_iter_val in enumerate(cnc_n_iters_lst):
 
             if include_clean_run and run_idx == 0:
                 # standard reception - no distortion
-                rx_bits = my_cnc_rx.receive(n_iters=0, upsample_factor=1,
-                                            in_sig_fd=rx_ofdm_symbol, lambda_estimation=1.0)
+                rx_bits = my_cnc_rx.receive(n_iters=0, in_sig_fd=rx_ofdm_symbol, alpha_estimation=1.0)
             else:
                 # enchanced CNC reception
-                rx_bits = my_cnc_rx.receive(n_iters=cnc_n_iter_val, upsample_factor=cnc_n_upsamp,
-                                            in_sig_fd=rx_ofdm_symbol)
+                rx_bits = my_cnc_rx.receive(n_iters=cnc_n_iter_val, in_sig_fd=rx_ofdm_symbol)
             rx_symbols = np.split(rx_bits, my_mod.n_sub_carr)
             # compare symbols
             for arr_idx in range(len(tx_symbols)):

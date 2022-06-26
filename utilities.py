@@ -318,14 +318,13 @@ def to_time_domain(in_sig_mat_fd):
 
 
 def save_to_csv(data_lst, filename):
-    timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-    with open("../figs/csv_results/%s_%s.csv" % (filename, timestamp), 'w', newline='') as csv_file:
+    with open("../figs/csv_results/%s.csv" % filename, 'w', newline='') as csv_file:
         writer = csv.writer(csv_file)
         writer.writerows(data_lst)
 
 
 def read_from_csv(filename):
-    with open("../figs/csv_results/%s" % filename, 'r', newline='') as csv_file:
-        reader = csv.reader(csv_file)
+    with open("../figs/csv_results/%s.csv" % filename, 'r', newline='') as csv_file:
+        reader = csv.reader(csv_file, quoting=csv.QUOTE_NONNUMERIC)
         data_lst = list(reader)
     return data_lst
