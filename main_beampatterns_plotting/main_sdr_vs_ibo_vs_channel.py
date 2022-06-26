@@ -27,10 +27,10 @@ set_latex_plot_style()
 print("Multi antenna processing init!")
 bit_rng = np.random.default_rng(4321)
 
-ibo_arr = np.arange(0, 8.0, 1)
+ibo_arr = np.arange(0, 8.0, 0.25)
 print("IBO values:", ibo_arr)
 
-n_ant_arr = [1, 4, 8]
+n_ant_arr = [1, 8, 32]
 print("N ANT values:", n_ant_arr)
 
 my_mod = modulation.OfdmQamModem(constel_size=64, n_fft=4096, n_sub_carr=1024, cp_len=128)
@@ -50,7 +50,7 @@ my_rx.set_position(cord_x=212, cord_y=212, cord_z=1.5)
 # %%
 psd_nfft = 4096
 n_samp_per_seg = 1024
-n_snapshots = 30
+n_snapshots = 100
 
 # %%
 # plot PSD for chosen point/angle
