@@ -197,14 +197,14 @@ plt.show()
 #                 # Change domain TD of RX signal to FD
 #                 no_cp_fd_sig_mat = torch.fft.fft(torch.from_numpy(rx_ofdm_symbol[my_cnc_rx.modem.cp_len:]),
 #                                                  norm="ortho").numpy()
-#                 rx_bits = my_cnc_rx.receive(n_iters=0, upsample_factor=cnc_upsample_val, in_sig_fd=no_cp_fd_sig_mat)
+#                 rx_bits = my_cnc_rx.receive(n_iters_lst=0, upsample_factor=cnc_upsample_val, in_sig_fd=no_cp_fd_sig_mat)
 #
 #             else:
 #                 # enchanced CNC reception
 #                 # Change domain TD of RX signal to FD
 #                 no_cp_fd_sig_mat = torch.fft.fft(torch.from_numpy(rx_ofdm_symbol[my_cnc_rx.modem.cp_len:]),
 #                                                  norm="ortho").numpy()
-#                 rx_bits = my_cnc_rx.receive(n_iters=cnc_n_iter_val, upsample_factor=cnc_upsample_val,
+#                 rx_bits = my_cnc_rx.receive(n_iters_lst=cnc_n_iter_val, upsample_factor=cnc_upsample_val,
 #                                             in_sig_fd=no_cp_fd_sig_mat)
 #
 #             n_bit_err = count_mismatched_bits(tx_bits, rx_bits)

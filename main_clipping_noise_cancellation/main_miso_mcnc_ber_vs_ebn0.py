@@ -131,7 +131,7 @@ for n_ant_val in n_ant_arr:
                                 rx_bits = my_standard_rx.receive(rx_ofdm_symbol)
                             else:
                                 # enchanced CNC reception
-                                rx_bits = my_mcnc_rx.receive(n_iters=cnc_n_iter_val, in_sig_fd=rx_ofdm_symbol)
+                                rx_bits = my_mcnc_rx.receive(n_iters_lst=cnc_n_iter_val, in_sig_fd=rx_ofdm_symbol)
     
                             n_bit_err = count_mismatched_bits(tx_bits, rx_bits)
                             bits_sent += my_mod.n_bits_per_ofdm_sym

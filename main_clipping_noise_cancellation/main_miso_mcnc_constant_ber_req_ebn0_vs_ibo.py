@@ -74,7 +74,7 @@ for n_ant_val in n_ant_arr:
 
     my_miso_rayleigh_chan = channel.RayleighMisoFd(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx,
                                                    seed=1234)
-    chan_lst = [my_miso_two_path_chan, my_miso_los_chan, my_miso_rayleigh_chan]
+    chan_lst = [my_miso_rayleigh_chan]
 
     for my_miso_chan in chan_lst:
         my_mcnc_rx = corrector.McncReceiver(copy.deepcopy(my_array), copy.deepcopy(my_miso_chan))
@@ -151,34 +151,38 @@ for n_ant_val in n_ant_arr:
                         my_mcnc_rx.update_distortion(ibo_db=ibo_val_db)
 
                         for snr_idx, snr_val_db in enumerate(snr_db_vals):
-                            
-                            for iter_idx, cnc_iter_val in enumerate(cnc_n_iter_lst):
-                                my_noise = noise.Awgn(snr_db=20, noise_p_dbm=-90, seed=1234)
-                                my_noise.snr_db = snr_val_db
-                                # same seed is required
-                                bit_rng = np.random.default_rng(4321)
-                                bers = np.zeros([len(cnc_n_iter_lst)])
-                                n_err = 0
-                                bits_sent = 0
+                            my_noise = noise.Awgn(snr_db=20, noise_p_dbm=-90, seed=1234)
+                            my_noise.snr_db = snr_val_db
+                            # same seed is required
+                            bit_rng = np.random.default_rng(4321)
 
-                                while bits_sent < bits_sent_max and n_err < n_err_min:
-                                    tx_bits = bit_rng.choice((0, 1), my_tx.modem.n_bits_per_ofdm_sym)
+                            bers = np.zeros([len(cnc_n_iter_lst)])
+                            n_err = np.zeros([len(cnc_n_iter_lst)])
+                            bits_sent = np.zeros([len(cnc_n_iter_lst)])
+                            while True:
+                                ite_use_flags = np.logical_and((n_err < n_err_min), (bits_sent < bits_sent_max))
+                                if ite_use_flags.any() == True:
+                                    curr_ite_lst = cnc_n_iter_lst[ite_use_flags]
+                                else:
+                                    break
 
-                                    tx_ofdm_symbol_fd, clean_ofdm_symbol_fd = my_array.transmit(tx_bits, out_domain_fd=True,
-                                                                                                return_both=True)
-                                    rx_ofdm_symbol_fd = my_miso_chan.propagate(in_sig_mat=tx_ofdm_symbol_fd)
-                                    rx_ofdm_symbol_fd = my_noise.process(rx_ofdm_symbol_fd, avg_sample_pow=my_mod.avg_symbol_power * (
-                                        np.average(agc_corr_vec ** 2)) * abs_alpha_per_ibo[ibo_idx] ** 2, disp_data=False)
-                                    rx_ofdm_symbol_fd = np.divide(rx_ofdm_symbol_fd, agc_corr_vec)
+                                tx_bits = bit_rng.choice((0, 1), my_tx.modem.n_bits_per_ofdm_sym)
+                                tx_ofdm_symbol_fd, clean_ofdm_symbol_fd = my_array.transmit(tx_bits, out_domain_fd=True,
+                                                                                            return_both=True)
+                                rx_ofdm_symbol_fd = my_miso_chan.propagate(in_sig_mat=tx_ofdm_symbol_fd)
+                                rx_ofdm_symbol_fd = my_noise.process(rx_ofdm_symbol_fd, avg_sample_pow=my_mod.avg_symbol_power * (
+                                    np.average(agc_corr_vec ** 2)) * abs_alpha_per_ibo[ibo_idx] ** 2, disp_data=False)
+                                rx_ofdm_symbol_fd = np.divide(rx_ofdm_symbol_fd, agc_corr_vec)
 
-                                    # CNC reception
-                                    rx_bits = my_mcnc_rx.receive(n_iters=cnc_iter_val, in_sig_fd=rx_ofdm_symbol_fd)
+                                # MCNC reception
+                                rx_bits_per_iter_lst = my_mcnc_rx.receive(n_iters_lst=cnc_n_iter_lst, in_sig_fd=rx_ofdm_symbol_fd)
+                                for idx in range(len(cnc_n_iter_lst)):
+                                    if ite_use_flags[idx] == True:
+                                        n_bit_err = count_mismatched_bits(tx_bits, rx_bits_per_iter_lst[idx])
+                                        n_err[idx] += n_bit_err
+                                        bits_sent[idx] += my_mod.n_bits_per_ofdm_sym
 
-                                    n_bit_err = count_mismatched_bits(tx_bits, rx_bits)
-                                    bits_sent += my_mod.n_bits_per_ofdm_sym
-                                    n_err += n_bit_err
-
-                                ber_per_ibo_snr_iter[ibo_idx, snr_idx, iter_idx] = n_err / bits_sent
+                            ber_per_ibo_snr_iter[ibo_idx, snr_idx, :] = n_err / bits_sent
 
                         print("--- Computation time: %f ---" % (time.time() - start_time))
 
