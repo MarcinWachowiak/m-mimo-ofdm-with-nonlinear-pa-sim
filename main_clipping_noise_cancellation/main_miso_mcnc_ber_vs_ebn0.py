@@ -29,8 +29,8 @@ set_latex_plot_style()
 # %%
 # parameters
 n_ant_arr = [1, 8]
-ibo_arr = [0, 2, 3, 5, 7]
-ebn0_step = [0.5, 1, 2]
+ibo_arr = [0, 2, 3, 5]
+ebn0_step = [1]
 cnc_n_iter_lst = [1, 2, 3, 5, 8]
 # include clean run is always True
 # no distortion and standard RX always included
@@ -162,9 +162,11 @@ for n_ant_val in n_ant_arr:
                 filename_str = "ber_vs_ebn0_mcnc_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s" % (my_miso_chan, n_ant_val, ibo_db, min(ebn0_arr), max(ebn0_arr), ebn0_arr[1]-ebn0_arr[0], '_'.join([str(val) for val in cnc_n_iter_lst[2:]]))
                 # timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
                 # filename_str += "_" + timestamp
-                plt.savefig("../figs/%s.png" % filename_str, dpi=600, bbox_inches='tight')
-                plt.show()
-    
+                plt.savefig("figs/%s.png" % filename_str, dpi=600, bbox_inches='tight')
+                # plt.show()
+                plt.cla()
+                plt.close()
+                
                 #%%
                 data_lst = []
                 data_lst.append(ebn0_arr)
