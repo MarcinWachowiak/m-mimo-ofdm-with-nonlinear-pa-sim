@@ -19,20 +19,15 @@ class CncReceiver():
         self.impairment.set_ibo(ibo_db)
         self.modem.alpha = self.modem.calc_alpha(ibo_db)
 
-    def receive(self, n_iters: int, in_sig_fd, alpha_estimation=None):
+    def receive(self, n_iters_lst, in_sig_fd, alpha_estimation=None):
         # strip input fd signal of the OOB - include only the symbol data
         n_sub_carr = self.modem.n_sub_carr
         rx_ofdm_nsc_fd = np.concatenate((in_sig_fd[-n_sub_carr // 2:], in_sig_fd[1:(n_sub_carr // 2) + 1]))
 
-        if n_iters == 0:
-            if alpha_estimation is not None:
-                rx_symbols = self.modem.symbol_detection(rx_ofdm_nsc_fd / alpha_estimation)
-            else:
-                rx_symbols = self.modem.symbol_detection(rx_ofdm_nsc_fd / self.modem.alpha)
-            return self.modem.symbols_to_bits(rx_symbols)
+        bits_per_iter_lst = []
 
         # allow a fixed number of iterations
-        for iter_idx in range(n_iters + 1):
+        for iter_idx in range(np.max(n_iters_lst) + 1):
             # skip estimate subtraction for first iteration
             if iter_idx != 0:
                 corr_in_sig_fd = rx_ofdm_nsc_fd - distortion_estimate_fd
@@ -44,6 +39,9 @@ class CncReceiver():
                 rx_symbols = self.modem.symbol_detection(corr_in_sig_fd / alpha_estimation)
             else:
                 rx_symbols = self.modem.symbol_detection(corr_in_sig_fd / self.modem.alpha)
+
+            if iter_idx in n_iters_lst:
+                bits_per_iter_lst.append(self.modem.symbols_to_bits(rx_symbols))
 
             # perform upsampled modulation
             ofdm_sym_fd_upsampled = np.zeros(int(self.modem.n_sub_carr * self.upsample_factor), dtype=np.complex128)
@@ -68,7 +66,7 @@ class CncReceiver():
             else:
                 distortion_estimate_fd = rx_symbols_estimate - (rx_symbols * self.modem.alpha)
 
-        return self.modem.symbols_to_bits(rx_symbols)
+        return bits_per_iter_lst
 
 
 class McncReceiver():
@@ -83,22 +81,15 @@ class McncReceiver():
         self.antenna_array.update_distortion(ibo_db=ibo_db,
                                              avg_sample_pow=self.antenna_array.base_transceiver.modem.avg_sample_power)
 
-    def receive(self, n_iters: int, in_sig_fd, alpha_estimation=None):
+    def receive(self, n_iters_lst, in_sig_fd, alpha_estimation=None):
         # strip input fd signal of the OOB - include only the symbol data
         n_sub_carr = self.antenna_array.array_elements[0].modem.n_sub_carr
         rx_ofdm_nsc_fd = np.concatenate((in_sig_fd[-n_sub_carr // 2:], in_sig_fd[1:(n_sub_carr // 2) + 1]))
 
-        if n_iters == 0:
-            if alpha_estimation is not None:
-                rx_symbols = self.antenna_array.array_elements[0].modem.symbol_detection(
-                    rx_ofdm_nsc_fd / alpha_estimation)
-            else:
-                rx_symbols = self.antenna_array.array_elements[0].modem.symbol_detection(
-                    rx_ofdm_nsc_fd / self.antenna_array.array_elements[0].modem.alpha)
-            return self.antenna_array.array_elements[0].modem.symbols_to_bits(rx_symbols)
+        bits_per_iter_lst = []
 
         # allow a fixed number of iterations
-        for iter_idx in range(n_iters + 1):
+        for iter_idx in range(np.max(n_iters_lst) + 1):
             # skip estimate subtraction for first iteration
             if iter_idx != 0:
                 corr_in_sig_fd = rx_ofdm_nsc_fd - distortion_estimate_fd
@@ -115,6 +106,9 @@ class McncReceiver():
 
             rx_bits = self.antenna_array.array_elements[0].modem.symbols_to_bits(rx_symbols)
 
+            if iter_idx in n_iters_lst:
+                bits_per_iter_lst.append(rx_bits)
+
             tx_ofdm_symbol = self.antenna_array.transmit(rx_bits, out_domain_fd=True, return_both=False)
             rx_ofdm_symbol = self.channel.propagate(in_sig_mat=tx_ofdm_symbol)
             rx_ofdm_symbol = np.divide(rx_ofdm_symbol, self.agc_corr_vec)
@@ -129,4 +123,4 @@ class McncReceiver():
                 distortion_estimate_fd = rx_symbols_estimate - (
                         rx_symbols * self.antenna_array.array_elements[0].modem.alpha)
 
-        return self.antenna_array.array_elements[0].modem.symbols_to_bits(rx_symbols)
+        return bits_per_iter_lst
