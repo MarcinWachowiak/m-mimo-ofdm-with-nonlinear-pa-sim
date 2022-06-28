@@ -169,11 +169,13 @@ for n_ant_val in n_ant_arr:
 
                         #MCNC reception
                         rx_bits_per_iter_lst = my_mcnc_rx.receive(n_iters_lst=cnc_n_iter_lst, in_sig_fd=rx_ofdm_symbol_fd)
-                        for idx in range(len(cnc_n_iter_lst)):
-                            if ite_use_flags[idx] == True:
-                                n_bit_err = count_mismatched_bits(tx_bits, rx_bits_per_iter_lst[idx])
-                                n_err[idx] += n_bit_err
-                                bits_sent[idx] += my_mod.n_bits_per_ofdm_sym
+
+                        ber_idx = np.array(list(range(len(cnc_n_iter_lst))))
+                        act_ber_idx = ber_idx[ite_use_flags]
+                        for idx in range(len(rx_bits_per_iter_lst)):
+                            n_bit_err = count_mismatched_bits(tx_bits, rx_bits_per_iter_lst[idx])
+                            n_err[act_ber_idx[idx]] += n_bit_err
+                            bits_sent[act_ber_idx[idx]] += my_mod.n_bits_per_ofdm_sym
 
                     for ite_idx in range(len(cnc_n_iter_lst)):
                         bers_per_ibo[ite_idx][ibo_idx] = n_err[ite_idx] / bits_sent[ite_idx]
