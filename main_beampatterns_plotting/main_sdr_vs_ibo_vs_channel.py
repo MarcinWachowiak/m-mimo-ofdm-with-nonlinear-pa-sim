@@ -27,10 +27,10 @@ set_latex_plot_style()
 print("Multi antenna processing init!")
 bit_rng = np.random.default_rng(4321)
 
-ibo_arr = np.arange(0, 8.25, 4)
+ibo_arr = np.arange(0, 8.0, 0.25)
 print("IBO values:", ibo_arr)
 
-n_ant_arr = [1, 2, 3]
+n_ant_arr = [1, 8, 32]
 print("N ANT values:", n_ant_arr)
 
 my_mod = modulation.OfdmQamModem(constel_size=64, n_fft=4096, n_sub_carr=1024, cp_len=128)
@@ -191,20 +191,19 @@ ax1.grid()
 # ax1.legend(title="Channel:")
 plt.tight_layout()
 plt.savefig(
-    "figs/sdr_vs_ibo_per_channel_ibo%dto%d_%dnant.png" % (
+    "../figs/sdr_vs_ibo_per_channel_ibo%dto%d_%dnant.png" % (
         min(ibo_arr), max(ibo_arr), np.max(n_ant_arr)),
     dpi=600, bbox_inches='tight')
-# plt.show()
-plt.cla()
-plt.close()
+plt.show()
 
 # %%
 # save data to csv file
-data_lst = []
-data_lst.append(ibo_arr)
-for arr1 in sdr_at_ibo_per_n_ant:
-    for arr2 in arr1:
-        data_lst.append(arr2.tolist())
-
-utilities.save_to_csv(data_lst=data_lst, filename="sdr_vs_ibo_per_channel_ibo%dto%d_%dnant.csv" % (min(ibo_arr), max(ibo_arr), np.max(n_ant_arr)), )
-print("Finished execution!")
+# data_lst = []
+# data_lst.append(ibo_arr)
+# for arr1 in sdr_at_ibo_per_n_ant:
+#     for arr2 in arr1:
+#         data_lst.append(arr2.tolist())
+#
+# utilities.save_to_csv(data_lst=data_lst, filename="sdr_vs_ibo_per_channel_ibo%dto%d_%dnant.csv" % (min(ibo_arr), max(ibo_arr), np.max(n_ant_arr)), )
+# data_tmp = utilities.read_from_csv(filename="sdr_vs_ibo_per_channel_ibo0to7_8nant.csv_18_06_2022_21_30_26.csv" )
+# print("Finished execution!")

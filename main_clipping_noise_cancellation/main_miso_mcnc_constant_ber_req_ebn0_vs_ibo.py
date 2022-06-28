@@ -30,9 +30,9 @@ set_latex_plot_style()
 # %%
 # %%
 n_ant_arr = [1, 8]
-target_ber_arr = [1e-2]
-ebn0_step_arr = [2]
-ibo_step_arr = [1]
+target_ber_arr = [1e-1, 1e-2, 1e-3]
+ebn0_step_arr = [0.5, 1, 2]
+ibo_step_arr = [0.5, 1, 2]
 cnc_n_iter_lst = [1, 2, 3, 5, 8]
 cnc_n_iter_lst = np.insert(cnc_n_iter_lst, 0, 0)
 
@@ -201,7 +201,7 @@ for n_ant_val in n_ant_arr:
 
                                     ax1.grid()
                                     plt.tight_layout()
-                                    # plt.show()
+                                    plt.show()
                                     print("Required Eb/No:", interpol_func(target_ber_val))
 
                                     fig2, ax2 = plt.subplots(1, 1)
@@ -234,11 +234,9 @@ for n_ant_val in n_ant_arr:
                                    (target_ber_val, my_miso_chan, n_ant_val, min(ebn0_db_arr), max(ebn0_db_arr), ebn0_db_arr[1]-ebn0_db_arr[0], min(ibo_arr), max(ibo_arr), ibo_arr[1]-ibo_arr[0], '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
                     # timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
                     # filename_str += "_" + timestamp
-                    plt.savefig("figs/%s.png" % filename_str, dpi=600, bbox_inches='tight')
-                    # plt.show()
-                    plt.cla()
-                    plt.close()
-                    
+                    plt.savefig("../figs/%s.png" % filename_str, dpi=600, bbox_inches='tight')
+                    plt.show()
+
                     #%%
                     data_lst = []
                     data_lst.append(ibo_arr)
