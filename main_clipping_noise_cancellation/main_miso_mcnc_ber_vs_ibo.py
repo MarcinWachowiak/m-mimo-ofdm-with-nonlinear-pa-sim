@@ -168,7 +168,7 @@ for n_ant_val in n_ant_arr:
                         rx_ofdm_symbol_fd = np.divide(rx_ofdm_symbol_fd, agc_corr_vec)
 
                         #MCNC reception
-                        rx_bits_per_iter_lst = my_mcnc_rx.receive(n_iters_lst=cnc_n_iter_lst, in_sig_fd=rx_ofdm_symbol_fd)
+                        rx_bits_per_iter_lst = my_mcnc_rx.receive(n_iters_lst=curr_ite_lst, in_sig_fd=rx_ofdm_symbol_fd)
 
                         ber_idx = np.array(list(range(len(cnc_n_iter_lst))))
                         act_ber_idx = ber_idx[ite_use_flags]
