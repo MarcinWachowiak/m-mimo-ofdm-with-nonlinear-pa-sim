@@ -240,7 +240,7 @@ for n_ant_val in n_ant_arr:
                                    (target_ber_val, my_miso_chan, n_ant_val, min(ebn0_db_arr), max(ebn0_db_arr), ebn0_db_arr[1]-ebn0_db_arr[0], min(ibo_arr), max(ibo_arr), ibo_arr[1]-ibo_arr[0], '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
                     # timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
                     # filename_str += "_" + timestamp
-                    plt.savefig("figs/%s.png" % filename_str, dpi=600, bbox_inches='tight')
+                    plt.savefig("figs/vm_worker_results/fixed_ber/%s.png" % filename_str, dpi=600, bbox_inches='tight')
                     # plt.show()
                     plt.cla()
                     plt.close()
