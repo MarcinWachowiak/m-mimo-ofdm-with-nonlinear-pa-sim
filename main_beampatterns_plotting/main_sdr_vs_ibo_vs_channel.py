@@ -25,12 +25,11 @@ from utilities import to_db
 set_latex_plot_style()
 # %%
 print("Multi antenna processing init!")
-bit_rng = np.random.default_rng(4321)
 
-ibo_arr = np.arange(0, 8.25, 4)
+ibo_arr = np.arange(0, 8.251, 0.125)
 print("IBO values:", ibo_arr)
 
-n_ant_arr = [1, 2, 3]
+n_ant_arr = [1, 4, 32]
 print("N ANT values:", n_ant_arr)
 
 my_mod = modulation.OfdmQamModem(constel_size=64, n_fft=4096, n_sub_carr=1024, cp_len=128)
@@ -74,6 +73,7 @@ for n_ant_idx, n_ant_val in enumerate(n_ant_arr):
     chan_lst = [my_miso_two_path_chan, my_miso_los_chan, my_miso_rayleigh_chan]
 
     for chan_idx, chan_obj in enumerate(chan_lst):
+        bit_rng = np.random.default_rng(4321)
         start_time = time.time()
         print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         my_miso_chan = chan_obj
