@@ -26,13 +26,13 @@ set_latex_plot_style()
 # %%
 print("Multi antenna processing init!")
 
-ibo_arr = np.arange(0, 8.251, 0.125)
+ibo_arr = np.arange(0, 8.01, 0.25)
 print("IBO values:", ibo_arr)
 
 n_ant_arr = [1, 4, 32]
 print("N ANT values:", n_ant_arr)
 
-my_mod = modulation.OfdmQamModem(constel_size=64, n_fft=4096, n_sub_carr=1024, cp_len=128)
+my_mod = modulation.OfdmQamModem(constel_size=64, n_fft=4096, n_sub_carr=2048, cp_len=128)
 my_distortion = distortion.SoftLimiter(ibo_db=3.0, avg_samp_pow=my_mod.avg_sample_power)
 my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
                                 center_freq=int(3.5e9),
@@ -49,7 +49,7 @@ my_rx.set_position(cord_x=212, cord_y=212, cord_z=1.5)
 # %%
 psd_nfft = 4096
 n_samp_per_seg = 1024
-n_snapshots = 100
+n_snapshots = 10
 
 # %%
 # plot PSD for chosen point/angle
@@ -87,6 +87,7 @@ for n_ant_idx, n_ant_val in enumerate(n_ant_arr):
 
             rx_ofdm_sc_accum = []
             clean_rx_ofdm_sc_accum = []
+            sdr_at_ibo_per_symb = []
 
             for snap_idx in range(n_snapshots):
                 tx_bits = bit_rng.choice((0, 1), my_tx.modem.n_bits_per_ofdm_sym)
@@ -105,22 +106,27 @@ for n_ant_idx, n_ant_val in enumerate(n_ant_arr):
                     (clean_rx_sig_fd[-my_mod.n_sub_carr // 2:], clean_rx_sig_fd[1:(my_mod.n_sub_carr // 2) + 1]))
                 clean_sc_ofdm_symb_td = utilities.to_time_domain(clean_sc_ofdm_symb_fd)
 
-                rx_ofdm_sc_accum.append(rx_sc_ofdm_symb_fd)
-                clean_rx_ofdm_sc_accum.append(clean_sc_ofdm_symb_fd)
+                # rx_ofdm_sc_accum.append(rx_sc_ofdm_symb_fd)
+                # clean_rx_ofdm_sc_accum.append(clean_sc_ofdm_symb_fd)
 
-            rx_sig_accum_arr = np.concatenate(rx_ofdm_sc_accum).ravel()
-            clean_rx_sig_accum_arr = np.concatenate(clean_rx_ofdm_sc_accum).ravel()
-            sc_ofdm_distortion_sig = rx_sig_accum_arr - my_rx.modem.alpha * clean_rx_sig_accum_arr
+                # rx_sig_accum_arr = np.concatenate(rx_ofdm_sc_accum).ravel()
+                # clean_rx_sig_accum_arr = np.concatenate(clean_rx_ofdm_sc_accum).ravel()
 
+                sc_ofdm_distortion_sig = rx_sc_ofdm_symb_fd - my_rx.modem.alpha * clean_sc_ofdm_symb_fd
+
+                # calculate SDR on symbol basis
+                sdr_at_ibo_per_symb.append(to_db(
+                    np.sum(np.power(np.abs(clean_sc_ofdm_symb_fd), 2)) / np.sum(
+                        np.power(np.abs(sc_ofdm_distortion_sig), 2))))
             # dist_ofdm_symb_freq_arr, dist_ofdm_symb_psd_arr = welch(sc_ofdm_distortion_sig, fs=psd_nfft, nfft=psd_nfft,
             #                                                         nperseg=n_samp_per_seg, return_onesided=False)
             # clean_ofdm_symb_freq_arr, clean_ofdm_symb_psd_arr = welch(clean_rx_sig_accum_arr, fs=psd_nfft, nfft=psd_nfft,
             #                                                           nperseg=n_samp_per_seg, return_onesided=False)
             # sdr_at_ibo[ibo_idx] = to_db(np.sum(clean_ofdm_symb_psd_arr)/np.sum(dist_ofdm_symb_psd_arr))
-
-            sdr_at_ibo[ibo_idx] = to_db(
-                np.sum(np.power(np.abs(clean_rx_sig_accum_arr), 2)) / np.sum(
-                    np.power(np.abs(sc_ofdm_distortion_sig), 2)))
+            sdr_at_ibo[ibo_idx] = np.average()
+            # sdr_at_ibo[ibo_idx] = to_db(
+            #     np.sum(np.power(np.abs(clean_rx_sig_accum_arr), 2)) / np.sum(
+            #         np.power(np.abs(sc_ofdm_distortion_sig), 2)))
 
         sdr_at_ibo_per_chan.append(sdr_at_ibo)
         print("--- Computation time: %f ---" % (time.time() - start_time))
@@ -191,7 +197,7 @@ ax1.grid()
 # ax1.legend(title="Channel:")
 plt.tight_layout()
 plt.savefig(
-    "figs/sdr_vs_ibo_per_channel_ibo%dto%d_%dnant.png" % (
+    "figs/vm_worker_results/sdr_vs_ibo_per_channel_ibo%dto%d_%dnant.png" % (
         min(ibo_arr), max(ibo_arr), np.max(n_ant_arr)),
     dpi=600, bbox_inches='tight')
 # plt.show()
