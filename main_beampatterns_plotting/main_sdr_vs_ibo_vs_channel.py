@@ -49,7 +49,7 @@ my_rx.set_position(cord_x=212, cord_y=212, cord_z=1.5)
 # %%
 psd_nfft = 4096
 n_samp_per_seg = 1024
-n_snapshots = 10
+n_snapshots = 1000
 
 # %%
 # plot PSD for chosen point/angle
@@ -123,7 +123,7 @@ for n_ant_idx, n_ant_val in enumerate(n_ant_arr):
             # clean_ofdm_symb_freq_arr, clean_ofdm_symb_psd_arr = welch(clean_rx_sig_accum_arr, fs=psd_nfft, nfft=psd_nfft,
             #                                                           nperseg=n_samp_per_seg, return_onesided=False)
             # sdr_at_ibo[ibo_idx] = to_db(np.sum(clean_ofdm_symb_psd_arr)/np.sum(dist_ofdm_symb_psd_arr))
-            sdr_at_ibo[ibo_idx] = np.average()
+            sdr_at_ibo[ibo_idx] = np.average(sdr_at_ibo_per_symb)
             # sdr_at_ibo[ibo_idx] = to_db(
             #     np.sum(np.power(np.abs(clean_rx_sig_accum_arr), 2)) / np.sum(
             #         np.power(np.abs(sc_ofdm_distortion_sig), 2)))
