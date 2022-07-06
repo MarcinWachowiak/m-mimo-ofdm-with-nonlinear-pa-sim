@@ -49,7 +49,7 @@ my_rx.set_position(cord_x=212, cord_y=212, cord_z=1.5)
 # %%
 psd_nfft = 4096
 n_samp_per_seg = 1024
-n_snapshots = 1000
+n_snapshots = 2000
 
 # %%
 # plot PSD for chosen point/angle
