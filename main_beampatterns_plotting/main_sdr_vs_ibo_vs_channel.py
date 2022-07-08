@@ -49,7 +49,7 @@ my_rx.set_position(cord_x=212, cord_y=212, cord_z=1.5)
 # %%
 psd_nfft = 4096
 n_samp_per_seg = 1024
-n_snapshots = 2000
+n_snapshots = 1000
 
 # %%
 # plot PSD for chosen point/angle
@@ -116,7 +116,7 @@ for n_ant_idx, n_ant_val in enumerate(n_ant_arr):
 
                 # calculate SDR on symbol basis
                 sdr_at_ibo_per_symb.append(to_db(
-                    np.sum(np.power(np.abs(clean_sc_ofdm_symb_fd), 2)) / np.sum(
+                    np.sum(np.power(np.abs(my_rx.modem.alpha * clean_sc_ofdm_symb_fd), 2)) / np.sum(
                         np.power(np.abs(sc_ofdm_distortion_sig), 2))))
             # dist_ofdm_symb_freq_arr, dist_ofdm_symb_psd_arr = welch(sc_ofdm_distortion_sig, fs=psd_nfft, nfft=psd_nfft,
             #                                                         nperseg=n_samp_per_seg, return_onesided=False)
