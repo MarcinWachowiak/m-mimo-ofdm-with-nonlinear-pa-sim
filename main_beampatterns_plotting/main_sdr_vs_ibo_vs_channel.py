@@ -116,7 +116,7 @@ for n_ant_idx, n_ant_val in enumerate(n_ant_arr):
 
                 # calculate SDR on symbol basis
                 sdr_at_ibo_per_symb.append(to_db(
-                    np.sum(np.power(np.abs(my_rx.modem.alpha * clean_sc_ofdm_symb_fd), 2)) / np.sum(
+                    np.sum(np.power(np.abs(my_rx.modem.alpha * rx_sc_ofdm_symb_fd), 2)) / np.sum(
                         np.power(np.abs(sc_ofdm_distortion_sig), 2))))
             # dist_ofdm_symb_freq_arr, dist_ofdm_symb_psd_arr = welch(sc_ofdm_distortion_sig, fs=psd_nfft, nfft=psd_nfft,
             #                                                         nperseg=n_samp_per_seg, return_onesided=False)
@@ -212,5 +212,5 @@ for arr1 in sdr_at_ibo_per_n_ant:
     for arr2 in arr1:
         data_lst.append(arr2.tolist())
 
-utilities.save_to_csv(data_lst=data_lst, filename="sdr_vs_ibo_per_channel_ibo%dto%d_%dnant.csv" % (min(ibo_arr), max(ibo_arr), np.max(n_ant_arr)), )
+utilities.save_to_csv(data_lst=data_lst, filename="sdr_vs_ibo_per_channel_ibo%dto%d_%dnant" % (min(ibo_arr), max(ibo_arr), np.max(n_ant_arr)), )
 print("Finished execution!")
