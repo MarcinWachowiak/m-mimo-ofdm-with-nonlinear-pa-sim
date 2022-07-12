@@ -26,7 +26,7 @@ set_latex_plot_style()
 # %%
 print("Multi antenna processing init!")
 
-ibo_arr = np.arange(0, 12.01, 0.5)
+ibo_arr = np.arange(0, 8.01, 0.25)
 print("IBO values:", ibo_arr)
 
 n_ant_arr = [1, 4, 32]
