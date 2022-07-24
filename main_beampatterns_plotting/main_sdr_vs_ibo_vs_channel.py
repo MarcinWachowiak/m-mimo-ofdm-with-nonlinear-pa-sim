@@ -52,6 +52,7 @@ n_samp_per_seg = 1024
 n_snapshots = 1000
 
 # %%
+bit_rng = np.random.default_rng(4321)
 # plot PSD for chosen point/angle
 sdr_at_ibo_per_n_ant = []
 # direct visibility channels - increasing antennas does not increase SDR - run for lowest value of n_ant_arr
@@ -73,7 +74,6 @@ for n_ant_idx, n_ant_val in enumerate(n_ant_arr):
     chan_lst = [my_miso_two_path_chan, my_miso_los_chan, my_miso_rayleigh_chan]
 
     for chan_idx, chan_obj in enumerate(chan_lst):
-        bit_rng = np.random.default_rng(4321)
         start_time = time.time()
         print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         my_miso_chan = chan_obj
@@ -90,6 +90,7 @@ for n_ant_idx, n_ant_val in enumerate(n_ant_arr):
             sdr_at_ibo_per_symb = []
 
             for snap_idx in range(n_snapshots):
+                # TODO: rayleigh reroll
                 tx_bits = bit_rng.choice((0, 1), my_tx.modem.n_bits_per_ofdm_sym)
                 arr_tx_sig_fd, clean_sig_mat_fd = my_array.transmit(in_bits=tx_bits, out_domain_fd=True,
                                                                     return_both=True)
@@ -116,7 +117,7 @@ for n_ant_idx, n_ant_val in enumerate(n_ant_arr):
 
                 # calculate SDR on symbol basis
                 sdr_at_ibo_per_symb.append(to_db(
-                    np.sum(np.power(np.abs(my_rx.modem.alpha * rx_sc_ofdm_symb_fd), 2)) / np.sum(
+                    np.sum(np.power(np.abs(my_rx.modem.alpha * clean_sc_ofdm_symb_fd), 2)) / np.sum(
                         np.power(np.abs(sc_ofdm_distortion_sig), 2))))
             # dist_ofdm_symb_freq_arr, dist_ofdm_symb_psd_arr = welch(sc_ofdm_distortion_sig, fs=psd_nfft, nfft=psd_nfft,
             #                                                         nperseg=n_samp_per_seg, return_onesided=False)

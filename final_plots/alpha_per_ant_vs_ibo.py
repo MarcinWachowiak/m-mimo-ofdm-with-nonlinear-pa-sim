@@ -23,7 +23,7 @@ import transceiver
 from plot_settings import set_latex_plot_style
 
 
-set_latex_plot_style()
+set_latex_plot_style(use_tex=True, fig_width_in=3.5)
 # %%
 
 my_mod = modulation.OfdmQamModem(constel_size=64, n_fft=4096, n_sub_carr=2048, cp_len=128)

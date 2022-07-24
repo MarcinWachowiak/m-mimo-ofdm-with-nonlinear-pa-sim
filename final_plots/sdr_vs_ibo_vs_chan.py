@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import utilities
 from plot_settings import set_latex_plot_style
 
-set_latex_plot_style()
+set_latex_plot_style(use_tex=True, fig_width_in=3.5)
 
 data_lst = utilities.read_from_csv(filename="sdr_vs_ibo_per_channel_ibo0to8_32nant")
 ibo_arr = data_lst[0]

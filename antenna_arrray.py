@@ -196,3 +196,10 @@ class LinearArray:
             avg_precoding_gain = np.average(precoding_matrix_pwr)
 
         return avg_precoding_gain
+
+    def get_precoding_mat(self):
+        precoding_matrix = np.empty((self.n_elements, self.base_transceiver.modem.n_sub_carr), dtype=np.complex128)
+        for idx, array_tx in enumerate(self.array_elements):
+            precoding_matrix[idx, :] = array_tx.modem.precoding_mat
+
+        return precoding_matrix
