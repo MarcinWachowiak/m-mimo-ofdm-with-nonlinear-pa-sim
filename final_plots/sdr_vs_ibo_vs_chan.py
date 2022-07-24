@@ -73,8 +73,8 @@ plt.gca().add_artist(leg2)
 #               loc="lower right", ncol=3, title="Channel and N antennas:", columnspacing=0.2) # Two columns, horizontal group labels
 #
 # %%
-ax1.set_ylim([5.75, 55.75])
-ax1.set_xlim([0, 8])
+ax1.set_ylim([4, 54])
+ax1.set_xlim([0, 7])
 
 # ax1.set_title("SDR in regard to IBO")
 ax1.set_xlabel("IBO [dB]")
