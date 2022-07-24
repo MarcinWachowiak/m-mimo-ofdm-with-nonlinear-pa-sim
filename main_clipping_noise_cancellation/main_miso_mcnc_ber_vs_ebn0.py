@@ -35,7 +35,6 @@ cnc_n_iter_lst = [1, 2, 3, 5, 8]
 # include clean run is always True
 # no distortion and standard RX always included
 cnc_n_iter_lst = np.insert(cnc_n_iter_lst, 0, 0)
-cnc_n_iter_lst = np.insert(cnc_n_iter_lst, 0, 0)
 
 # print("Distortion IBO/TOI value:", ibo_db)
 # print("Eb/n0 values: ", ebn0_arr)
@@ -71,102 +70,145 @@ for n_ant_val in n_ant_arr:
     my_miso_two_path_chan.calc_channel_mat(tx_transceivers=my_array.array_elements, rx_transceiver=my_standard_rx,
                                            skip_attenuation=False)
     
-    my_miso_rayleigh_chan = channel.RayleighMisoFd(tx_transceivers=my_array.array_elements, rx_transceiver=my_standard_rx,
+    my_miso_rayleigh_chan = channel.RayleighMisoFd(tx_transceivers=my_array.array_elements,
+                                                   rx_transceiver=my_standard_rx,
                                                    seed=1234)
-    chan_lst = [my_miso_two_path_chan, my_miso_los_chan, my_miso_rayleigh_chan]
+    chan_lst = [my_miso_los_chan, my_miso_two_path_chan, my_miso_rayleigh_chan]
     
     for my_miso_chan in chan_lst:
         my_mcnc_rx = corrector.McncReceiver(copy.deepcopy(my_array), copy.deepcopy(my_miso_chan))
-        cnc_n_upsamp = int(my_mod.n_fft / my_mod.n_sub_carr)
-    
-        for ibo_val in ibo_arr:
-            ibo_db = ibo_val
-    
+
+        chan_mat_at_point = my_miso_chan.get_channel_mat_fd()
+        my_array.set_precoding_matrix(channel_mat_fd=chan_mat_at_point, mr_precoding=True)
+
+        hk_mat = np.concatenate((chan_mat_at_point[:, -my_mod.n_sub_carr // 2:],
+                                 chan_mat_at_point[:, 1:(my_mod.n_sub_carr // 2) + 1]), axis=1)
+        vk_mat = my_array.get_precoding_mat()
+        vk_pow_vec = np.sum(np.power(np.abs(vk_mat), 2), axis=1)
+        hk_vk_agc = np.multiply(hk_mat, vk_mat)
+        hk_vk_agc_avg_vec = np.sum(hk_vk_agc, axis=0)
+        hk_vk_noise_scaler = np.mean(np.power(hk_vk_agc_avg_vec, 2))
+
+        for ibo_val_db in ibo_arr:
+            my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
+            my_mcnc_rx.update_distortion(ibo_db=ibo_val_db)
+
+            ibo_vec = 10 * np.log10(10 ** (ibo_val_db / 10) * my_mod.n_sub_carr / (vk_pow_vec * n_ant_val))
+            ak_vect = my_mod.calc_alpha(ibo_db=ibo_vec)
+
+            hk_vk_agc_nfft = np.ones(my_mod.n_fft, dtype=np.complex128)
+            hk_vk_agc_nfft[-(n_sub_carr // 2):] = hk_vk_agc_avg_vec[0:n_sub_carr // 2]
+            hk_vk_agc_nfft[1:(n_sub_carr // 2) + 1] = hk_vk_agc_avg_vec[n_sub_carr // 2:]
+
+            ak_hk_vk_agc = np.dot(ak_vect, hk_vk_agc)
+            ak_hk_vk_agc = np.expand_dims(ak_hk_vk_agc, axis=0)
+            ak_hk_vk_agc_avg_vec = np.sum(ak_hk_vk_agc, axis=0)
+            ak_hk_vk_noise_scaler = np.mean(np.power(ak_hk_vk_agc_avg_vec, 2))
+
+            ak_hk_vk_agc_nfft = np.ones(my_mod.n_fft, dtype=np.complex128)
+            ak_hk_vk_agc_nfft[-(n_sub_carr // 2):] = ak_hk_vk_agc_avg_vec[0:n_sub_carr // 2]
+            ak_hk_vk_agc_nfft[1:(n_sub_carr // 2) + 1] = ak_hk_vk_agc_avg_vec[n_sub_carr // 2:]
+
             for ebn0_step_val in ebn0_step:
                 ebn0_arr = np.arange(0, 31, ebn0_step_val)
-    
+
                 my_noise = noise.Awgn(snr_db=10, seed=1234)
                 bit_rng = np.random.default_rng(4321)
                 snr_arr = ebn0_arr
-    
-                chan_mat_at_point = my_miso_chan.get_channel_mat_fd()
-                my_array.set_precoding_matrix(channel_mat_fd=chan_mat_at_point, mr_precoding=True)
-                agc_corr_vec = np.sqrt(np.sum(np.power(np.abs(chan_mat_at_point), 2), axis=0))
-                agc_corr_nsc = np.concatenate((agc_corr_vec[-my_mod.n_sub_carr // 2:], agc_corr_vec[1:(my_mod.n_sub_carr // 2) + 1]))
-    
-                # %%
-                my_array.update_distortion(ibo_db=ibo_db, avg_sample_pow=my_mod.avg_sample_power)
-                my_mcnc_rx.update_distortion(ibo_db=ibo_db)
-                abs_lambda = my_mod.calc_alpha(ibo_db=ibo_db)
+
                 ber_per_dist = []
-    
-                for run_idx, cnc_n_iter_val in enumerate(cnc_n_iter_lst):
+
+                for snr_idx, snr in enumerate(snr_arr):
                     start_time = time.time()
                     print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-    
-                    bers = np.zeros([len(snr_arr)])
-                    for idx, snr in enumerate(snr_arr):
-                        my_noise.snr_db = snr
-                        n_err = 0
-                        bits_sent = 0
-    
-                        while bits_sent < bits_sent_max and n_err < n_err_min:
+
+                    my_noise.snr_db = snr
+                    bers = np.zeros([len(cnc_n_iter_lst) + 1])
+                    n_err = np.zeros([len(cnc_n_iter_lst) + 1])
+                    bits_sent = np.zeros([len(cnc_n_iter_lst) + 1])
+                    # clean RX run
+                    while True:
+                        if np.logical_and((n_err[0] < n_err_min), (bits_sent[0] < bits_sent_max)):
                             tx_bits = bit_rng.choice((0, 1), my_tx.modem.n_bits_per_ofdm_sym)
-                            tx_ofdm_symbol, clean_ofdm_symbol = my_array.transmit(tx_bits, out_domain_fd=True, return_both=True)
-                            if run_idx == 0:
-                                rx_ofdm_symbol = my_miso_chan.propagate(in_sig_mat=clean_ofdm_symbol)
-                                rx_ofdm_symbol = my_noise.process(rx_ofdm_symbol, avg_sample_pow=my_mod.avg_symbol_power * np.mean(
-                                    np.power(agc_corr_nsc, 2)), disp_data=False)
-                            else:
-                                rx_ofdm_symbol = my_miso_chan.propagate(in_sig_mat=tx_ofdm_symbol)
-                                rx_ofdm_symbol = my_noise.process(rx_ofdm_symbol, avg_sample_pow=my_mod.avg_symbol_power * np.mean(
-                                    np.power(agc_corr_nsc, 2)) * abs_lambda ** 2)
-                            # apply AGC
-                            rx_ofdm_symbol = rx_ofdm_symbol / agc_corr_vec
-    
-                            if run_idx == 0:
-                                # standard reception
-                                rx_ofdm_symbol = utilities.to_time_domain(rx_ofdm_symbol)
-                                rx_ofdm_symbol = np.concatenate((rx_ofdm_symbol[-my_mod.cp_len:], rx_ofdm_symbol))
-                                rx_bits = my_standard_rx.receive(rx_ofdm_symbol)
-                            else:
-                                # enchanced CNC reception
-                                rx_bits = my_mcnc_rx.receive(n_iters=cnc_n_iter_val, in_sig_fd=rx_ofdm_symbol)
-    
+                            tx_ofdm_symbol, clean_ofdm_symbol = my_array.transmit(tx_bits, out_domain_fd=True,
+                                                                                  return_both=True)
+                            clean_rx_ofdm_symbol = my_miso_chan.propagate(in_sig_mat=clean_ofdm_symbol)
+                            clean_rx_ofdm_symbol = my_noise.process(clean_rx_ofdm_symbol,
+                                                                    avg_sample_pow=my_mod.avg_symbol_power * hk_vk_noise_scaler,
+                                                                    disp_data=False)
+                            clean_rx_ofdm_symbol = np.divide(clean_rx_ofdm_symbol, hk_vk_agc_nfft)
+                            clean_rx_ofdm_symbol = utilities.to_time_domain(clean_rx_ofdm_symbol)
+                            clean_rx_ofdm_symbol = np.concatenate(
+                                (clean_rx_ofdm_symbol[-my_mod.cp_len:], clean_rx_ofdm_symbol))
+                            rx_bits = my_standard_rx.receive(clean_rx_ofdm_symbol)
+
                             n_bit_err = count_mismatched_bits(tx_bits, rx_bits)
-                            bits_sent += my_mod.n_bits_per_ofdm_sym
-                            n_err += n_bit_err
-                        bers[idx] = n_err / bits_sent
+                            n_err[0] += n_bit_err
+                            bits_sent[0] += my_mod.n_bits_per_ofdm_sym
+                        else:
+                            break
+                    # distorted RX run
+                    while True:
+                        ite_use_flags = np.logical_and((n_err[1:] < n_err_min), (bits_sent[1:] < bits_sent_max))
+                        if ite_use_flags.any() == True:
+                            curr_ite_lst = cnc_n_iter_lst[ite_use_flags]
+                        else:
+                            break
+
+                        tx_bits = bit_rng.choice((0, 1), my_tx.modem.n_bits_per_ofdm_sym)
+                        tx_ofdm_symbol, clean_ofdm_symbol = my_array.transmit(tx_bits, out_domain_fd=True,
+                                                                              return_both=True)
+                        rx_ofdm_symbol = my_miso_chan.propagate(in_sig_mat=tx_ofdm_symbol)
+                        rx_ofdm_symbol = my_noise.process(rx_ofdm_symbol,
+                                                          avg_sample_pow=my_mod.avg_symbol_power * ak_hk_vk_noise_scaler)
+                        # apply AGC
+                        rx_ofdm_symbol = np.divide(rx_ofdm_symbol, ak_hk_vk_agc_nfft)
+
+                        # enchanced CNC reception
+                        rx_bits_per_iter_lst = my_mcnc_rx.receive(n_iters_lst=curr_ite_lst, in_sig_fd=rx_ofdm_symbol)
+
+                        ber_idx = np.array(list(range(len(cnc_n_iter_lst))))
+                        act_ber_idx = ber_idx[ite_use_flags] + 1
+                        for idx in range(len(rx_bits_per_iter_lst)):
+                            n_bit_err = count_mismatched_bits(tx_bits, rx_bits_per_iter_lst[idx])
+                            n_err[act_ber_idx[idx]] += n_bit_err
+                            bits_sent[act_ber_idx[idx]] += my_mod.n_bits_per_ofdm_sym
+
+                    for ite_idx in range(len(bers)):
+                        bers[ite_idx] = n_err[ite_idx] / bits_sent[ite_idx]
                     ber_per_dist.append(bers)
                     print("--- Computation time: %f ---" % (time.time() - start_time))
-    
+
+                ber_per_dist = np.column_stack(ber_per_dist)
                 # %%
                 fig1, ax1 = plt.subplots(1, 1)
                 ax1.set_yscale('log')
+                ax1.plot(ebn0_arr, ber_per_dist[0], label="No distortion")
                 for idx, cnc_iter_val in enumerate(cnc_n_iter_lst):
                     if idx == 0:
-                        ax1.plot(ebn0_arr, ber_per_dist[idx], label="No distortion")
-                    elif idx == 1:
-                        ax1.plot(ebn0_arr, ber_per_dist[idx], label="Standard RX")
+                        ax1.plot(ebn0_arr, ber_per_dist[idx + 1], label="Standard RX")
                     else:
-                        ax1.plot(ebn0_arr, ber_per_dist[idx], label="MCNC NI = %d" % (cnc_iter_val))
+                        ax1.plot(ebn0_arr, ber_per_dist[idx + 1], label="MCNC NI = %d" % (cnc_iter_val))
     
                 # fix log scaling
-                ax1.set_title("BER vs Eb/N0, %s, MCNC, QAM %d, N ANT = %d, IBO = %d [dB]" % (my_miso_chan, my_mod.constellation_size, n_ant_val, ibo_db))
+                ax1.set_title("BER vs Eb/N0, %s, MCNC, QAM %d, N ANT = %d, IBO = %d [dB]" % (
+                my_miso_chan, my_mod.constellation_size, n_ant_val, ibo_val_db))
                 ax1.set_xlabel("Eb/N0 [dB]")
                 ax1.set_ylabel("BER")
                 ax1.grid()
                 ax1.legend()
                 plt.tight_layout()
-    
-                filename_str = "ber_vs_ebn0_mcnc_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s" % (my_miso_chan, n_ant_val, ibo_db, min(ebn0_arr), max(ebn0_arr), ebn0_arr[1]-ebn0_arr[0], '_'.join([str(val) for val in cnc_n_iter_lst[2:]]))
+
+                filename_str = "ber_vs_ebn0_mcnc_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s" % (
+                my_miso_chan, n_ant_val, ibo_val_db, min(ebn0_arr), max(ebn0_arr), ebn0_arr[1] - ebn0_arr[0],
+                '_'.join([str(val) for val in cnc_n_iter_lst[2:]]))
                 # timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
                 # filename_str += "_" + timestamp
                 plt.savefig("figs/vm_worker_results/ber_vs_ebn0/%s.png" % filename_str, dpi=600, bbox_inches='tight')
                 # plt.show()
                 plt.cla()
                 plt.close()
-                
+
                 #%%
                 data_lst = []
                 data_lst.append(ebn0_arr)
