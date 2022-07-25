@@ -1,5 +1,6 @@
 from math import sqrt
 
+import matplotlib.pyplot as plt
 from matplotlib import rcParams, cycler, rc
 
 
@@ -32,3 +33,11 @@ def set_latex_plot_style(use_tex=False, fig_width_in=7.0):
     rcParams['path.simplify'] = True
 
     rcParams.update(params)
+
+
+def reset_color_cycle():
+    plt.gca().set_prop_cycle(None)
+    CB_color_cycle = ['#377eb8', '#ff7f00', '#4daf4a',
+                      '#f781bf', '#a65628', '#984ea3',
+                      '#999999', '#e41a1c', '#dede00']
+    rcParams['axes.prop_cycle'] = cycler(color=CB_color_cycle)

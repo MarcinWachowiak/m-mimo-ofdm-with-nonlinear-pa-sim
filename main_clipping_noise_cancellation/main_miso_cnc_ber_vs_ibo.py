@@ -225,7 +225,7 @@ for n_ant_val in n_ant_arr:
                 # timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
                 # filename_str += "_" + timestamp
                 plt.savefig("../figs/%s.png" % filename_str, dpi=600, bbox_inches='tight')
-                # plt.show()
+                plt.show()
 
                 #%%
                 data_lst = []
