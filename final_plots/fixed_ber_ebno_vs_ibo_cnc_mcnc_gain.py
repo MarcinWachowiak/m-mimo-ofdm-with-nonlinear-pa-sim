@@ -34,12 +34,12 @@ req_ebn0_per_ibo_mcnc = data_lst_mcnc[1:]
 # %%
 fig1, ax1 = plt.subplots(1, 1)
 for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
-    ax1.plot(ibo_arr_cnc, req_ebn0_per_ibo_cnc[ite_idx], "-")
+    ax1.plot(ibo_arr_cnc, np.array(req_ebn0_per_ibo_cnc[ite_idx]) - np.array(req_ebn0_per_ibo_cnc[ite_idx]), "-")
 
 plot_settings.reset_color_cycle()
 
 for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
-    ax1.plot(ibo_arr_mcnc, req_ebn0_per_ibo_mcnc[ite_idx], "--")
+    ax1.plot(ibo_arr_mcnc, np.array(req_ebn0_per_ibo_mcnc[ite_idx]) - np.array(req_ebn0_per_ibo_mcnc[ite_idx]), "--")
 
 import matplotlib.lines as mlines
 
@@ -64,7 +64,7 @@ ax1.set_ylabel("Eb/n0 [dB]")
 ax1.grid()
 plt.tight_layout()
 
-filename_str = "fixed_ber%1.1e_cnc_%s_nant%d_ebn0_min%d_max%d_step%1.2f_ibo_min%d_max%d_step%1.2f_niter%s" % \
+filename_str = "fixed_ber%1.1e_mcnc_cnc_gain_%s_nant%d_ebn0_min%d_max%d_step%1.2f_ibo_min%d_max%d_step%1.2f_niter%s" % \
                (target_ber_val, my_miso_chan, n_ant_val, min(ebn0_db_arr), max(ebn0_db_arr),
                 ebn0_db_arr[1] - ebn0_db_arr[0], min(ibo_arr_cnc), max(ibo_arr_cnc), ibo_arr_cnc[1] - ibo_arr_cnc[0],
                 '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))

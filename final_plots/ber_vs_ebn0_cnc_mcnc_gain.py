@@ -8,6 +8,7 @@ import plot_settings
 sys.path.append(os.getcwd())
 
 import matplotlib.pyplot as plt
+import numpy as np
 
 import utilities
 from plot_settings import set_latex_plot_style
@@ -18,7 +19,7 @@ cnc_n_iter_lst = [0, 1, 2, 3, 5, 8]
 n_ant_val = 1
 ibo_val_db = 0
 constel_size = 64
-my_miso_chan = "two_path"
+my_miso_chan = "rayleigh"
 
 data_lst_cnc = utilities.read_from_csv(
     filename="ber_vs_ebn0_cnc_%s_nant1_ibo0_ebn0_min0_max30_step1.00_niter2_3_5_8" % my_miso_chan)
@@ -32,16 +33,14 @@ ber_per_dist_mcnc = data_lst_mcnc[1:]
 
 # %%
 fig1, ax1 = plt.subplots(1, 1)
-
-ax1.plot(ebn0_arr_cnc, ber_per_dist_cnc[0], label="No distortion")
+# ax1.plot(ebn0_arr_cnc, ber_per_dist_cnc[0], label="No distortion")
 for idx, cnc_iter_val in enumerate(cnc_n_iter_lst):
-    ax1.plot(ebn0_arr_cnc, ber_per_dist_cnc[idx + 1], "-")
+    ax1.plot(ebn0_arr_cnc, np.array(ber_per_dist_cnc[1]) / np.array(ber_per_dist_cnc[idx + 1]), "-")
 
 plot_settings.reset_color_cycle()
 
-ax1.plot(ebn0_arr_mcnc, ber_per_dist_mcnc[0], "--", label="No distortion")
 for idx, cnc_iter_val in enumerate(cnc_n_iter_lst):
-    ax1.plot(ebn0_arr_mcnc, ber_per_dist_mcnc[idx + 1], "--")
+    ax1.plot(ebn0_arr_cnc, np.array(ber_per_dist_mcnc[1]) / np.array(ber_per_dist_mcnc[idx + 1]), "--")
 
 import matplotlib.lines as mlines
 
@@ -49,7 +48,7 @@ CB_color_cycle = ['#377eb8', '#ff7f00', '#4daf4a',
                   '#f781bf', '#a65628', '#984ea3',
                   '#999999', '#e41a1c', '#dede00']
 n_ite_legend = []
-n_ite_legend.append(mlines.Line2D([0], [0], color=CB_color_cycle[0], label="Cln"))
+# n_ite_legend.append(mlines.Line2D([0], [0], color=CB_color_cycle[0], label="Cln"))
 for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
     n_ite_legend.append(mlines.Line2D([0], [0], color=CB_color_cycle[ite_idx + 1], label=ite_val))
 
@@ -70,7 +69,7 @@ ax1.set_ylabel("BER")
 ax1.grid()
 plt.tight_layout()
 
-filename_str = "ber_vs_ebn0_cnc_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s" % (
+filename_str = "ber_vs_ebn0_mcnc_cnc_gain_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s" % (
     my_miso_chan, n_ant_val, ibo_val_db, min(ebn0_arr_cnc), max(ebn0_arr_cnc), ebn0_arr_cnc[1] - ebn0_arr_cnc[0],
     '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
 # timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
