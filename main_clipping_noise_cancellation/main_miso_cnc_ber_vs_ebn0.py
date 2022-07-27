@@ -28,8 +28,8 @@ set_latex_plot_style()
 
 # %%
 # parameters
-n_ant_arr = [1, 8]
-ibo_arr = [0, 2, 3, 5]
+n_ant_arr = [1]
+ibo_arr = [0]
 ebn0_step = [1]
 cnc_n_iter_lst = [1, 2, 3, 5, 8]
 # include clean run is always True
@@ -47,8 +47,8 @@ n_sub_carr = 2048
 cp_len = 128
 
 # accuracy
-bits_sent_max = int(1e6)
-n_err_min = 1000
+bits_sent_max = int(1e7)
+n_err_min = int(1e5)
 
 my_mod = modulation.OfdmQamModem(constel_size=constel_size, n_fft=n_fft, n_sub_carr=n_sub_carr, cp_len=cp_len)
 
@@ -203,7 +203,7 @@ for n_ant_val in n_ant_arr:
 
                 filename_str = "ber_vs_ebn0_cnc_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s" % (
                     my_miso_chan, n_ant_val, ibo_val_db, min(ebn0_arr), max(ebn0_arr), ebn0_arr[1] - ebn0_arr[0],
-                    '_'.join([str(val) for val in cnc_n_iter_lst[2:]]))
+                    '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
                 # timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
                 # filename_str += "_" + timestamp
                 plt.savefig("figs/vm_worker_results/ber_vs_ebn0/%s.png" % filename_str, dpi=600, bbox_inches='tight')

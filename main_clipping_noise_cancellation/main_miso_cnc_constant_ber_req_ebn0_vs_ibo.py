@@ -29,10 +29,10 @@ from utilities import count_mismatched_bits, ebn0_to_snr
 set_latex_plot_style()
 # %%
 # %%
-n_ant_arr = [1, 8]
+n_ant_arr = [1]
 target_ber_arr = [1e-2]
-ebn0_step_arr = [1]
-ibo_step_arr = [1]
+ebn0_step_arr = [0.5]
+ibo_step_arr = [0.5]
 cnc_n_iter_lst = [1, 2, 3, 5, 8]
 cnc_n_iter_lst = np.insert(cnc_n_iter_lst, 0, 0)
 
@@ -48,7 +48,7 @@ cp_len = 128
 
 # BER accuracy settings
 bits_sent_max = int(1e6)
-n_err_min = 1e3
+n_err_min = int(1e4)
 
 my_mod = modulation.OfdmQamModem(constel_size=constel_size, n_fft=n_fft, n_sub_carr=n_sub_carr, cp_len=cp_len)
 my_distortion = distortion.SoftLimiter(ibo_db=5, avg_samp_pow=my_mod.avg_sample_power)
@@ -97,7 +97,7 @@ for n_ant_val in n_ant_arr:
                 ibo_arr = np.arange(0, 8, ibo_step_val)
 
                 for ebn0_step_val in ebn0_step_arr:
-                    ebn0_db_arr = np.arange(10, 31, ebn0_step_val)
+                    ebn0_db_arr = np.arange(14, 31, ebn0_step_val)
                     snr_db_vals = ebn0_to_snr(ebn0_db_arr, my_mod.n_fft, my_mod.n_sub_carr, my_mod.constel_size)
 
                     ber_per_ibo_snr_iter = np.zeros((len(ibo_arr), len(snr_db_vals), len(cnc_n_iter_lst)))
