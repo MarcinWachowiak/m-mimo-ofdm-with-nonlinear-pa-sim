@@ -29,7 +29,7 @@ from utilities import count_mismatched_bits, ebn0_to_snr
 set_latex_plot_style()
 # %%
 # %%
-n_ant_arr = [1, 2]
+n_ant_arr = [1]
 target_ber_arr = [1e-2]
 ebn0_step_arr = [1]
 ibo_step_arr = [1]
@@ -48,7 +48,7 @@ cp_len = 128
 
 # BER accuracy settings
 bits_sent_max = int(1e6)
-n_err_min = 1e3
+n_err_min = 1e2
 
 my_mod = modulation.OfdmQamModem(constel_size=constel_size, n_fft=n_fft, n_sub_carr=n_sub_carr, cp_len=cp_len)
 my_distortion = distortion.SoftLimiter(ibo_db=5, avg_samp_pow=my_mod.avg_sample_power)
