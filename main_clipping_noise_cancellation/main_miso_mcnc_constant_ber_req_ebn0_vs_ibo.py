@@ -31,8 +31,8 @@ set_latex_plot_style()
 # %%
 n_ant_arr = [1]
 target_ber_arr = [1e-2]
-ebn0_step_arr = [1]
-ibo_step_arr = [1]
+ebn0_step_arr = [0.5]
+ibo_step_arr = [0.5]
 cnc_n_iter_lst = [1, 2, 3, 5, 8]
 cnc_n_iter_lst = np.insert(cnc_n_iter_lst, 0, 0)
 
@@ -48,7 +48,7 @@ cp_len = 128
 
 # BER accuracy settings
 bits_sent_max = int(1e6)
-n_err_min = 1e2
+n_err_min = int(1e4)
 
 my_mod = modulation.OfdmQamModem(constel_size=constel_size, n_fft=n_fft, n_sub_carr=n_sub_carr, cp_len=cp_len)
 my_distortion = distortion.SoftLimiter(ibo_db=5, avg_samp_pow=my_mod.avg_sample_power)
@@ -83,7 +83,6 @@ for n_ant_val in n_ant_arr:
         my_mcnc_rx = corrector.McncReceiver(copy.deepcopy(my_array), copy.deepcopy(my_miso_chan))
         cnc_n_upsamp = int(my_mod.n_fft / my_mod.n_sub_carr)
 
-
         hk_mat = np.concatenate((chan_mat_at_point[:, -my_mod.n_sub_carr // 2:],
                                  chan_mat_at_point[:, 1:(my_mod.n_sub_carr // 2) + 1]), axis=1)
         vk_mat = my_array.get_precoding_mat()
@@ -98,7 +97,7 @@ for n_ant_val in n_ant_arr:
                 ibo_arr = np.arange(0, 8, ibo_step_val)
 
                 for ebn0_step_val in ebn0_step_arr:
-                    ebn0_db_arr = np.arange(10, 31, ebn0_step_val)
+                    ebn0_db_arr = np.arange(14, 31, ebn0_step_val)
                     snr_db_vals = ebn0_to_snr(ebn0_db_arr, my_mod.n_fft, my_mod.n_sub_carr, my_mod.constel_size)
 
                     ber_per_ibo_snr_iter = np.zeros((len(ibo_arr), len(snr_db_vals), len(cnc_n_iter_lst)))
@@ -192,11 +191,14 @@ for n_ant_val in n_ant_arr:
                                 tx_bits = bit_rng.choice((0, 1), my_tx.modem.n_bits_per_ofdm_sym)
                                 tx_ofdm_symbol_fd = my_array.transmit(tx_bits, out_domain_fd=True, return_both=False)
                                 rx_ofdm_symbol_fd = my_miso_chan.propagate(in_sig_mat=tx_ofdm_symbol_fd)
-                                rx_ofdm_symbol_fd = my_noise.process(rx_ofdm_symbol_fd, avg_sample_pow=my_mod.avg_symbol_power * ak_hk_vk_noise_scaler, disp_data=False)
+                                rx_ofdm_symbol_fd = my_noise.process(rx_ofdm_symbol_fd,
+                                                                     avg_sample_pow=my_mod.avg_symbol_power * ak_hk_vk_noise_scaler,
+                                                                     disp_data=False)
                                 rx_ofdm_symbol_fd = np.divide(rx_ofdm_symbol_fd, ak_hk_vk_agc_nfft)
 
                                 # MCNC reception
-                                rx_bits_per_iter_lst = my_mcnc_rx.receive(n_iters_lst=curr_ite_lst, in_sig_fd=rx_ofdm_symbol_fd)
+                                rx_bits_per_iter_lst = my_mcnc_rx.receive(n_iters_lst=curr_ite_lst,
+                                                                          in_sig_fd=rx_ofdm_symbol_fd)
 
                                 ber_idx = np.array(list(range(len(cnc_n_iter_lst))))
                                 act_ber_idx = ber_idx[ite_use_flags]
@@ -261,8 +263,10 @@ for n_ant_val in n_ant_arr:
                                    (target_ber_val, my_miso_chan, n_ant_val, min(ebn0_db_arr), max(ebn0_db_arr), ebn0_db_arr[1]-ebn0_db_arr[0], min(ibo_arr), max(ibo_arr), ibo_arr[1]-ibo_arr[0], '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
                     # timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
                     # filename_str += "_" + timestamp
-                    plt.savefig("../figs/%s.png" % filename_str, dpi=600, bbox_inches='tight')
-                    plt.show()
+                    plt.savefig("figs/vm_worker_results/fixed_ber/%s.png" % filename_str, dpi=600, bbox_inches='tight')
+                    # plt.show()
+                    plt.cla()
+                    plt.close()
 
                     #%%
                     data_lst = []
@@ -272,6 +276,5 @@ for n_ant_val in n_ant_arr:
                     utilities.save_to_csv(data_lst=data_lst, filename=filename_str)
 
                     read_data = utilities.read_from_csv(filename=filename_str)
-
 
 print("Finished execution!")

@@ -28,8 +28,8 @@ set_latex_plot_style()
 
 # %%
 # parameters
-n_ant_arr = [1, 8]
-ibo_arr = [0, 2, 3, 5, 7]
+n_ant_arr = [1]
+ibo_arr = [0]
 ebn0_step = [1]
 cnc_n_iter_lst = [1, 2, 3, 5, 8]
 # include clean run is always True
@@ -47,8 +47,8 @@ n_sub_carr = 2048
 cp_len = 128
 
 # accuracy
-bits_sent_max = int(1e6)
-n_err_min = 1000
+bits_sent_max = int(1e7)
+n_err_min = int(1e5)
 
 my_mod = modulation.OfdmQamModem(constel_size=constel_size, n_fft=n_fft, n_sub_carr=n_sub_carr, cp_len=cp_len)
 
@@ -70,7 +70,8 @@ for n_ant_val in n_ant_arr:
     my_miso_two_path_chan.calc_channel_mat(tx_transceivers=my_array.array_elements, rx_transceiver=my_standard_rx,
                                            skip_attenuation=False)
     
-    my_miso_rayleigh_chan = channel.RayleighMisoFd(tx_transceivers=my_array.array_elements, rx_transceiver=my_standard_rx,
+    my_miso_rayleigh_chan = channel.RayleighMisoFd(tx_transceivers=my_array.array_elements,
+                                                   rx_transceiver=my_standard_rx,
                                                    seed=1234)
     chan_lst = [my_miso_los_chan, my_miso_two_path_chan, my_miso_rayleigh_chan]
     
@@ -110,7 +111,7 @@ for n_ant_val in n_ant_arr:
 
             for ebn0_step_val in ebn0_step:
                 ebn0_arr = np.arange(0, 31, ebn0_step_val)
-    
+
                 my_noise = noise.Awgn(snr_db=10, seed=1234)
                 bit_rng = np.random.default_rng(4321)
                 snr_arr = ebn0_arr
@@ -133,7 +134,8 @@ for n_ant_val in n_ant_arr:
                                                                                   return_both=True)
                             clean_rx_ofdm_symbol = my_miso_chan.propagate(in_sig_mat=clean_ofdm_symbol)
                             clean_rx_ofdm_symbol = my_noise.process(clean_rx_ofdm_symbol,
-                                                                    avg_sample_pow=my_mod.avg_symbol_power * hk_vk_noise_scaler, disp_data=False)
+                                                                    avg_sample_pow=my_mod.avg_symbol_power * hk_vk_noise_scaler,
+                                                                    disp_data=False)
                             clean_rx_ofdm_symbol = np.divide(clean_rx_ofdm_symbol, hk_vk_agc_nfft)
                             clean_rx_ofdm_symbol = utilities.to_time_domain(clean_rx_ofdm_symbol)
                             clean_rx_ofdm_symbol = np.concatenate(
@@ -184,26 +186,29 @@ for n_ant_val in n_ant_arr:
                 ax1.plot(ebn0_arr, ber_per_dist[0], label="No distortion")
                 for idx, cnc_iter_val in enumerate(cnc_n_iter_lst):
                     if idx == 0:
-                        ax1.plot(ebn0_arr, ber_per_dist[idx+1], label="Standard RX")
+                        ax1.plot(ebn0_arr, ber_per_dist[idx + 1], label="Standard RX")
                     else:
-                        ax1.plot(ebn0_arr, ber_per_dist[idx+1], label="MCNC NI = %d" % (cnc_iter_val))
+                        ax1.plot(ebn0_arr, ber_per_dist[idx + 1], label="MCNC NI = %d" % (cnc_iter_val))
     
                 # fix log scaling
-                ax1.set_title("BER vs Eb/N0, %s, MCNC, QAM %d, N ANT = %d, IBO = %d [dB]" % (my_miso_chan, my_mod.constellation_size, n_ant_val, ibo_val_db))
+                ax1.set_title("BER vs Eb/N0, %s, MCNC, QAM %d, N ANT = %d, IBO = %d [dB]" % (
+                my_miso_chan, my_mod.constellation_size, n_ant_val, ibo_val_db))
                 ax1.set_xlabel("Eb/N0 [dB]")
                 ax1.set_ylabel("BER")
                 ax1.grid()
                 ax1.legend()
                 plt.tight_layout()
-    
+
                 filename_str = "ber_vs_ebn0_mcnc_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s" % (
                 my_miso_chan, n_ant_val, ibo_val_db, min(ebn0_arr), max(ebn0_arr), ebn0_arr[1] - ebn0_arr[0],
                 '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
                 # timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
                 # filename_str += "_" + timestamp
-                plt.savefig("../figs/%s.png" % filename_str, dpi=600, bbox_inches='tight')
-                plt.show()
-    
+                plt.savefig("figs/vm_worker_results/ber_vs_ebn0/%s.png" % filename_str, dpi=600, bbox_inches='tight')
+                # plt.show()
+                plt.cla()
+                plt.close()
+
                 #%%
                 data_lst = []
                 data_lst.append(ebn0_arr)

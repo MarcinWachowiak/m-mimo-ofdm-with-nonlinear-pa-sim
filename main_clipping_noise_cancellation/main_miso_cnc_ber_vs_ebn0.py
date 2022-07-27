@@ -28,8 +28,8 @@ set_latex_plot_style()
 
 # %%
 # parameters
-n_ant_arr = [1, 8]
-ibo_arr = [0, 2, 3, 5, 7]
+n_ant_arr = [1]
+ibo_arr = [0]
 ebn0_step = [1]
 cnc_n_iter_lst = [1, 2, 3, 5, 8]
 # include clean run is always True
@@ -47,8 +47,8 @@ n_sub_carr = 2048
 cp_len = 128
 
 # accuracy
-bits_sent_max = int(1e6)
-n_err_min = 1000
+bits_sent_max = int(1e7)
+n_err_min = int(1e5)
 
 my_mod = modulation.OfdmQamModem(constel_size=constel_size, n_fft=n_fft, n_sub_carr=n_sub_carr, cp_len=cp_len)
 
@@ -134,7 +134,8 @@ for n_ant_val in n_ant_arr:
                                                                                   return_both=True)
                             clean_rx_ofdm_symbol = my_miso_chan.propagate(in_sig_mat=clean_ofdm_symbol)
                             clean_rx_ofdm_symbol = my_noise.process(clean_rx_ofdm_symbol,
-                                                                    avg_sample_pow=my_mod.avg_symbol_power * hk_vk_noise_scaler, disp_data=False)
+                                                                    avg_sample_pow=my_mod.avg_symbol_power * hk_vk_noise_scaler,
+                                                                    disp_data=False)
                             clean_rx_ofdm_symbol = np.divide(clean_rx_ofdm_symbol, hk_vk_agc_nfft)
                             clean_rx_ofdm_symbol = utilities.to_time_domain(clean_rx_ofdm_symbol)
                             clean_rx_ofdm_symbol = np.concatenate(
@@ -205,8 +206,10 @@ for n_ant_val in n_ant_arr:
                     '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
                 # timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
                 # filename_str += "_" + timestamp
-                plt.savefig("../figs/%s.png" % filename_str, dpi=600, bbox_inches='tight')
-                plt.show()
+                plt.savefig("figs/vm_worker_results/ber_vs_ebn0/%s.png" % filename_str, dpi=600, bbox_inches='tight')
+                # plt.show()
+                plt.cla()
+                plt.close()
 
                 # %%
                 data_lst = []

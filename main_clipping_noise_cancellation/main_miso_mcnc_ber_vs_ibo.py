@@ -26,9 +26,9 @@ import utilities
 set_latex_plot_style()
 # %%
 
-n_ant_arr = [1, 8]
+n_ant_arr = [1]
 ebn0_db_arr = [20]
-ibo_step_arr = [1]
+ibo_step_arr = [0.5]
 cnc_n_iter_lst = [1, 2, 3, 5, 8]
 # standard RX
 cnc_n_iter_lst = np.insert(cnc_n_iter_lst, 0, 0)
@@ -44,8 +44,8 @@ n_sub_carr = 2048
 cp_len = 128
 
 # BER accuracy settings
-bits_sent_max = int(1e6)
-n_err_min = 1000
+bits_sent_max = int(1e7)
+n_err_min = int(1e5)
 
 # remember to copy objects not to avoid shared properties modifications!
 # check modifications before copy and what you copy!
@@ -93,7 +93,7 @@ for n_ant_val in n_ant_arr:
         hk_vk_noise_scaler = np.mean(np.power(hk_vk_agc_avg_vec, 2))
 
         for ibo_step_val in ibo_step_arr:
-            ibo_arr = np.arange(0, 11.0, ibo_step_val)
+            ibo_arr = np.arange(0, 9.0, ibo_step_val)
 
             for ebn0_db in ebn0_db_arr:
                 snr_val_db = ebn0_to_snr(ebn0_db, my_mod.n_fft, my_mod.n_sub_carr, my_mod.constel_size)
