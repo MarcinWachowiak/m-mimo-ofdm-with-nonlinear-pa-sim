@@ -19,15 +19,15 @@ cnc_n_iter_lst = [0, 1, 2, 3, 5, 8]
 n_ant_val = 1
 ibo_val_db = 0
 constel_size = 64
-my_miso_chan = "rayleigh"
+my_miso_chan = "two_path"
 
 data_lst_cnc = utilities.read_from_csv(
-    filename="ber_vs_ebn0_cnc_%s_nant1_ibo0_ebn0_min0_max30_step1.00_niter2_3_5_8" % my_miso_chan)
+    filename="ber_vs_ebn0_cnc_%s_nant1_ibo0_ebn0_min0_max30_step1.00_niter1_2_3_5_8" % my_miso_chan)
 ebn0_arr_cnc = data_lst_cnc[0]
 ber_per_dist_cnc = data_lst_cnc[1:]
 
 data_lst_mcnc = utilities.read_from_csv(
-    filename="ber_vs_ebn0_mcnc_%s_nant1_ibo0_ebn0_min0_max30_step1.00_niter2_3_5_8" % my_miso_chan)
+    filename="ber_vs_ebn0_mcnc_%s_nant1_ibo0_ebn0_min0_max30_step1.00_niter1_2_3_5_8" % my_miso_chan)
 ebn0_arr_mcnc = data_lst_mcnc[0]
 ber_per_dist_mcnc = data_lst_mcnc[1:]
 

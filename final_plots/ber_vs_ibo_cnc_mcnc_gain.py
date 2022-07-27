@@ -19,15 +19,15 @@ n_ant_val = 1
 ibo_val_db = 0
 ebn0_db = 20
 constel_size = 64
-my_miso_chan = "los"
+my_miso_chan = "two_path"
 
 data_lst_cnc = utilities.read_from_csv(
-    filename="ber_vs_ibo_cnc_%s_nant1_ebn0_20_ibo_min0_max10_step1.00_niter1_2_3_5_8" % my_miso_chan)
+    filename="ber_vs_ibo_cnc_%s_nant1_ebn0_20_ibo_min0_max8_step0.50_niter1_2_3_5_8" % my_miso_chan)
 ibo_arr_cnc = data_lst_cnc[0]
 bers_per_ibo_cnc = data_lst_cnc[1:]
 
 data_lst_mcnc = utilities.read_from_csv(
-    filename="ber_vs_ibo_mcnc_%s_nant1_ebn0_20_ibo_min0_max10_step1.00_niter1_2_3_5_8" % my_miso_chan)
+    filename="ber_vs_ibo_mcnc_%s_nant1_ebn0_20_ibo_min0_max8_step0.50_niter1_2_3_5_8" % my_miso_chan)
 ibo_arr_mcnc = data_lst_mcnc[0]
 bers_per_ibo_mcnc = data_lst_mcnc[1:]
 

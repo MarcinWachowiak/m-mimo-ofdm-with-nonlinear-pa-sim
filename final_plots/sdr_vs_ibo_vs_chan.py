@@ -46,7 +46,7 @@ n_ant1 = mpatches.Patch(color='#377eb8', label='1')
 n_ant4 = mpatches.Patch(color='#ff7f00', label='4')
 n_ant32 = mpatches.Patch(color='#4daf4a', label='32')
 
-leg1 = plt.legend(handles=[n_ant1, n_ant4, n_ant32], title="N antennas:", loc="lower right")
+leg1 = plt.legend(handles=[n_ant1, n_ant4, n_ant32], title="K antennas:", loc="lower right")
 plt.gca().add_artist(leg1)
 
 import matplotlib.lines as mlines
