@@ -97,8 +97,8 @@ for n_ant_val in n_ant_arr:
                 ibo_arr = np.arange(0, 8, ibo_step_val)
 
                 for ebn0_step_val in ebn0_step_arr:
-                    ebn0_db_arr = np.arange(14, 31, ebn0_step_val)
-                    snr_db_vals = ebn0_to_snr(ebn0_db_arr, my_mod.n_fft, my_mod.n_sub_carr, my_mod.constel_size)
+                    ebn0_db_arr = np.arange(5, 20, ebn0_step_val)
+                    snr_db_vals = ebn0_to_snr(ebn0_db_arr, my_mod.n_sub_carr, my_mod.n_sub_carr, my_mod.constel_size)
 
                     ber_per_ibo_snr_iter = np.zeros((len(ibo_arr), len(snr_db_vals), len(cnc_n_iter_lst)))
 

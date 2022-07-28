@@ -19,15 +19,15 @@ target_ber_val = 1e-2
 n_ant_val = 1
 constel_size = 64
 ebn0_db_arr = np.arange(10, 31, 1.0)
-my_miso_chan = "rayleigh"
+my_miso_chan = "los"
 
 data_lst_cnc = utilities.read_from_csv(
-    filename="fixed_ber1.0e-02_cnc_%s_nant1_ebn0_min10_max30_step1.00_ibo_min0_max7_step1.00_niter1_2_3_5_8" % my_miso_chan)
+    filename="fixed_ber1.0e-02_cnc_%s_nant1_ebn0_min14_max30_step0.50_ibo_min0_max7_step0.50_niter1_2_3_5_8" % my_miso_chan)
 ibo_arr_cnc = data_lst_cnc[0]
 req_ebn0_per_ibo_cnc = data_lst_cnc[1:]
 
 data_lst_mcnc = utilities.read_from_csv(
-    filename="fixed_ber1.0e-02_mcnc_%s_nant1_ebn0_min10_max30_step1.00_ibo_min0_max7_step1.00_niter1_2_3_5_8" % my_miso_chan)
+    filename="fixed_ber1.0e-02_mcnc_%s_nant1_ebn0_min14_max30_step0.50_ibo_min0_max7_step0.50_niter1_2_3_5_8" % my_miso_chan)
 ibo_arr_mcnc = data_lst_mcnc[0]
 req_ebn0_per_ibo_mcnc = data_lst_mcnc[1:]
 

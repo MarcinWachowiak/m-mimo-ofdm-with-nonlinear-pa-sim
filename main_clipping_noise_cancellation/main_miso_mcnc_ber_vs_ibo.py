@@ -27,7 +27,7 @@ set_latex_plot_style()
 # %%
 
 n_ant_arr = [1]
-ebn0_db_arr = [20]
+ebn0_db_arr = [15]
 ibo_step_arr = [0.5]
 cnc_n_iter_lst = [1, 2, 3, 5, 8]
 # standard RX
@@ -96,7 +96,7 @@ for n_ant_val in n_ant_arr:
             ibo_arr = np.arange(0, 9.0, ibo_step_val)
 
             for ebn0_db in ebn0_db_arr:
-                snr_val_db = ebn0_to_snr(ebn0_db, my_mod.n_fft, my_mod.n_sub_carr, my_mod.constel_size)
+                snr_val_db = ebn0_to_snr(ebn0_db, my_mod.n_sub_carr, my_mod.n_sub_carr, my_mod.constel_size)
                 bers_per_ibo = np.zeros((len(cnc_n_iter_lst), len(ibo_arr)))
 
                 # lambda estimation phase

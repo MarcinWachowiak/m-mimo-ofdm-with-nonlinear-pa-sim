@@ -22,7 +22,7 @@ import noise
 import transceiver
 import utilities
 from plot_settings import set_latex_plot_style
-from utilities import count_mismatched_bits
+from utilities import count_mismatched_bits, ebn0_to_snr
 
 set_latex_plot_style()
 
@@ -110,19 +110,19 @@ for n_ant_val in n_ant_arr:
             ak_hk_vk_agc_nfft[1:(n_sub_carr // 2) + 1] = ak_hk_vk_agc_avg_vec[n_sub_carr // 2:]
 
             for ebn0_step_val in ebn0_step:
-                ebn0_arr = np.arange(0, 31, ebn0_step_val)
+                ebn0_arr = np.arange(5, 16, ebn0_step_val)
 
                 my_noise = noise.Awgn(snr_db=10, seed=1234)
                 bit_rng = np.random.default_rng(4321)
-                snr_arr = ebn0_arr
+                snr_arr = ebn0_to_snr(ebn0_arr, my_mod.n_sub_carr, my_mod.n_sub_carr, my_mod.constel_size)
 
                 ber_per_dist = []
 
-                for snr_idx, snr in enumerate(snr_arr):
+                for snr_idx, snr_db_val in enumerate(snr_arr):
                     start_time = time.time()
                     print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
-                    my_noise.snr_db = snr
+                    my_noise.snr_db = snr_db_val
                     bers = np.zeros([len(cnc_n_iter_lst) + 1])
                     n_err = np.zeros([len(cnc_n_iter_lst) + 1])
                     bits_sent = np.zeros([len(cnc_n_iter_lst) + 1])
