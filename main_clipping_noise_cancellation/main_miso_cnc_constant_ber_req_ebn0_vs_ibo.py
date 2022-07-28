@@ -97,6 +97,9 @@ for n_ant_val in n_ant_arr:
                 ibo_arr = np.arange(0, 8, ibo_step_val)
 
                 for ebn0_step_val in ebn0_step_arr:
+                    start_time = time.time()
+                    print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+
                     ebn0_db_arr = np.arange(5, 20, ebn0_step_val)
                     snr_db_vals = ebn0_to_snr(ebn0_db_arr, my_mod.n_sub_carr, my_mod.n_sub_carr, my_mod.constel_size)
 
@@ -107,8 +110,6 @@ for n_ant_val in n_ant_arr:
                     if estimate_lambda:
                         abs_alpha_per_ibo = np.zeros(len(ibo_arr))
                         for ibo_idx, ibo_val_db in enumerate(ibo_arr):
-                            start_time = time.time()
-                            print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
                             my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
                             # correct avg sample power in nonlinearity after precoding
 
@@ -150,8 +151,6 @@ for n_ant_val in n_ant_arr:
                     # %%
                     # BER vs IBO eval
                     for ibo_idx, ibo_val_db in enumerate(ibo_arr):
-                        start_time = time.time()
-                        print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
                         my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
                         my_cnc_rx.update_distortion(ibo_db=ibo_val_db)
 
@@ -205,7 +204,7 @@ for n_ant_val in n_ant_arr:
 
                             ber_per_ibo_snr_iter[ibo_idx, snr_idx, :] = n_err / bits_sent
 
-                        print("--- Computation time: %f ---" % (time.time() - start_time))
+                    print("--- Computation time: %f ---" % (time.time() - start_time))
 
                     # %%
                     # extract SNR value providing given BER from collected data

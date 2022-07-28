@@ -96,6 +96,9 @@ for n_ant_val in n_ant_arr:
             ibo_arr = np.arange(0, 9.0, ibo_step_val)
 
             for ebn0_db in ebn0_db_arr:
+                start_time = time.time()
+                print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+
                 snr_val_db = ebn0_to_snr(ebn0_db, my_mod.n_sub_carr, my_mod.n_sub_carr, my_mod.constel_size)
                 bers_per_ibo = np.zeros((len(cnc_n_iter_lst), len(ibo_arr)))
 
@@ -148,8 +151,6 @@ for n_ant_val in n_ant_arr:
                 for ibo_idx, ibo_val_db in enumerate(ibo_arr):
                     my_noise = noise.Awgn(snr_db=20, noise_p_dbm=-90, seed=1234)
                     my_noise.snr_db = snr_val_db
-                    start_time = time.time()
-                    print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
                     my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
                     my_mcnc_rx.update_distortion(ibo_db=ibo_val_db)
@@ -202,7 +203,7 @@ for n_ant_val in n_ant_arr:
                     for ite_idx in range(len(cnc_n_iter_lst)):
                         bers_per_ibo[ite_idx][ibo_idx] = n_err[ite_idx] / bits_sent[ite_idx]
 
-                    print("--- Computation time: %f ---" % (time.time() - start_time))
+                print("--- Computation time: %f ---" % (time.time() - start_time))
 
                 # %%
                 fig1, ax1 = plt.subplots(1, 1)

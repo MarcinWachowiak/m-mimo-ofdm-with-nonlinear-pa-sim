@@ -110,18 +110,16 @@ for n_ant_val in n_ant_arr:
             ak_hk_vk_agc_nfft[1:(n_sub_carr // 2) + 1] = ak_hk_vk_agc_avg_vec[n_sub_carr // 2:]
 
             for ebn0_step_val in ebn0_step:
-                ebn0_arr = np.arange(5, 16, ebn0_step_val)
+                start_time = time.time()
+                print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
+                ebn0_arr = np.arange(5, 21, ebn0_step_val)
                 my_noise = noise.Awgn(snr_db=10, seed=1234)
                 bit_rng = np.random.default_rng(4321)
                 snr_arr = ebn0_to_snr(ebn0_arr, my_mod.n_sub_carr, my_mod.n_sub_carr, my_mod.constel_size)
-
                 ber_per_dist = []
 
                 for snr_idx, snr_db_val in enumerate(snr_arr):
-                    start_time = time.time()
-                    print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-
                     my_noise.snr_db = snr_db_val
                     bers = np.zeros([len(cnc_n_iter_lst) + 1])
                     n_err = np.zeros([len(cnc_n_iter_lst) + 1])
@@ -176,8 +174,10 @@ for n_ant_val in n_ant_arr:
 
                     for ite_idx in range(len(bers)):
                         bers[ite_idx] = n_err[ite_idx] / bits_sent[ite_idx]
+
                     ber_per_dist.append(bers)
-                    print("--- Computation time: %f ---" % (time.time() - start_time))
+
+                print("--- Computation time: %f ---" % (time.time() - start_time))
 
                 ber_per_dist = np.column_stack(ber_per_dist)
                 # %%
@@ -204,7 +204,7 @@ for n_ant_val in n_ant_arr:
                 '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
                 # timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
                 # filename_str += "_" + timestamp
-                plt.savefig("figs/vm_worker_results/ber_vs_ebn0/%s.png" % filename_str, dpi=600, bbox_inches='tight')
+                plt.savefig("../figs/%s.png" % filename_str, dpi=600, bbox_inches='tight')
                 # plt.show()
                 plt.cla()
                 plt.close()
