@@ -41,7 +41,7 @@ class Awgn(Noise):
             n_nsc = 2048
             in_sig_nsc = np.concatenate((in_sig[-n_nsc // 2:], in_sig[1:(n_nsc // 2) + 1]))
             noise_nsc = np.concatenate((noise[-n_nsc // 2:], noise[1:(n_nsc // 2) + 1]))
-            print("Signal power:[dBm]", to_db(fd_signal_power(in_sig_nsc)) + 30)
+            print("Signal power:[dBm]", to_db(fd_signal_power(in_sig_nsc) + 30))
             print("Noise power:[dBm]", to_db(fd_signal_power(noise_nsc)) + 30)
             print("SNR: ", to_db(fd_signal_power(in_sig_nsc) / fd_signal_power(noise_nsc)))
             #

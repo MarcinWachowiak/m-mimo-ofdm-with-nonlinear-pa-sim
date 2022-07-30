@@ -40,7 +40,7 @@ class LinearArray:
             else:
                 tx.set_tx_power_dbm(tx_power_dbm)
 
-    def transmit(self, in_bits, out_domain_fd=True, return_both=False):
+    def transmit(self, in_bits, out_domain_fd=True, return_both=False, skip_dist=False):
         if out_domain_fd:
             out_sig_mat = np.empty([self.n_elements, self.base_transceiver.modem.n_fft],
                                    dtype=np.complex128)
@@ -59,13 +59,14 @@ class LinearArray:
             for idx, tx_transceiver in enumerate(self.array_elements):
                 out_sig_mat[idx, :], clean_sig_mat[idx, :] = tx_transceiver.transmit(in_bits,
                                                                                      out_domain_fd=out_domain_fd,
-                                                                                     return_both=True)
+                                                                                     return_both=True,
+                                                                                     skip_dist=skip_dist)
 
             return np.squeeze(out_sig_mat), np.squeeze(clean_sig_mat)
         else:
             for idx, tx_transceiver in enumerate(self.array_elements):
                 out_sig_mat[idx, :] = tx_transceiver.transmit(in_bits, out_domain_fd=out_domain_fd,
-                                                              return_both=return_both)
+                                                              return_both=return_both, skip_dist=skip_dist)
             return np.squeeze(out_sig_mat)
 
     def set_precoding_matrix(self, channel_mat_fd=None, mr_precoding=False):

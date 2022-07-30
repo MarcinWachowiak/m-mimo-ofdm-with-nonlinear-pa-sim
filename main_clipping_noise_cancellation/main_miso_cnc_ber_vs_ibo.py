@@ -92,6 +92,10 @@ for n_ant_val in n_ant_arr:
         hk_vk_agc_avg_vec = np.sum(hk_vk_agc, axis=0)
         hk_vk_noise_scaler = np.mean(np.power(hk_vk_agc_avg_vec, 2))
 
+        hk_vk_agc_nfft = np.ones(my_mod.n_fft, dtype=np.complex128)
+        hk_vk_agc_nfft[-(n_sub_carr // 2):] = hk_vk_agc_avg_vec[0:n_sub_carr // 2]
+        hk_vk_agc_nfft[1:(n_sub_carr // 2) + 1] = hk_vk_agc_avg_vec[n_sub_carr // 2:]
+
         for ibo_step_val in ibo_step_arr:
             ibo_arr = np.arange(0, 9.0, ibo_step_val)
 
@@ -156,15 +160,11 @@ for n_ant_val in n_ant_arr:
 
                     ibo_vec = 10 * np.log10(10 ** (ibo_val_db / 10) * my_mod.n_sub_carr / (vk_pow_vec * n_ant_val))
                     ak_vect = my_mod.calc_alpha(ibo_db=ibo_vec)
+                    ak_vect = np.expand_dims(ak_vect, axis=1)
 
-                    hk_vk_agc_nfft = np.ones(my_mod.n_fft, dtype=np.complex128)
-                    hk_vk_agc_nfft[-(n_sub_carr // 2):] = hk_vk_agc_avg_vec[0:n_sub_carr // 2]
-                    hk_vk_agc_nfft[1:(n_sub_carr // 2) + 1] = hk_vk_agc_avg_vec[n_sub_carr // 2:]
-
-                    ak_hk_vk_agc = np.dot(ak_vect, hk_vk_agc)
-                    ak_hk_vk_agc = np.expand_dims(ak_hk_vk_agc, axis=0)
+                    ak_hk_vk_agc = ak_vect * hk_vk_agc
                     ak_hk_vk_agc_avg_vec = np.sum(ak_hk_vk_agc, axis=0)
-                    ak_hk_vk_noise_scaler = np.mean(np.power(ak_hk_vk_agc_avg_vec, 2))
+                    ak_hk_vk_noise_scaler = np.mean(np.power(np.abs(ak_hk_vk_agc_avg_vec), 2))
 
                     ak_hk_vk_agc_nfft = np.ones(my_mod.n_fft, dtype=np.complex128)
                     ak_hk_vk_agc_nfft[-(n_sub_carr // 2):] = ak_hk_vk_agc_avg_vec[0:n_sub_carr // 2]

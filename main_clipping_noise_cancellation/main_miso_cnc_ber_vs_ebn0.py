@@ -87,7 +87,11 @@ for n_ant_val in n_ant_arr:
         vk_pow_vec = np.sum(np.power(np.abs(vk_mat), 2), axis=1)
         hk_vk_agc = np.multiply(hk_mat, vk_mat)
         hk_vk_agc_avg_vec = np.sum(hk_vk_agc, axis=0)
-        hk_vk_noise_scaler = np.mean(np.power(hk_vk_agc_avg_vec, 2))
+        hk_vk_noise_scaler = np.mean(np.power(np.abs(hk_vk_agc_avg_vec), 2))
+
+        hk_vk_agc_nfft = np.ones(my_mod.n_fft, dtype=np.complex128)
+        hk_vk_agc_nfft[-(n_sub_carr // 2):] = hk_vk_agc_avg_vec[0:n_sub_carr // 2]
+        hk_vk_agc_nfft[1:(n_sub_carr // 2) + 1] = hk_vk_agc_avg_vec[n_sub_carr // 2:]
 
         for ibo_val_db in ibo_arr:
             my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
@@ -95,15 +99,11 @@ for n_ant_val in n_ant_arr:
 
             ibo_vec = 10 * np.log10(10 ** (ibo_val_db / 10) * my_mod.n_sub_carr / (vk_pow_vec * n_ant_val))
             ak_vect = my_mod.calc_alpha(ibo_db=ibo_vec)
+            ak_vect = np.expand_dims(ak_vect, axis=1)
 
-            hk_vk_agc_nfft = np.ones(my_mod.n_fft, dtype=np.complex128)
-            hk_vk_agc_nfft[-(n_sub_carr // 2):] = hk_vk_agc_avg_vec[0:n_sub_carr // 2]
-            hk_vk_agc_nfft[1:(n_sub_carr // 2) + 1] = hk_vk_agc_avg_vec[n_sub_carr // 2:]
-
-            ak_hk_vk_agc = np.dot(ak_vect, hk_vk_agc)
-            ak_hk_vk_agc = np.expand_dims(ak_hk_vk_agc, axis=0)
+            ak_hk_vk_agc = ak_vect * hk_vk_agc
             ak_hk_vk_agc_avg_vec = np.sum(ak_hk_vk_agc, axis=0)
-            ak_hk_vk_noise_scaler = np.mean(np.power(ak_hk_vk_agc_avg_vec, 2))
+            ak_hk_vk_noise_scaler = np.mean(np.power(np.abs(ak_hk_vk_agc_avg_vec), 2))
 
             ak_hk_vk_agc_nfft = np.ones(my_mod.n_fft, dtype=np.complex128)
             ak_hk_vk_agc_nfft[-(n_sub_carr // 2):] = ak_hk_vk_agc_avg_vec[0:n_sub_carr // 2]
@@ -128,8 +128,8 @@ for n_ant_val in n_ant_arr:
                     while True:
                         if np.logical_and((n_err[0] < n_err_min), (bits_sent[0] < bits_sent_max)):
                             tx_bits = bit_rng.choice((0, 1), my_tx.modem.n_bits_per_ofdm_sym)
-                            tx_ofdm_symbol, clean_ofdm_symbol = my_array.transmit(tx_bits, out_domain_fd=True,
-                                                                                  return_both=True)
+                            clean_ofdm_symbol = my_array.transmit(tx_bits, out_domain_fd=True, return_both=False,
+                                                                  skip_dist=True)
                             clean_rx_ofdm_symbol = my_miso_chan.propagate(in_sig_mat=clean_ofdm_symbol)
                             clean_rx_ofdm_symbol = my_noise.process(clean_rx_ofdm_symbol,
                                                                     avg_sample_pow=my_mod.avg_symbol_power * hk_vk_noise_scaler,
@@ -154,8 +154,7 @@ for n_ant_val in n_ant_arr:
                             break
 
                         tx_bits = bit_rng.choice((0, 1), my_tx.modem.n_bits_per_ofdm_sym)
-                        tx_ofdm_symbol, clean_ofdm_symbol = my_array.transmit(tx_bits, out_domain_fd=True,
-                                                                              return_both=True)
+                        tx_ofdm_symbol = my_array.transmit(tx_bits, out_domain_fd=True, skip_dist=False)
                         rx_ofdm_symbol = my_miso_chan.propagate(in_sig_mat=tx_ofdm_symbol)
                         rx_ofdm_symbol = my_noise.process(rx_ofdm_symbol,
                                                           avg_sample_pow=my_mod.avg_symbol_power * ak_hk_vk_noise_scaler)
@@ -204,9 +203,7 @@ for n_ant_val in n_ant_arr:
                 # timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
                 # filename_str += "_" + timestamp
                 plt.savefig("../figs/%s.png" % filename_str, dpi=600, bbox_inches='tight')
-                # plt.show()
-                plt.cla()
-                plt.close()
+                plt.show()
 
                 # %%
                 data_lst = []
