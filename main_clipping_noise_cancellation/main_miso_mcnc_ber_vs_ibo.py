@@ -26,10 +26,10 @@ import utilities
 set_latex_plot_style()
 # %%
 
-n_ant_arr = [1]
+n_ant_arr = [64]
 ebn0_db_arr = [15]
 ibo_step_arr = [0.5]
-cnc_n_iter_lst = [1, 2, 3, 5, 8]
+cnc_n_iter_lst = [1, 2, 3, 4, 5, 6, 7, 8]
 # standard RX
 cnc_n_iter_lst = np.insert(cnc_n_iter_lst, 0, 0)
 

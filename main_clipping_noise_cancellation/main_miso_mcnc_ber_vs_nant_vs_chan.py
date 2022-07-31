@@ -26,10 +26,10 @@ import utilities
 set_latex_plot_style()
 # %%
 
-n_ant_arr = [1, 2, 4, 8, 16, 32, 64]
+n_ant_arr = [1, 2, 4, 8, 16, 32, 64, 128]
 ebn0_db = 15
 ibo_val_db = 0
-cnc_n_iter_lst = [1, 2, 3, 5, 8]
+cnc_n_iter_lst = [1, 2, 3, 4, 5, 6, 7, 8]
 # standard RX
 cnc_n_iter_lst = np.insert(cnc_n_iter_lst, 0, 0)
 
@@ -44,8 +44,8 @@ n_sub_carr = 2048
 cp_len = 128
 
 # BER accuracy settings
-bits_sent_max = int(1e5)
-n_err_min = int(1e4)
+bits_sent_max = int(1e7)
+n_err_min = int(1e6)
 
 # remember to copy objects not to avoid shared properties modifications!
 # check modifications before copy and what you copy!

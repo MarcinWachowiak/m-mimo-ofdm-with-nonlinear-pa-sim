@@ -29,11 +29,11 @@ from utilities import count_mismatched_bits, ebn0_to_snr
 set_latex_plot_style()
 # %%
 # %%
-n_ant_arr = [1]
+n_ant_arr = [64]
 target_ber_arr = [1e-2]
 ebn0_step_arr = [0.5]
 ibo_step_arr = [0.5]
-cnc_n_iter_lst = [1, 2, 3, 5, 8]
+cnc_n_iter_lst = [1, 2, 3, 4, 5, 6, 7, 8]
 cnc_n_iter_lst = np.insert(cnc_n_iter_lst, 0, 0)
 
 # print("Eb/n0 values:", ebn0_db_arr)

@@ -42,12 +42,13 @@ class MisoLosFd:
 
         self.channel_mat_fd = calc_channel_mat_fd
 
-    def propagate(self, in_sig_mat):
-        # apply channel matrix to signal
-        fd_signal_at_point = np.multiply(in_sig_mat, self.channel_mat_fd)
-        # sum rows
-        fd_signal_at_point = np.sum(fd_signal_at_point, axis=0)
-        return fd_signal_at_point
+    def propagate(self, in_sig_mat, sum=True):
+        fd_sigmat_after_chan = np.multiply(in_sig_mat, self.channel_mat_fd)
+        # sum columns
+        if sum:
+            return np.sum(fd_sigmat_after_chan, axis=0)
+        else:
+            return fd_sigmat_after_chan
 
 
 class MisoTwoPathFd:
@@ -100,10 +101,13 @@ class MisoTwoPathFd:
         # combine two path coefficients without normalization
         self.channel_mat_fd = np.add(los_fd_shift_mat, sec_fd_shift_mat)
 
-    def propagate(self, in_sig_mat):
-        combined_fd_sig = np.multiply(in_sig_mat, self.channel_mat_fd)
-        # sum rows
-        return np.sum(combined_fd_sig, axis=0)
+    def propagate(self, in_sig_mat, sum=True):
+        fd_sigmat_after_chan = np.multiply(in_sig_mat, self.channel_mat_fd)
+        # sum columns
+        if sum:
+            return np.sum(fd_sigmat_after_chan, axis=0)
+        else:
+            return fd_sigmat_after_chan
 
 
 class RayleighMisoFd:
@@ -162,9 +166,12 @@ class RayleighMisoFd:
         else:
             self.channel_mat_fd = np.multiply(fd_rayleigh_coeffs, self.los_fd_att_mat)
 
-    def propagate(self, in_sig_mat):
+    def propagate(self, in_sig_mat, sum=True):
         # channel in frequency domain
         # multiply signal by rayleigh channel coefficients in frequency domain
         fd_sigmat_after_chan = np.multiply(in_sig_mat, self.channel_mat_fd)
         # sum columns
-        return np.sum(fd_sigmat_after_chan, axis=0)
+        if sum:
+            return np.sum(fd_sigmat_after_chan, axis=0)
+        else:
+            return fd_sigmat_after_chan
