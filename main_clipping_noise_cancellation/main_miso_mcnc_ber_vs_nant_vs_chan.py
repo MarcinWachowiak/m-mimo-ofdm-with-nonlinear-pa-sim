@@ -213,11 +213,13 @@ plt.gca().add_artist(leg2)
 plt.tight_layout()
 
 filename_str = "ber_vs_nant_mcnc_nant%s_ebn0_%d_ibo%d_niter%s" % (
-'_'.join([str(val) for val in n_ant_arr]), ebn0_db, ibo_val_db, '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
+    '_'.join([str(val) for val in n_ant_arr]), ebn0_db, ibo_val_db, '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
 # timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 # filename_str += "_" + timestamp
-plt.savefig("../figs/%s.png" % filename_str, dpi=600, bbox_inches='tight')
-plt.show()
+plt.savefig("figs/vm_worker_results/%s.png" % filename_str, dpi=600, bbox_inches='tight')
+# plt.show()
+plt.cla()
+plt.close()
 
 # %%
 data_lst = []

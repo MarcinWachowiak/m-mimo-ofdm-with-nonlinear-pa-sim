@@ -1,5 +1,6 @@
 # VM simulation runner
-import os, sys
+import os
+import sys
 import time
 from datetime import datetime
 
@@ -8,13 +9,15 @@ sys.path.append(os.getcwd())
 
 
 filename_str_lst = [
-                    "main_clipping_noise_cancellation/main_miso_cnc_ber_vs_ebn0.py",
-                    "main_clipping_noise_cancellation/main_miso_mcnc_ber_vs_ebn0.py",
-                    "main_clipping_noise_cancellation/main_miso_cnc_ber_vs_ibo.py",
-                    "main_clipping_noise_cancellation/main_miso_mcnc_ber_vs_ibo.py",
-                    "main_clipping_noise_cancellation/main_miso_cnc_constant_ber_req_ebn0_vs_ibo.py",
-                    "main_clipping_noise_cancellation/main_miso_mcnc_constant_ber_req_ebn0_vs_ibo.py"
-                    ]
+    # "main_miso_cnc_ber_vs_nant_vs_chan.py",
+    "main_miso_mcnc_ber_vs_nant_vs_chan.py",
+    "main_clipping_noise_cancellation/main_miso_cnc_ber_vs_ebn0.py",
+    "main_clipping_noise_cancellation/main_miso_mcnc_ber_vs_ebn0.py",
+    "main_clipping_noise_cancellation/main_miso_cnc_ber_vs_ibo.py",
+    "main_clipping_noise_cancellation/main_miso_mcnc_ber_vs_ibo.py",
+    "main_clipping_noise_cancellation/main_miso_cnc_constant_ber_req_ebn0_vs_ibo.py",
+    "main_clipping_noise_cancellation/main_miso_mcnc_constant_ber_req_ebn0_vs_ibo.py"
+]
 for idx, filename_str in enumerate(filename_str_lst):
     print("Running: %d/%d, %s" %(idx+1, len(filename_str_lst), filename_str))
 

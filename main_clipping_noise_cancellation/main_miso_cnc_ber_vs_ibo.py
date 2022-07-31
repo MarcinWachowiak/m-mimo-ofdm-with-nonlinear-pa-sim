@@ -264,20 +264,25 @@ for n_ant_val in n_ant_arr:
                         ite_val = "0 - standard RX"
                     ax1.plot(ibo_arr, bers_per_ibo[ite_idx, :], label=ite_val)
 
-                ax1.set_title("BER vs IBO, %s, CNC, QAM %d, N ANT = %d, Eb/n0 = %d [dB], " % (my_miso_chan, my_mod.constellation_size, n_ant_val, ebn0_db))
+                ax1.set_title("BER vs IBO, %s, CNC, QAM %d, N ANT = %d, Eb/n0 = %d [dB], " % (
+                my_miso_chan, my_mod.constellation_size, n_ant_val, ebn0_db))
                 ax1.set_xlabel("IBO [dB]")
                 ax1.set_ylabel("BER")
                 ax1.grid()
                 ax1.legend(title="CNC N ite:")
                 plt.tight_layout()
 
-                filename_str = "ber_vs_ibo_cnc_%s_nant%d_ebn0_%d_ibo_min%d_max%d_step%1.2f_niter%s" % (my_miso_chan, n_ant_val, ebn0_db, min(ibo_arr), max(ibo_arr), ibo_arr[1]-ibo_arr[0], '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
+                filename_str = "ber_vs_ibo_cnc_%s_nant%d_ebn0_%d_ibo_min%d_max%d_step%1.2f_niter%s" % (
+                my_miso_chan, n_ant_val, ebn0_db, min(ibo_arr), max(ibo_arr), ibo_arr[1] - ibo_arr[0],
+                '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
                 # timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
                 # filename_str += "_" + timestamp
-                plt.savefig("../figs/%s.png" % filename_str, dpi=600, bbox_inches='tight')
-                plt.show()
+                plt.savefig("figs/vm_worker_results/ber_vs_ibo/%s.png" % filename_str, dpi=600, bbox_inches='tight')
+                # plt.show()
+                plt.cla()
+                plt.close()
 
-                #%%
+                # %%
                 data_lst = []
                 data_lst.append(ibo_arr)
                 for arr1 in bers_per_ibo:
