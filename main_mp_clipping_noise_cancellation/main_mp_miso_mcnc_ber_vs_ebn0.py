@@ -152,8 +152,10 @@ if __name__ == '__main__':
                         '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
                     # timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
                     # filename_str += "_" + timestamp
-                    plt.savefig("../figs/%s.png" % filename_str, dpi=600, bbox_inches='tight')
-                    plt.show()
+                    plt.savefig("figs/%s.png" % filename_str, dpi=600, bbox_inches='tight')
+                    # plt.show()
+                    plt.cla()
+                    plt.close()
 
                     # %%
                     data_lst = []
