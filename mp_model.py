@@ -58,10 +58,9 @@ class Link():
         self.ak_hk_vk_agc_nfft[1:(self.n_sub_carr // 2) + 1] = ak_hk_vk_agc_avg_vec[self.n_sub_carr // 2:]
 
     def simulate(self, cnc_n_iter_lst, seed_arr, n_err_shared_arr, n_bits_sent_shared_arr):
-
-        self.my_noise.rng_gen = np.random.default_rng(seed_arr[0])
-        self.loc_rng = np.random.default_rng(seed_arr[1])
-        self.bit_rng = np.random.default_rng(seed_arr[2])
+        self.bit_rng = np.random.default_rng(seed_arr[0])
+        self.my_noise.rng_gen = np.random.default_rng(seed_arr[1])
+        self.loc_rng = np.random.default_rng(seed_arr[2])
 
         # clean RX run
         while True:
@@ -118,7 +117,7 @@ class Link():
                 vk_pow_vec = np.sum(np.power(np.abs(vk_mat), 2), axis=1)
                 hk_vk_agc = np.multiply(hk_mat, vk_mat)
                 hk_vk_agc_avg_vec = np.sum(hk_vk_agc, axis=0)
-                hk_vk_noise_scaler = np.mean(np.power(np.abs(hk_vk_agc_avg_vec), 2))
+                self.hk_vk_noise_scaler = np.mean(np.power(np.abs(hk_vk_agc_avg_vec), 2))
 
                 self.hk_vk_agc_nfft = np.ones(self.my_mod.n_fft, dtype=np.complex128)
                 self.hk_vk_agc_nfft[-(self.n_sub_carr // 2):] = hk_vk_agc_avg_vec[0:self.n_sub_carr // 2]
@@ -157,3 +156,41 @@ class Link():
                 n_bit_err = utilities.count_mismatched_bits(tx_bits, rx_bits_per_iter_lst[idx])
                 n_err_shared_arr[act_ber_idx[idx]] += n_bit_err
                 n_bits_sent_shared_arr[act_ber_idx[idx]] += self.n_bits_per_ofdm_sym
+
+    def update_distortion(self, ibo_val_db):
+        self.my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=self.my_mod.avg_sample_power)
+        self.my_cnc_rx.update_distortion(ibo_db=ibo_val_db)
+        self.ibo_val_db = self.my_array.array_elements[0].impairment.ibo_db
+
+        chan_mat_at_point = self.my_miso_chan.get_channel_mat_fd()
+
+        hk_mat = np.concatenate((chan_mat_at_point[:, -self.n_sub_carr // 2:],
+                                 chan_mat_at_point[:, 1:(self.n_sub_carr // 2) + 1]), axis=1)
+        vk_mat = self.my_array.get_precoding_mat()
+        vk_pow_vec = np.sum(np.power(np.abs(vk_mat), 2), axis=1)
+        hk_vk_agc = np.multiply(hk_mat, vk_mat)
+        self.hk_vk_agc_avg_vec = np.sum(hk_vk_agc, axis=0)
+        self.hk_vk_noise_scaler = np.mean(np.power(np.abs(self.hk_vk_agc_avg_vec), 2))
+
+        self.hk_vk_agc_nfft = np.ones(self.my_mod.n_fft, dtype=np.complex128)
+        self.hk_vk_agc_nfft[-(self.n_sub_carr // 2):] = self.hk_vk_agc_avg_vec[0:self.n_sub_carr // 2]
+        self.hk_vk_agc_nfft[1:(self.n_sub_carr // 2) + 1] = self.hk_vk_agc_avg_vec[self.n_sub_carr // 2:]
+
+        ibo_vec = 10 * np.log10(10 ** (self.ibo_val_db / 10) * self.n_sub_carr / (vk_pow_vec * self.n_ant_val))
+        ak_vect = self.my_mod.calc_alpha(ibo_db=ibo_vec)
+        ak_vect = np.expand_dims(ak_vect, axis=1)
+
+        ak_hk_vk_agc = ak_vect * hk_vk_agc
+        ak_hk_vk_agc_avg_vec = np.sum(ak_hk_vk_agc, axis=0)
+        self.ak_hk_vk_noise_scaler = np.mean(np.power(np.abs(ak_hk_vk_agc_avg_vec), 2))
+
+        self.ak_hk_vk_agc_nfft = np.ones(self.my_mod.n_fft, dtype=np.complex128)
+        self.ak_hk_vk_agc_nfft[-(self.n_sub_carr // 2):] = ak_hk_vk_agc_avg_vec[0:self.n_sub_carr // 2]
+        self.ak_hk_vk_agc_nfft[1:(self.n_sub_carr // 2) + 1] = ak_hk_vk_agc_avg_vec[self.n_sub_carr // 2:]
+
+    def set_snr(self, snr_db_val):
+        self.my_noise.snr_db = snr_db_val
+
+    def set_precoding(self):
+        chan_mat_at_point = self.my_miso_chan.get_channel_mat_fd()
+        self.my_array.set_precoding_matrix(channel_mat_fd=chan_mat_at_point, mr_precoding=True)
