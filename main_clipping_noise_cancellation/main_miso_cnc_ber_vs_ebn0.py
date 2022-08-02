@@ -28,7 +28,7 @@ set_latex_plot_style()
 
 # %%
 # parameters
-n_ant_arr = [64]
+n_ant_arr = [16]
 ibo_arr = [0]
 ebn0_step = [1]
 cnc_n_iter_lst = [1, 2, 3, 4, 5, 6, 7, 8]
@@ -252,8 +252,10 @@ for n_ant_val in n_ant_arr:
                     '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
                 # timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
                 # filename_str += "_" + timestamp
-                plt.savefig("../figs/%s.png" % filename_str, dpi=600, bbox_inches='tight')
-                plt.show()
+                plt.savefig("figs/%s.png" % filename_str, dpi=600, bbox_inches='tight')
+                # plt.show()
+                plt.cla()
+                plt.close()
 
                 # %%
                 data_lst = []

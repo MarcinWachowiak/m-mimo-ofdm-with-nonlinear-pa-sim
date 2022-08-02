@@ -35,7 +35,7 @@ if __name__ == '__main__':
     # %%
     # parameters
 
-    n_ant_arr = [64]
+    n_ant_arr = [16]
     ibo_arr = [0]
     ebn0_step = [1]
     cnc_n_iter_lst = [1, 2, 3, 4, 5, 6, 7, 8]
@@ -113,7 +113,7 @@ if __name__ == '__main__':
                         n_bits_sent_shared_arr = mp.Array(ctypes.c_double, len(cnc_n_iter_lst) + 1, lock=True)
 
                         # differentiate rng seeds between processes
-                        proc_seed_lst = seed_rng.integers(0, high=sys.maxsize, size=(3, num_cores))
+                        proc_seed_lst = seed_rng.integers(0, high=sys.maxsize, size=(num_cores, 3))
                         processes = []
                         for idx in range(num_cores):
                             p = mp.Process(target=mp_link_obj.simulate, args=(cnc_n_iter_lst, proc_seed_lst[idx],
@@ -153,13 +153,15 @@ if __name__ == '__main__':
                     ax1.legend()
                     plt.tight_layout()
 
-                    filename_str = "ber_vs_ebn0_cnc_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s" % (
+                    filename_str = "mp_ber_vs_ebn0_cnc_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s" % (
                         my_miso_chan, n_ant_val, ibo_val_db, min(ebn0_arr), max(ebn0_arr), ebn0_arr[1] - ebn0_arr[0],
                         '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
                     # timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
                     # filename_str += "_" + timestamp
-                    plt.savefig("../figs/%s.png" % filename_str, dpi=600, bbox_inches='tight')
-                    plt.show()
+                    plt.savefig("figs/%s.png" % filename_str, dpi=600, bbox_inches='tight')
+                    # plt.show()
+                    plt.cla()
+                    plt.close()
 
                     # %%
                     data_lst = []
