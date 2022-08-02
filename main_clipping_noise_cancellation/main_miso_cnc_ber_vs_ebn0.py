@@ -75,7 +75,7 @@ for n_ant_val in n_ant_arr:
     my_miso_rayleigh_chan = channel.RayleighMisoFd(tx_transceivers=my_array.array_elements,
                                                    rx_transceiver=my_standard_rx,
                                                    seed=1234)
-    chan_lst = [my_miso_los_chan, my_miso_two_path_chan, my_miso_rayleigh_chan]
+    chan_lst = [my_miso_los_chan]
 
     for my_miso_chan in chan_lst:
         loc_rng = np.random.default_rng(2137)

@@ -241,8 +241,7 @@ for n_ant_val in n_ant_arr:
                                 tx_ofdm_symbol_fd = my_array.transmit(tx_bits, out_domain_fd=True, return_both=False)
                                 rx_ofdm_symbol_fd = my_miso_chan.propagate(in_sig_mat=tx_ofdm_symbol_fd)
                                 rx_ofdm_symbol_fd = my_noise.process(rx_ofdm_symbol_fd,
-                                                                     avg_sample_pow=my_mod.avg_symbol_power * ak_hk_vk_noise_scaler *
-                                                                                    abs_alpha_per_ibo[ibo_idx] ** 2,
+                                                                     avg_sample_pow=my_mod.avg_symbol_power * ak_hk_vk_noise_scaler,
                                                                      disp_data=False)
                                 rx_ofdm_symbol_fd = np.divide(rx_ofdm_symbol_fd, ak_hk_vk_agc_nfft)
 

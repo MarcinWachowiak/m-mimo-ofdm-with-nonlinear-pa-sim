@@ -29,10 +29,10 @@ from utilities import count_mismatched_bits, ebn0_to_snr
 set_latex_plot_style()
 # %%
 # %%
-n_ant_arr = [64]
+n_ant_arr = [1]
 target_ber_arr = [1e-2]
-ebn0_step_arr = [0.5]
-ibo_step_arr = [0.5]
+ebn0_step_arr = [1]
+ibo_step_arr = [1]
 cnc_n_iter_lst = [1, 2, 3, 4, 5, 6, 7, 8]
 cnc_n_iter_lst = np.insert(cnc_n_iter_lst, 0, 0)
 
@@ -40,7 +40,7 @@ cnc_n_iter_lst = np.insert(cnc_n_iter_lst, 0, 0)
 # print("IBO values:", ibo_arr)
 # print("CNC N iterations:", cnc_n_iter_lst)
 
-#modulation
+# modulation
 constel_size = 64
 n_fft = 4096
 n_sub_carr = 2048
@@ -48,7 +48,7 @@ cp_len = 128
 
 # BER accuracy settings
 bits_sent_max = int(1e6)
-n_err_min = int(1e4)
+n_err_min = int(1e5)
 
 my_mod = modulation.OfdmQamModem(constel_size=constel_size, n_fft=n_fft, n_sub_carr=n_sub_carr, cp_len=cp_len)
 my_distortion = distortion.SoftLimiter(ibo_db=5, avg_samp_pow=my_mod.avg_sample_power)
