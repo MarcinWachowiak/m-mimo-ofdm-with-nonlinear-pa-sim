@@ -204,10 +204,9 @@ ax1.set_ylabel("SDR [dB]")
 ax1.grid()
 # ax1.legend(title="Channel:")
 plt.tight_layout()
-plt.savefig(
-    "../figs/sdr_vs_ibo_per_channel_ibo%dto%d_%dnant.png" % (
-        min(ibo_arr), max(ibo_arr), np.max(n_ant_arr)),
-    dpi=600, bbox_inches='tight')
+plt.savefig("figs/sdr_vs_ibo_per_channel_ibo%dto%d_%dnant.png" % (
+    min(ibo_arr), max(ibo_arr), np.max(n_ant_arr)),
+            dpi=600, bbox_inches='tight')
 
 plt.show()
 
