@@ -7,19 +7,11 @@ from matplotlib.ticker import MaxNLocator
 
 sys.path.append(os.getcwd())
 
-import copy
-import time
-from datetime import datetime
-
 import matplotlib.pyplot as plt
 import numpy as np
 
 import utilities
-import antenna_arrray
-import channel
-import distortion
 import modulation
-import transceiver
 from plot_settings import set_latex_plot_style
 
 
@@ -51,7 +43,7 @@ ax1.set_ylim([0.752, 0.788])
 ax1.set_xlabel(r"$\mathrm{IBO_k}$ [dB]")
 ax1.set_ylabel(r"$\mathrm{\alpha_k}$ [-]")
 ax1.grid()
-ax1.legend(title="Channel:", loc="lower right")
+ax1.legend(title="Channel:", loc="lower right", framealpha=0.9)
 
 plt.tight_layout()
 plt.savefig("../figs/final_figs/alpha_vs_ibo_per_ant64_ibo0.0.pdf", dpi=600, bbox_inches='tight')

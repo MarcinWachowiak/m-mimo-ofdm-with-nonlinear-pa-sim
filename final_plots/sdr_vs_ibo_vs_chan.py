@@ -10,9 +10,9 @@ import matplotlib.pyplot as plt
 import utilities
 from plot_settings import set_latex_plot_style
 
-set_latex_plot_style(use_tex=True, fig_width_in=3.5)
+set_latex_plot_style(use_tex=True, fig_width_in=3.5, fig_height_in=2.4)
 
-data_lst = utilities.read_from_csv(filename="sdr_vs_ibo_per_channel_ibo0to8_32nant")
+data_lst = utilities.read_from_csv(filename="sdr_vs_ibo_per_channel_ibo0to7_32nant")
 ibo_arr = data_lst[0]
 sdr_at_ibo_per_n_ant = data_lst[1:]
 
@@ -46,7 +46,7 @@ n_ant1 = mpatches.Patch(color='#377eb8', label='1')
 n_ant4 = mpatches.Patch(color='#ff7f00', label='4')
 n_ant32 = mpatches.Patch(color='#4daf4a', label='32')
 
-leg1 = plt.legend(handles=[n_ant1, n_ant4, n_ant32], title="K antennas:", loc="lower right")
+leg1 = plt.legend(handles=[n_ant1, n_ant4, n_ant32], title="K antennas:", loc="lower right", framealpha=0.9)
 plt.gca().add_artist(leg1)
 
 import matplotlib.lines as mlines
@@ -54,8 +54,8 @@ import matplotlib.lines as mlines
 los = mlines.Line2D([0], [0], linestyle='none', marker="o", fillstyle="none", color='k', label='LOS')
 twopath = mlines.Line2D([0], [0], linestyle='none', marker="s", fillstyle="none", color='k', label='Two-path')
 rayleigh = mlines.Line2D([0], [0], linestyle='none', marker="*", fillstyle="none", color='k', label='Rayleigh')
-leg2 = plt.legend(handles=[los, twopath, rayleigh], title="Channels:", loc="upper left")
-plt.gca().add_artist(leg2)
+ax1.legend(handles=[los, twopath, rayleigh], title="Channels:", loc="upper left", framealpha=0.9)
+# plt.gca().add_artist(leg2)
 #
 # p10, = ax1.plot([0], marker='None',
 #            linestyle='None', label='dummy-tophead')
@@ -81,7 +81,7 @@ ax1.set_xlabel("IBO [dB]")
 ax1.set_ylabel("SDR [dB]")
 ax1.grid()
 plt.tight_layout()
-plt.savefig("../figs/final_figs/sdr_vs_ibo_per_channel_ibo0to8_1_4_32nant.pdf", dpi=600, bbox_inches='tight')
+plt.savefig("../figs/final_figs/sdr_vs_ibo_per_channel_ibo0to7_1_4_32nant.pdf", dpi=600, bbox_inches='tight')
 plt.show()
 
 print("Finished execution!")

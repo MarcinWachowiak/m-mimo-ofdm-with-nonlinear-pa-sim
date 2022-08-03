@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib import rcParams, cycler, rc
 
 
-def set_latex_plot_style(use_tex=False, fig_width_in=7.0):
+def set_latex_plot_style(use_tex=False, fig_width_in=7.0, fig_height_in=None):
     CB_color_cycle = ['#377eb8', '#ff7f00', '#4daf4a',
                       '#f781bf', '#a65628', '#984ea3',
                       '#999999', '#e41a1c', '#dede00']
@@ -20,8 +20,10 @@ def set_latex_plot_style(use_tex=False, fig_width_in=7.0):
     # inches_per_pt = 1.0 / 72.27  # Convert pt to inches
     golden_mean = (sqrt(5) - 1.0) / 2.0  # Aesthetic ratio
     # fig_width_in = 3.5  # width in inches
-    fig_height = fig_width_in * golden_mean  # height in inches
-    fig_size = [fig_width_in, fig_height]
+    if fig_height_in is None:
+        fig_height_in = fig_width_in * golden_mean  # height in inches
+
+    fig_size = [fig_width_in, fig_height_in]
 
     params = {'backend': 'Qt5Agg',
               'axes.labelsize': 8,
