@@ -24,7 +24,6 @@ for idx, filename_str in enumerate(filename_str_lst):
 
     start_time = time.time()
     print("### Start time: %s ###" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-    # SDR VS IBO VS N_ANT VS CHANNEL
     try:
         os.system("python3 %s" % filename_str)
     except:
