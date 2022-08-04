@@ -96,32 +96,6 @@ class McncReceiver():
 
         self.agc_corr_vec = ak_hk_vk_agc_nfft
 
-    def update_distortion(self, ibo_db):
-        self.antenna_array.update_distortion(ibo_db=ibo_db,
-                                             avg_sample_pow=self.antenna_array.base_transceiver.modem.avg_sample_power)
-        chan_mat_at_point = self.channel.get_channel_mat_fd()
-        hk_mat = np.concatenate((chan_mat_at_point[:, -self.antenna_array.array_elements[0].modem.n_sub_carr // 2:],
-                                 chan_mat_at_point[:,
-                                 1:(self.antenna_array.array_elements[0].modem.n_sub_carr // 2) + 1]), axis=1)
-        vk_mat = self.antenna_array.get_precoding_mat()
-        vk_pow_vec = np.sum(np.power(np.abs(vk_mat), 2), axis=1)
-        hk_vk_agc = np.multiply(hk_mat, vk_mat)
-
-        ibo_vec = 10 * np.log10(
-            10 ** (self.antenna_array.array_elements[0].impairment.ibo_db / 10) * self.n_sub_carr / (
-                        vk_pow_vec * len(self.antenna_array.array_elements)))
-        ak_vect = self.antenna_array.array_elements[0].modem.calc_alpha(ibo_db=ibo_vec)
-        ak_vect = np.expand_dims(ak_vect, axis=1)
-
-        ak_hk_vk_agc = ak_vect * hk_vk_agc
-        ak_hk_vk_agc_avg_vec = np.sum(ak_hk_vk_agc, axis=0)
-
-        ak_hk_vk_agc_nfft = np.ones(self.antenna_array.array_elements[0].modem.n_fft, dtype=np.complex128)
-        ak_hk_vk_agc_nfft[-(self.n_sub_carr // 2):] = ak_hk_vk_agc_avg_vec[0:self.n_sub_carr // 2]
-        ak_hk_vk_agc_nfft[1:(self.n_sub_carr // 2) + 1] = ak_hk_vk_agc_avg_vec[self.n_sub_carr // 2:]
-
-        self.agc_corr_vec = ak_hk_vk_agc_nfft
-
     def receive(self, n_iters_lst, in_sig_fd, alpha_estimation=None):
         # strip input fd signal of the OOB - include only the symbol data
         rx_ofdm_nsc_fd = np.concatenate((in_sig_fd[-self.n_sub_carr // 2:], in_sig_fd[1:(self.n_sub_carr // 2) + 1]))
@@ -159,10 +133,10 @@ class McncReceiver():
 
         return bits_per_iter_lst
 
-    def update_precoding(self):
-        channel_mat_at_point = self.channel.get_channel_mat_fd()
-        self.antenna_array.set_precoding_matrix(channel_mat_fd=channel_mat_at_point, mr_precoding=True)
-        self.n_sub_carr = self.antenna_array.array_elements[0].modem.n_sub_carr
+    def update_agc(self):
+        # channel_mat_at_point = self.channel.get_channel_mat_fd()
+        # self.antenna_array.set_precoding_matrix(channel_mat_fd=channel_mat_at_point, mr_precoding=True)
+        # self.n_sub_carr = self.antenna_array.array_elements[0].modem.n_sub_carr
 
         chan_mat_at_point = self.channel.get_channel_mat_fd()
         hk_mat = np.concatenate((chan_mat_at_point[:, -self.antenna_array.array_elements[0].modem.n_sub_carr // 2:],

@@ -15,7 +15,6 @@ from scipy import interpolate
 
 import antenna_arrray
 import channel
-import corrector
 import distortion
 import modulation
 import noise
@@ -40,7 +39,7 @@ if __name__ == '__main__':
     cnc_n_iter_lst = [1, 2, 3, 4, 5, 6, 7, 8]
     cnc_n_iter_lst = np.insert(cnc_n_iter_lst, 0, 0)
     incl_clean_run = False
-    reroll_sel_chan = False
+    reroll_chan = True
 
     # modulation
     constel_size = 64
@@ -52,16 +51,20 @@ if __name__ == '__main__':
     bits_sent_max = int(1e6)
     n_err_min = int(1e5)
 
+    rx_loc_x, rx_loc_y = 212.0, 212.0
+    rx_loc_var = 10.0
+
     my_mod = modulation.OfdmQamModem(constel_size=constel_size, n_fft=n_fft, n_sub_carr=n_sub_carr, cp_len=cp_len)
     my_distortion = distortion.SoftLimiter(ibo_db=5, avg_samp_pow=my_mod.avg_sample_power)
     my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
                                     center_freq=int(3.5e9),
                                     carrier_spacing=int(15e3))
     my_standard_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
-                                             cord_x=212,
-                                             cord_y=212, cord_z=1.5,
+                                             cord_x=rx_loc_x,
+                                             cord_y=rx_loc_y, cord_z=1.5,
                                              center_freq=int(3.5e9), carrier_spacing=int(15e3))
 
+    seed_rng = np.random.default_rng(2137)
     for n_ant_val in n_ant_arr:
         my_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(3.5e9),
                                               wav_len_spacing=0.5,
@@ -81,11 +84,11 @@ if __name__ == '__main__':
         my_noise = noise.Awgn(snr_db=10, seed=1234)
 
         for my_miso_chan in chan_lst:
-            my_mcnc_rx = corrector.McncReceiver(copy.deepcopy(my_array), copy.deepcopy(my_miso_chan))
+
             mp_link_obj = mp_model.Link(mod_obj=my_mod, array_obj=my_array, std_rx_obj=my_standard_rx,
-                                        cnc_rx_obj=my_mcnc_rx, chan_obj=my_miso_chan, noise_obj=my_noise,
-                                        rx_loc_var=0, n_err_min=n_err_min,
-                                        bits_sent_max=bits_sent_max)
+                                        chan_obj=my_miso_chan, noise_obj=my_noise,
+                                        rx_loc_var=rx_loc_var, n_err_min=n_err_min,
+                                        bits_sent_max=bits_sent_max, is_mcnc=True)
 
             for target_ber_val in target_ber_arr:
 
@@ -113,14 +116,12 @@ if __name__ == '__main__':
                                 n_bits_sent_shared_arr = mp.Array(ctypes.c_double, len(cnc_n_iter_lst), lock=True)
                                 bers_per_ite = np.zeros(len(cnc_n_iter_lst))
 
-                                # differentiate rng seeds between processes
-                                seed_rng = np.random.default_rng(2137)
                                 proc_seed_lst = seed_rng.integers(0, high=sys.maxsize, size=(num_cores, 3))
                                 processes = []
                                 for idx in range(num_cores):
                                     p = mp.Process(target=mp_link_obj.simulate,
                                                    args=(
-                                                       incl_clean_run, reroll_sel_chan, cnc_n_iter_lst,
+                                                       incl_clean_run, reroll_chan, cnc_n_iter_lst,
                                                        proc_seed_lst[idx],
                                                        n_err_shared_arr, n_bits_sent_shared_arr))
                                     processes.append(p)

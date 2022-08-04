@@ -84,8 +84,8 @@ for n_ant_val in n_ant_arr:
 
     for my_miso_chan in chan_lst:
         loc_rng = np.random.default_rng(2137)
-        # channel object is shared in MCNC not copied
-        my_mcnc_rx = corrector.McncReceiver(copy.deepcopy(my_array), my_miso_chan)
+        # channel and array objects are shared not copied
+        my_mcnc_rx = corrector.McncReceiver(my_array, my_miso_chan)
 
         for ibo_step_val in ibo_step_arr:
             ibo_arr = np.arange(0, 9.0, ibo_step_val)
@@ -105,7 +105,6 @@ for n_ant_val in n_ant_arr:
                 # BER vs IBO eval
                 for ibo_idx, ibo_val_db in enumerate(ibo_arr):
                     my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
-                    my_mcnc_rx.update_distortion(ibo_db=ibo_val_db)
 
                     bers = np.zeros([len(cnc_n_iter_lst)])
                     n_err = np.zeros([len(cnc_n_iter_lst)])
@@ -134,7 +133,7 @@ for n_ant_val in n_ant_arr:
 
                         chan_mat_at_point = my_miso_chan.get_channel_mat_fd()
                         my_array.set_precoding_matrix(channel_mat_fd=chan_mat_at_point, mr_precoding=True)
-                        my_mcnc_rx.update_precoding()
+                        my_mcnc_rx.update_agc()
 
                         hk_mat = np.concatenate((chan_mat_at_point[:, -my_mod.n_sub_carr // 2:],
                                                  chan_mat_at_point[:, 1:(my_mod.n_sub_carr // 2) + 1]), axis=1)

@@ -79,9 +79,8 @@ for n_ant_val in n_ant_arr:
     for my_miso_chan in chan_lst:
         chan_mat_at_point = my_miso_chan.get_channel_mat_fd()
         my_array.set_precoding_matrix(channel_mat_fd=chan_mat_at_point, mr_precoding=True)
-
-        my_mcnc_rx = corrector.McncReceiver(copy.deepcopy(my_array), copy.deepcopy(my_miso_chan))
-        cnc_n_upsamp = int(my_mod.n_fft / my_mod.n_sub_carr)
+        # channel and array objects are shared not copied
+        my_mcnc_rx = corrector.McncReceiver(my_array, my_miso_chan)
 
         hk_mat = np.concatenate((chan_mat_at_point[:, -my_mod.n_sub_carr // 2:],
                                  chan_mat_at_point[:, 1:(my_mod.n_sub_carr // 2) + 1]), axis=1)
@@ -117,6 +116,7 @@ for n_ant_val in n_ant_arr:
                             start_time = time.time()
                             print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
                             my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
+                            my_mcnc_rx.update_agc()
                             # correct avg sample power in nonlinearity after precoding
 
                             # estimate lambda correcting coefficient
@@ -158,7 +158,7 @@ for n_ant_val in n_ant_arr:
                     # BER vs IBO eval
                     for ibo_idx, ibo_val_db in enumerate(ibo_arr):
                         my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
-                        my_mcnc_rx.update_distortion(ibo_db=ibo_val_db)
+                        my_mcnc_rx.update_agc()
 
                         ibo_vec = 10 * np.log10(10 ** (ibo_val_db / 10) * my_mod.n_sub_carr / (vk_pow_vec * n_ant_val))
                         ak_vect = my_mod.calc_alpha(ibo_db=ibo_vec)

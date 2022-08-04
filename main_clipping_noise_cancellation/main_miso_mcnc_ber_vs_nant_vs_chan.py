@@ -81,18 +81,17 @@ for n_ant_val in n_ant_arr:
     for my_miso_chan in chan_lst:
         start_time = time.time()
         print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-
-        my_mcnc_rx = corrector.McncReceiver(copy.deepcopy(my_array), copy.deepcopy(my_miso_chan))
+        # channel and array objects are shared not copied
+        my_mcnc_rx = corrector.McncReceiver(my_array, my_miso_chan)
 
         chan_mat_at_point = my_miso_chan.get_channel_mat_fd()
         my_array.set_precoding_matrix(channel_mat_fd=chan_mat_at_point, mr_precoding=True)
+        my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
+        my_mcnc_rx.update_agc()
 
         snr_val_db = ebn0_to_snr(ebn0_db, my_mod.n_sub_carr, my_mod.n_sub_carr, my_mod.constel_size)
         my_noise = noise.Awgn(snr_db=20, noise_p_dbm=-90, seed=1234)
         my_noise.snr_db = snr_val_db
-
-        my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
-        my_mcnc_rx.update_distortion(ibo_db=ibo_val_db)
 
         hk_mat = np.concatenate((chan_mat_at_point[:, -my_mod.n_sub_carr // 2:],
                                  chan_mat_at_point[:, 1:(my_mod.n_sub_carr // 2) + 1]), axis=1)

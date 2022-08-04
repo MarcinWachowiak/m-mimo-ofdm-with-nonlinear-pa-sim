@@ -28,9 +28,9 @@ set_latex_plot_style()
 
 # %%
 # parameters
-n_ant_arr = [64]
+n_ant_arr = [1]
 ibo_arr = [0]
-ebn0_step = [0.5]
+ebn0_step = [1]
 cnc_n_iter_lst = [1, 2, 3, 4, 5, 6, 7, 8]
 # include clean run is always True
 # no distortion and standard RX always included
@@ -47,7 +47,7 @@ n_sub_carr = 2048
 cp_len = 128
 
 # accuracy
-bits_sent_max = int(1e7)
+bits_sent_max = int(5e5)
 n_err_min = int(1e5)
 
 rx_loc_x, rx_loc_y = 212.0, 212.0
@@ -79,12 +79,11 @@ for n_ant_val in n_ant_arr:
 
     for my_miso_chan in chan_lst:
         loc_rng = np.random.default_rng(2137)
-        # channel object is shared in MCNC not copied
-        my_mcnc_rx = corrector.McncReceiver(copy.deepcopy(my_array), my_miso_chan)
+        # channel and array objects are shared not copied
+        my_mcnc_rx = corrector.McncReceiver(my_array, my_miso_chan)
 
         for ibo_val_db in ibo_arr:
             my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
-            my_mcnc_rx.update_distortion(ibo_db=ibo_val_db)
 
             for ebn0_step_val in ebn0_step:
                 start_time = time.time()
@@ -188,7 +187,7 @@ for n_ant_val in n_ant_arr:
 
                         chan_mat_at_point = my_miso_chan.get_channel_mat_fd()
                         my_array.set_precoding_matrix(channel_mat_fd=chan_mat_at_point, mr_precoding=True)
-                        my_mcnc_rx.update_precoding()
+                        my_mcnc_rx.update_agc()
 
                         hk_mat = np.concatenate((chan_mat_at_point[:, -my_mod.n_sub_carr // 2:],
                                                  chan_mat_at_point[:, 1:(my_mod.n_sub_carr // 2) + 1]), axis=1)

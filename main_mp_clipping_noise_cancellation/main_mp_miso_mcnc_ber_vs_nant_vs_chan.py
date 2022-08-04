@@ -14,7 +14,6 @@ import numpy as np
 
 import antenna_arrray
 import channel
-import corrector
 import distortion
 import modulation
 import noise
@@ -39,7 +38,7 @@ if __name__ == '__main__':
     # standard RX
     cnc_n_iter_lst = np.insert(cnc_n_iter_lst, 0, 0)
     incl_clean_run = False
-    reroll_sel_chan = False
+    reroll_chan = True
     # print("Eb/n0 value:", ebn0_db)
     # print("CNC N iterations:", cnc_n_iter_lst)
     # print("IBO values:", ibo_arr)
@@ -54,6 +53,9 @@ if __name__ == '__main__':
     bits_sent_max = int(1e7)
     n_err_min = int(1e6)
 
+    rx_loc_x, rx_loc_y = 212.0, 212.0
+    rx_loc_var = 10.0
+
     # remember to copy objects not to avoid shared properties modifications!
     # check modifications before copy and what you copy!
     my_mod = modulation.OfdmQamModem(constel_size=constel_size, n_fft=n_fft, n_sub_carr=n_sub_carr, cp_len=cp_len)
@@ -63,11 +65,12 @@ if __name__ == '__main__':
                                     center_freq=int(3.5e9),
                                     carrier_spacing=int(15e3))
     my_standard_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
-                                             cord_x=212,
-                                             cord_y=212, cord_z=1.5,
+                                             cord_x=rx_loc_x,
+                                             cord_y=rx_loc_y, cord_z=1.5,
                                              center_freq=int(3.5e9), carrier_spacing=int(15e3))
 
     bers_per_nant = []
+    seed_rng = np.random.default_rng(2137)
     for n_ant_val in n_ant_arr:
         my_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(3.5e9),
                                               wav_len_spacing=0.5,
@@ -85,38 +88,31 @@ if __name__ == '__main__':
                                                        rx_transceiver=my_standard_rx,
                                                        seed=1234)
         chan_lst = [my_miso_los_chan, my_miso_two_path_chan, my_miso_rayleigh_chan]
+
+        snr_db_val = ebn0_to_snr(ebn0_db, my_mod.n_sub_carr, my_mod.n_sub_carr, my_mod.constel_size)
         my_noise = noise.Awgn(snr_db=10, seed=1234)
+        my_noise.snr_db = snr_db_val
         bers_per_chan = []
 
         for my_miso_chan in chan_lst:
             start_time = time.time()
             print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
-            my_mcnc_rx = corrector.McncReceiver(copy.deepcopy(my_array), copy.deepcopy(my_miso_chan))
             mp_link_obj = mp_model.Link(mod_obj=my_mod, array_obj=my_array, std_rx_obj=my_standard_rx,
-                                        cnc_rx_obj=my_mcnc_rx, chan_obj=my_miso_chan, noise_obj=my_noise,
-                                        rx_loc_var=0, n_err_min=n_err_min,
-                                        bits_sent_max=bits_sent_max)
-            chan_mat_at_point = my_miso_chan.get_channel_mat_fd()
-            my_array.set_precoding_matrix(channel_mat_fd=chan_mat_at_point, mr_precoding=True)
-
-            snr_val_db = ebn0_to_snr(ebn0_db, my_mod.n_sub_carr, my_mod.n_sub_carr, my_mod.constel_size)
-            my_noise.snr_db = snr_val_db
-
-            snr_db_val = ebn0_to_snr(ebn0_db, my_mod.n_sub_carr, my_mod.n_sub_carr, my_mod.constel_size)
+                                        chan_obj=my_miso_chan, noise_obj=my_noise,
+                                        rx_loc_var=rx_loc_var, n_err_min=n_err_min,
+                                        bits_sent_max=bits_sent_max, is_mcnc=True)
             mp_link_obj.set_snr(snr_db_val=snr_db_val)
 
             n_err_shared_arr = mp.Array(ctypes.c_double, len(cnc_n_iter_lst), lock=True)
             n_bits_sent_shared_arr = mp.Array(ctypes.c_double, len(cnc_n_iter_lst), lock=True)
             bers_per_ite = np.zeros(len(cnc_n_iter_lst))
 
-            # differentiate rng seeds between processes
-            seed_rng = np.random.default_rng(2137)
             proc_seed_lst = seed_rng.integers(0, high=sys.maxsize, size=(num_cores, 3))
             processes = []
             for idx in range(num_cores):
                 p = mp.Process(target=mp_link_obj.simulate,
-                               args=(incl_clean_run, reroll_sel_chan, cnc_n_iter_lst, proc_seed_lst[idx],
+                               args=(incl_clean_run, reroll_chan, cnc_n_iter_lst, proc_seed_lst[idx],
                                      n_err_shared_arr, n_bits_sent_shared_arr))
                 processes.append(p)
                 p.start()
