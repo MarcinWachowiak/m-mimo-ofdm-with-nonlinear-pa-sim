@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import utilities
 from plot_settings import set_latex_plot_style
 
-set_latex_plot_style(use_tex=False, fig_width_in=3.5, fig_height_in=2.8)
+set_latex_plot_style(use_tex=True, fig_width_in=3.5, fig_height_in=3.5)
 
 n_ant_arr = [1, 2, 4, 8, 16, 32, 64, 128]
 
@@ -45,6 +45,10 @@ ax1.set_yscale('log', base=10)
 ax1.set_xticks(n_ant_arr)
 ax1.set_xticklabels(n_ant_arr)
 
+CB_color_cycle = ['#377eb8', '#ff7f00', '#4daf4a',
+                  '#f781bf', '#a65628', '#984ea3',
+                  '#999999', '#e41a1c', '#dede00']
+
 cnc_chan_linestyles = ['o-', 's-', '*-']
 for chan_idx, chan_obj in enumerate(chan_lst):
     for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
@@ -56,24 +60,23 @@ for chan_idx, chan_obj in enumerate(chan_lst):
 
 mcnc_chan_linestyles = ['o--', 's--', '*--']
 for chan_idx, chan_obj in enumerate(chan_lst):
+    color_idx = 0
     for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
         if ite_val in sel_cnc_iter_val:
+            # if not (chan_idx == 2 and ite_val == 0):
             ax1.plot(mcnc_n_ant_arr, mcnc_bers_per_chan_per_nite_per_n_ant[ite_idx + chan_idx * len(cnc_n_iter_lst)],
                      mcnc_chan_linestyles[chan_idx],
-                     fillstyle="none", label=ite_val)
+                     fillstyle="none", label=ite_val, color=CB_color_cycle[color_idx])
+            color_idx += 1
     plot_settings.reset_color_cycle()
 
-ax1.set_title("BER vs N ant, CNC, QAM %d, IBO = %d [dB], Eb/n0 = %d [dB], " % (constel_size, ibo_val_db, ebn0_db))
-ax1.set_xlabel("N antennas [-]")
+# ax1.set_title("BER vs N ant, CNC, QAM %d, IBO = %d [dB], Eb/n0 = %d [dB], " % (constel_size, ibo_val_db, ebn0_db))
+ax1.set_xlabel("K antennas [-]")
 ax1.set_ylabel("BER")
 ax1.grid(which='major', linestyle='-')
 ax1.grid(which='minor', linestyle='--')
 
 import matplotlib.lines as mlines
-
-CB_color_cycle = ['#377eb8', '#ff7f00', '#4daf4a',
-                  '#f781bf', '#a65628', '#984ea3',
-                  '#999999', '#e41a1c', '#dede00']
 
 n_ite_legend = []
 color_idx = 0
@@ -82,7 +85,8 @@ for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
         n_ite_legend.append(mlines.Line2D([0], [0], color=CB_color_cycle[color_idx], label=ite_val))
         color_idx += 1
 
-leg1 = plt.legend(handles=n_ite_legend, title="I iterations:", loc="lower left", ncol=1, framealpha=0.9)
+leg1 = plt.legend(handles=n_ite_legend, title="I iterations:", loc="upper left", ncol=1, framealpha=0.9,
+                  bbox_to_anchor=(0.0, -0.15))
 plt.gca().add_artist(leg1)
 
 import matplotlib.lines as mlines
@@ -90,21 +94,24 @@ import matplotlib.lines as mlines
 los = mlines.Line2D([0], [0], linestyle='none', marker="o", fillstyle="none", color='k', label='LOS')
 twopath = mlines.Line2D([0], [0], linestyle='none', marker="s", fillstyle="none", color='k', label='Two-path')
 rayleigh = mlines.Line2D([0], [0], linestyle='none', marker="*", fillstyle="none", color='k', label='Rayleigh')
-leg2 = plt.legend(handles=[los, twopath, rayleigh], title="Channels:", loc="upper left", framealpha=0.9)
+leg2 = plt.legend(handles=[los, twopath, rayleigh], title="Channels:", loc="upper center", framealpha=0.9,
+                  bbox_to_anchor=(0.5, -0.15))
 plt.gca().add_artist(leg2)
 
 cnc_leg = mlines.Line2D([0], [0], linestyle='-', color='k', label='CNC')
 mcnc_leg = mlines.Line2D([0], [0], linestyle='--', color='k', label='MCNC')
-ax1.legend(handles=[cnc_leg, mcnc_leg], loc="upper center", framealpha=0.9)
+ax1.legend(handles=[cnc_leg, mcnc_leg], loc="upper left", framealpha=0.9, bbox_to_anchor=(0.7, -0.15))
 # plt.gca().add_artist(leg3)
+# ax1.set_xlim([1,128])
+# ax1.set_ylim([1e-4,1e-0])
 
 plt.tight_layout()
-
+# %%
 filename_str = "ber_vs_nant_cnc_nant%s_ebn0_%d_ibo%d_niter%s" % (
     '_'.join([str(val) for val in n_ant_arr]), ebn0_db, ibo_val_db,
     '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
 
-plt.savefig("../figs/final_figs/%s.png" % filename_str, dpi=600, bbox_inches='tight')
+plt.savefig("../figs/final_figs/%s.pdf" % filename_str, dpi=600, bbox_inches='tight')
 plt.show()
 
 print("Finished execution!")

@@ -161,8 +161,8 @@ if __name__ == '__main__':
 
     ax1.set_title(
         "BER vs N ant, MCNC, QAM %d, IBO = %d [dB], Eb/n0 = %d [dB], " % (
-        my_mod.constellation_size, ibo_val_db, ebn0_db))
-    ax1.set_xlabel("N antennas [-]")
+            my_mod.constellation_size, ibo_val_db, ebn0_db))
+    ax1.set_xlabel("K antennas [-]")
     ax1.set_ylabel("BER")
     ax1.grid(which='major', linestyle='-')
     ax1.grid(which='minor', linestyle='--')
