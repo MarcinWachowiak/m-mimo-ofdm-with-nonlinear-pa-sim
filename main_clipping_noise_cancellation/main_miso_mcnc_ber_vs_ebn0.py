@@ -30,7 +30,7 @@ set_latex_plot_style()
 # parameters
 n_ant_arr = [64]
 ibo_arr = [0]
-ebn0_step = [1]
+ebn0_step = [0.5]
 cnc_n_iter_lst = [1, 2, 3, 4, 5, 6, 7, 8]
 # include clean run is always True
 # no distortion and standard RX always included
@@ -40,7 +40,7 @@ cnc_n_iter_lst = np.insert(cnc_n_iter_lst, 0, 0)
 # print("Eb/n0 values: ", ebn0_arr)
 # print("CNC iterations: ", cnc_n_iter_lst)
 
-#modulation
+# modulation
 constel_size = 64
 n_fft = 4096
 n_sub_carr = 2048
@@ -50,13 +50,15 @@ cp_len = 128
 bits_sent_max = int(1e7)
 n_err_min = int(1e5)
 
-my_mod = modulation.OfdmQamModem(constel_size=constel_size, n_fft=n_fft, n_sub_carr=n_sub_carr, cp_len=cp_len)
+rx_loc_x, rx_loc_y = 212.0, 212.0
+rx_loc_var = 10.0
 
+my_mod = modulation.OfdmQamModem(constel_size=constel_size, n_fft=n_fft, n_sub_carr=n_sub_carr, cp_len=cp_len)
 
 my_distortion = distortion.SoftLimiter(0, my_mod.avg_sample_power)
 my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion))
 my_standard_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
-                                         cord_x=212, cord_y=212, cord_z=1.5,
+                                         cord_x=rx_loc_x, cord_y=rx_loc_y, cord_z=1.5,
                                          center_freq=int(3.5e9), carrier_spacing=int(15e3))
 
 for n_ant_val in n_ant_arr:
@@ -74,40 +76,15 @@ for n_ant_val in n_ant_arr:
                                                    rx_transceiver=my_standard_rx,
                                                    seed=1234)
     chan_lst = [my_miso_los_chan, my_miso_two_path_chan, my_miso_rayleigh_chan]
-    
+
     for my_miso_chan in chan_lst:
-        my_mcnc_rx = corrector.McncReceiver(copy.deepcopy(my_array), copy.deepcopy(my_miso_chan))
-
-        chan_mat_at_point = my_miso_chan.get_channel_mat_fd()
-        my_array.set_precoding_matrix(channel_mat_fd=chan_mat_at_point, mr_precoding=True)
-
-        hk_mat = np.concatenate((chan_mat_at_point[:, -my_mod.n_sub_carr // 2:],
-                                 chan_mat_at_point[:, 1:(my_mod.n_sub_carr // 2) + 1]), axis=1)
-        vk_mat = my_array.get_precoding_mat()
-        vk_pow_vec = np.sum(np.power(np.abs(vk_mat), 2), axis=1)
-        hk_vk_agc = np.multiply(hk_mat, vk_mat)
-        hk_vk_agc_avg_vec = np.sum(hk_vk_agc, axis=0)
-        hk_vk_noise_scaler = np.mean(np.power(hk_vk_agc_avg_vec, 2))
-
-        hk_vk_agc_nfft = np.ones(my_mod.n_fft, dtype=np.complex128)
-        hk_vk_agc_nfft[-(n_sub_carr // 2):] = hk_vk_agc_avg_vec[0:n_sub_carr // 2]
-        hk_vk_agc_nfft[1:(n_sub_carr // 2) + 1] = hk_vk_agc_avg_vec[n_sub_carr // 2:]
+        loc_rng = np.random.default_rng(2137)
+        # channel object is shared in MCNC not copied
+        my_mcnc_rx = corrector.McncReceiver(copy.deepcopy(my_array), my_miso_chan)
 
         for ibo_val_db in ibo_arr:
             my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
             my_mcnc_rx.update_distortion(ibo_db=ibo_val_db)
-
-            ibo_vec = 10 * np.log10(10 ** (ibo_val_db / 10) * my_mod.n_sub_carr / (vk_pow_vec * n_ant_val))
-            ak_vect = my_mod.calc_alpha(ibo_db=ibo_vec)
-            ak_vect = np.expand_dims(ak_vect, axis=1)
-
-            ak_hk_vk_agc = ak_vect * hk_vk_agc
-            ak_hk_vk_agc_avg_vec = np.sum(ak_hk_vk_agc, axis=0)
-            ak_hk_vk_noise_scaler = np.mean(np.power(np.abs(ak_hk_vk_agc_avg_vec), 2))
-
-            ak_hk_vk_agc_nfft = np.ones(my_mod.n_fft, dtype=np.complex128)
-            ak_hk_vk_agc_nfft[-(n_sub_carr // 2):] = ak_hk_vk_agc_avg_vec[0:n_sub_carr // 2]
-            ak_hk_vk_agc_nfft[1:(n_sub_carr // 2) + 1] = ak_hk_vk_agc_avg_vec[n_sub_carr // 2:]
 
             for ebn0_step_val in ebn0_step:
                 start_time = time.time()
@@ -125,7 +102,49 @@ for n_ant_val in n_ant_arr:
                     n_err = np.zeros([len(cnc_n_iter_lst) + 1])
                     bits_sent = np.zeros([len(cnc_n_iter_lst) + 1])
                     # clean RX run
+                    snap_cnt = 0
                     while True:
+                        if isinstance(my_miso_chan, channel.MisoLosFd) or isinstance(my_miso_chan,
+                                                                                     channel.MisoTwoPathFd):
+                            # reroll location
+                            my_standard_rx.set_position(
+                                cord_x=rx_loc_x + loc_rng.uniform(low=-rx_loc_var / 2.0, high=rx_loc_var / 2.0),
+                                cord_y=rx_loc_y + loc_rng.uniform(low=-rx_loc_var / 2.0, high=rx_loc_var / 2.0),
+                                cord_z=my_standard_rx.cord_z)
+                            my_miso_chan.calc_channel_mat(tx_transceivers=my_array.array_elements,
+                                                          rx_transceiver=my_standard_rx,
+                                                          skip_attenuation=False)
+                        else:
+                            my_miso_rayleigh_chan.reroll_channel_coeffs()
+
+                        chan_mat_at_point = my_miso_chan.get_channel_mat_fd()
+                        my_array.set_precoding_matrix(channel_mat_fd=chan_mat_at_point, mr_precoding=True)
+
+                        hk_mat = np.concatenate((chan_mat_at_point[:, -my_mod.n_sub_carr // 2:],
+                                                 chan_mat_at_point[:, 1:(my_mod.n_sub_carr // 2) + 1]), axis=1)
+                        vk_mat = my_array.get_precoding_mat()
+                        vk_pow_vec = np.sum(np.power(np.abs(vk_mat), 2), axis=1)
+                        hk_vk_agc = np.multiply(hk_mat, vk_mat)
+                        hk_vk_agc_avg_vec = np.sum(hk_vk_agc, axis=0)
+                        hk_vk_noise_scaler = np.mean(np.power(np.abs(hk_vk_agc_avg_vec), 2))
+
+                        hk_vk_agc_nfft = np.ones(my_mod.n_fft, dtype=np.complex128)
+                        hk_vk_agc_nfft[-(n_sub_carr // 2):] = hk_vk_agc_avg_vec[0:n_sub_carr // 2]
+                        hk_vk_agc_nfft[1:(n_sub_carr // 2) + 1] = hk_vk_agc_avg_vec[n_sub_carr // 2:]
+
+                        ibo_vec = 10 * np.log10(
+                            10 ** (ibo_val_db / 10) * my_mod.n_sub_carr / (vk_pow_vec * n_ant_val))
+                        ak_vect = my_mod.calc_alpha(ibo_db=ibo_vec)
+                        ak_vect = np.expand_dims(ak_vect, axis=1)
+
+                        ak_hk_vk_agc = ak_vect * hk_vk_agc
+                        ak_hk_vk_agc_avg_vec = np.sum(ak_hk_vk_agc, axis=0)
+                        ak_hk_vk_noise_scaler = np.mean(np.power(np.abs(ak_hk_vk_agc_avg_vec), 2))
+
+                        ak_hk_vk_agc_nfft = np.ones(my_mod.n_fft, dtype=np.complex128)
+                        ak_hk_vk_agc_nfft[-(n_sub_carr // 2):] = ak_hk_vk_agc_avg_vec[0:n_sub_carr // 2]
+                        ak_hk_vk_agc_nfft[1:(n_sub_carr // 2) + 1] = ak_hk_vk_agc_avg_vec[n_sub_carr // 2:]
+
                         if np.logical_and((n_err[0] < n_err_min), (bits_sent[0] < bits_sent_max)):
                             tx_bits = bit_rng.choice((0, 1), my_tx.modem.n_bits_per_ofdm_sym)
                             clean_ofdm_symbol = my_array.transmit(tx_bits, out_domain_fd=True, return_both=False,
@@ -145,6 +164,7 @@ for n_ant_val in n_ant_arr:
                             bits_sent[0] += my_mod.n_bits_per_ofdm_sym
                         else:
                             break
+                        snap_cnt += 1
                     # distorted RX run
                     while True:
                         ite_use_flags = np.logical_and((n_err[1:] < n_err_min), (bits_sent[1:] < bits_sent_max))
@@ -152,6 +172,48 @@ for n_ant_val in n_ant_arr:
                             curr_ite_lst = cnc_n_iter_lst[ite_use_flags]
                         else:
                             break
+
+                        if isinstance(my_miso_chan, channel.MisoLosFd) or isinstance(my_miso_chan,
+                                                                                     channel.MisoTwoPathFd):
+                            # reroll location
+                            my_standard_rx.set_position(
+                                cord_x=rx_loc_x + loc_rng.uniform(low=-rx_loc_var / 2.0, high=rx_loc_var / 2.0),
+                                cord_y=rx_loc_y + loc_rng.uniform(low=-rx_loc_var / 2.0, high=rx_loc_var / 2.0),
+                                cord_z=my_standard_rx.cord_z)
+                            my_miso_chan.calc_channel_mat(tx_transceivers=my_array.array_elements,
+                                                          rx_transceiver=my_standard_rx,
+                                                          skip_attenuation=False)
+                        else:
+                            my_miso_rayleigh_chan.reroll_channel_coeffs()
+
+                        chan_mat_at_point = my_miso_chan.get_channel_mat_fd()
+                        my_array.set_precoding_matrix(channel_mat_fd=chan_mat_at_point, mr_precoding=True)
+                        my_mcnc_rx.update_precoding()
+
+                        hk_mat = np.concatenate((chan_mat_at_point[:, -my_mod.n_sub_carr // 2:],
+                                                 chan_mat_at_point[:, 1:(my_mod.n_sub_carr // 2) + 1]), axis=1)
+                        vk_mat = my_array.get_precoding_mat()
+                        vk_pow_vec = np.sum(np.power(np.abs(vk_mat), 2), axis=1)
+                        hk_vk_agc = np.multiply(hk_mat, vk_mat)
+                        hk_vk_agc_avg_vec = np.sum(hk_vk_agc, axis=0)
+                        hk_vk_noise_scaler = np.mean(np.power(np.abs(hk_vk_agc_avg_vec), 2))
+
+                        hk_vk_agc_nfft = np.ones(my_mod.n_fft, dtype=np.complex128)
+                        hk_vk_agc_nfft[-(n_sub_carr // 2):] = hk_vk_agc_avg_vec[0:n_sub_carr // 2]
+                        hk_vk_agc_nfft[1:(n_sub_carr // 2) + 1] = hk_vk_agc_avg_vec[n_sub_carr // 2:]
+
+                        ibo_vec = 10 * np.log10(
+                            10 ** (ibo_val_db / 10) * my_mod.n_sub_carr / (vk_pow_vec * n_ant_val))
+                        ak_vect = my_mod.calc_alpha(ibo_db=ibo_vec)
+                        ak_vect = np.expand_dims(ak_vect, axis=1)
+
+                        ak_hk_vk_agc = ak_vect * hk_vk_agc
+                        ak_hk_vk_agc_avg_vec = np.sum(ak_hk_vk_agc, axis=0)
+                        ak_hk_vk_noise_scaler = np.mean(np.power(np.abs(ak_hk_vk_agc_avg_vec), 2))
+
+                        ak_hk_vk_agc_nfft = np.ones(my_mod.n_fft, dtype=np.complex128)
+                        ak_hk_vk_agc_nfft[-(n_sub_carr // 2):] = ak_hk_vk_agc_avg_vec[0:n_sub_carr // 2]
+                        ak_hk_vk_agc_nfft[1:(n_sub_carr // 2) + 1] = ak_hk_vk_agc_avg_vec[n_sub_carr // 2:]
 
                         tx_bits = bit_rng.choice((0, 1), my_tx.modem.n_bits_per_ofdm_sym)
                         tx_ofdm_symbol = my_array.transmit(tx_bits, out_domain_fd=True, return_both=False,
@@ -171,10 +233,11 @@ for n_ant_val in n_ant_arr:
                             n_bit_err = count_mismatched_bits(tx_bits, rx_bits_per_iter_lst[idx])
                             n_err[act_ber_idx[idx]] += n_bit_err
                             bits_sent[act_ber_idx[idx]] += my_mod.n_bits_per_ofdm_sym
+                        snap_cnt += 1
+                    # print("Eb/N0: %1.1f, chan_rerolls: %d" %(utilities.snr_to_ebn0(snr=snr_db_val, n_fft=n_sub_carr, n_sub_carr=n_sub_carr, constel_size=constel_size), snap_cnt))
 
                     for ite_idx in range(len(bers)):
                         bers[ite_idx] = n_err[ite_idx] / bits_sent[ite_idx]
-
                     ber_per_dist.append(bers)
 
                 print("--- Computation time: %f ---" % (time.time() - start_time))
@@ -204,10 +267,10 @@ for n_ant_val in n_ant_arr:
                     '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
                 # timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
                 # filename_str += "_" + timestamp
-                plt.savefig("figs/vm_worker_results/ber_vs_ebn0/%s.png" % filename_str, dpi=600, bbox_inches='tight')
-                # plt.show()
-                plt.cla()
-                plt.close()
+                plt.savefig("../figs/%s.png" % filename_str, dpi=600, bbox_inches='tight')
+                plt.show()
+                # plt.cla()
+                # plt.close()
 
                 # %%
                 data_lst = []
