@@ -71,22 +71,29 @@ for chan_idx, chan_obj in enumerate(chan_lst):
     plot_settings.reset_color_cycle()
 
 # ax1.set_title("BER vs N ant, CNC, QAM %d, IBO = %d [dB], Eb/n0 = %d [dB], " % (constel_size, ibo_val_db, ebn0_db))
+ax1.set_xlim([1, 128])
 ax1.set_xlabel("K antennas [-]")
 ax1.set_ylabel("BER")
 ax1.grid(which='major', linestyle='-')
 ax1.grid(which='minor', linestyle='--')
 
-import matplotlib.lines as mlines
-
 n_ite_legend = []
+# color_idx = 0
+# for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
+#     if ite_val in sel_cnc_iter_val:
+#         n_ite_legend.append(mlines.Line2D([0], [0], color=CB_color_cycle[color_idx], label=ite_val))
+#         color_idx += 1
+
+import matplotlib.patches as mpatches
+
 color_idx = 0
 for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
     if ite_val in sel_cnc_iter_val:
-        n_ite_legend.append(mlines.Line2D([0], [0], color=CB_color_cycle[color_idx], label=ite_val))
+        n_ite_legend.append(mpatches.Patch(color=CB_color_cycle[color_idx], label=ite_val))
         color_idx += 1
 
-leg1 = plt.legend(handles=n_ite_legend, title="I iterations:", loc="upper left", ncol=1, framealpha=0.9,
-                  bbox_to_anchor=(0.0, -0.15))
+leg1 = plt.legend(handles=n_ite_legend, title="I iterations:", loc="upper center", ncol=1, framealpha=0.9,
+                  bbox_to_anchor=(0.5 + 0.02, -0.15))
 plt.gca().add_artist(leg1)
 
 import matplotlib.lines as mlines
@@ -94,20 +101,19 @@ import matplotlib.lines as mlines
 los = mlines.Line2D([0], [0], linestyle='none', marker="o", fillstyle="none", color='k', label='LOS')
 twopath = mlines.Line2D([0], [0], linestyle='none', marker="s", fillstyle="none", color='k', label='Two-path')
 rayleigh = mlines.Line2D([0], [0], linestyle='none', marker="*", fillstyle="none", color='k', label='Rayleigh')
-leg2 = plt.legend(handles=[los, twopath, rayleigh], title="Channels:", loc="upper center", framealpha=0.9,
-                  bbox_to_anchor=(0.5, -0.15))
+leg2 = plt.legend(handles=[los, twopath, rayleigh], title="Channels:", loc="upper left", framealpha=0.9,
+                  bbox_to_anchor=(-0.05 + 0.02, -0.15))
 plt.gca().add_artist(leg2)
 
 cnc_leg = mlines.Line2D([0], [0], linestyle='-', color='k', label='CNC')
 mcnc_leg = mlines.Line2D([0], [0], linestyle='--', color='k', label='MCNC')
-ax1.legend(handles=[cnc_leg, mcnc_leg], loc="upper left", framealpha=0.9, bbox_to_anchor=(0.7, -0.15))
+ax1.legend(handles=[cnc_leg, mcnc_leg], loc="upper left", framealpha=0.9, bbox_to_anchor=(0.68 + 0.01, -0.15))
 # plt.gca().add_artist(leg3)
-# ax1.set_xlim([1,128])
-# ax1.set_ylim([1e-4,1e-0])
+
 
 plt.tight_layout()
 # %%
-filename_str = "ber_vs_nant_cnc_nant%s_ebn0_%d_ibo%d_niter%s" % (
+filename_str = "ber_vs_nant_nant%s_ebn0_%d_ibo%d_niter%s" % (
     '_'.join([str(val) for val in n_ant_arr]), ebn0_db, ibo_val_db,
     '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
 

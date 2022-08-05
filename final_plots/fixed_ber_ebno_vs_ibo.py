@@ -20,7 +20,7 @@ n_ant_val = 64
 constel_size = 64
 
 ebn0_min = 10
-ebn0_max = 20
+ebn0_max = 22
 ebn0_step = 0.5
 
 ibo_min = 0
@@ -79,7 +79,7 @@ ax1.set_ylabel("Eb/n0 [dB]")
 ax1.grid()
 plt.tight_layout()
 
-filename_str = "fixed_ber%1.1e_cnc_%s_nant%d_ebn0_min%d_max%d_step%1.2f_ibo_min%d_max%d_step%1.2f_niter%s" % \
+filename_str = "fixed_ber%1.1e_%s_nant%d_ebn0_min%d_max%d_step%1.2f_ibo_min%d_max%d_step%1.2f_niter%s" % \
                (target_ber_val, my_miso_chan, n_ant_val, ebn0_min, ebn0_max,
                 ebn0_step, min(cnc_ibo_arr), max(cnc_ibo_arr), cnc_ibo_arr[1] - cnc_ibo_arr[0],
                 '_'.join([str(val) for val in sel_cnc_iter_val[1:]]))
