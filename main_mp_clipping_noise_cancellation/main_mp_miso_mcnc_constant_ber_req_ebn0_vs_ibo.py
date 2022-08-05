@@ -99,7 +99,7 @@ if __name__ == '__main__':
                         start_time = time.time()
                         print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
-                        ebn0_db_arr = np.arange(10, 20, ebn0_step_val)
+                        ebn0_db_arr = np.arange(10, 22.1, ebn0_step_val)
                         snr_db_vals = ebn0_to_snr(ebn0_db_arr, my_mod.n_sub_carr, my_mod.n_sub_carr,
                                                   my_mod.constel_size)
                         ber_per_ibo_snr_iter = np.zeros((len(ibo_arr), len(snr_db_vals), len(cnc_n_iter_lst)))
@@ -203,8 +203,9 @@ if __name__ == '__main__':
                         # %%
                         data_lst = []
                         data_lst.append(ibo_arr)
-                        for arr1 in req_ebn0_per_ibo:
-                            data_lst.append(arr1)
+                        for arr1 in ber_per_ibo_snr_iter:
+                            for arr2 in arr1:
+                                data_lst.append(arr2)
                         utilities.save_to_csv(data_lst=data_lst, filename=filename_str)
 
                         read_data = utilities.read_from_csv(filename=filename_str)
