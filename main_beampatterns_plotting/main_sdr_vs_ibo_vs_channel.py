@@ -29,7 +29,7 @@ print("Multi antenna processing init!")
 ibo_arr = np.arange(0, 7.01, 0.25)
 print("IBO values:", ibo_arr)
 
-n_ant_arr = [1, 4, 32]
+n_ant_arr = [1, 4, 32, 64, 128]
 print("N ANT values:", n_ant_arr)
 
 my_mod = modulation.OfdmQamModem(constel_size=64, n_fft=4096, n_sub_carr=2048, cp_len=128)
