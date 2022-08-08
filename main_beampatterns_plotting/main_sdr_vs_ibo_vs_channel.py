@@ -26,11 +26,15 @@ set_latex_plot_style()
 # %%
 print("Multi antenna processing init!")
 
-ibo_arr = np.arange(0, 7.01, 0.25)
+ibo_arr = np.arange(0, 8.01, 0.25)
 print("IBO values:", ibo_arr)
 
 n_ant_arr = [1, 4, 32, 64, 128]
 print("N ANT values:", n_ant_arr)
+
+n_snapshots = 500
+rx_loc_x, rx_loc_y = 212.0, 212.0
+rx_loc_var = 10.0
 
 my_mod = modulation.OfdmQamModem(constel_size=64, n_fft=4096, n_sub_carr=2048, cp_len=128)
 my_distortion = distortion.SoftLimiter(ibo_db=3.0, avg_samp_pow=my_mod.avg_sample_power)
@@ -38,20 +42,17 @@ my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.dee
                                 center_freq=int(3.5e9),
                                 carrier_spacing=int(15e3))
 
-my_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion), cord_x=212,
-                                cord_y=212, cord_z=1.5, center_freq=int(3.5e9),
-                                carrier_spacing=int(15e3))
+my_standard_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
+                                         cord_x=rx_loc_x,
+                                         cord_y=rx_loc_y, cord_z=1.5, center_freq=int(3.5e9),
+                                         carrier_spacing=int(15e3))
 
 my_array = antenna_arrray.LinearArray(n_elements=np.min(n_ant_arr), base_transceiver=my_tx, center_freq=int(3.5e9),
                                       wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
-my_rx.set_position(cord_x=212, cord_y=212, cord_z=1.5)
+my_standard_rx.set_position(cord_x=rx_loc_x, cord_y=rx_loc_y, cord_z=1.5)
 
 # %%
-# psd_nfft = 4096
-# n_samp_per_seg = 1024
-n_snapshots = 500
-
-# %%
+loc_rng = np.random.default_rng(2137)
 bit_rng = np.random.default_rng(4321)
 # plot PSD for chosen point/angle
 sdr_at_ibo_per_n_ant = []
@@ -64,26 +65,26 @@ for n_ant_idx, n_ant_val in enumerate(n_ant_arr):
                                           wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
 
     my_miso_los_chan = channel.MisoLosFd()
-    my_miso_los_chan.calc_channel_mat(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx,
+    my_miso_los_chan.calc_channel_mat(tx_transceivers=my_array.array_elements, rx_transceiver=my_standard_rx,
                                       skip_attenuation=False)
     my_miso_two_path_chan = channel.MisoTwoPathFd()
-    my_miso_two_path_chan.calc_channel_mat(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx,
+    my_miso_two_path_chan.calc_channel_mat(tx_transceivers=my_array.array_elements, rx_transceiver=my_standard_rx,
                                            skip_attenuation=False)
 
-    my_miso_rayleigh_chan = channel.RayleighMisoFd(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx,
+    my_miso_rayleigh_chan = channel.RayleighMisoFd(tx_transceivers=my_array.array_elements,
+                                                   rx_transceiver=my_standard_rx,
                                                    seed=1234)
 
     chan_lst = [my_miso_los_chan, my_miso_two_path_chan, my_miso_rayleigh_chan]
 
-    for chan_idx, chan_obj in enumerate(chan_lst):
-        my_miso_chan = chan_obj
+    for chan_idx, my_miso_chan in enumerate(chan_lst):
         channel_mat_at_point_fd = my_miso_chan.get_channel_mat_fd()
         my_array.set_precoding_matrix(channel_mat_fd=channel_mat_at_point_fd, mr_precoding=True)
 
         sdr_at_ibo = np.zeros(len(ibo_arr))
         for ibo_idx, ibo_val_db in enumerate(ibo_arr):
             my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
-            my_rx.update_distortion(ibo_db=ibo_val_db)
+            my_standard_rx.update_distortion(ibo_db=ibo_val_db)
 
             vk_mat = my_array.get_precoding_mat()
             vk_pow_vec = np.sum(np.power(np.abs(vk_mat), 2), axis=1)
@@ -96,7 +97,22 @@ for n_ant_idx, n_ant_val in enumerate(n_ant_arr):
             sdr_at_ibo_per_symb = []
 
             for snap_idx in range(n_snapshots):
-                # TODO: rayleigh reroll
+                if isinstance(my_miso_chan, channel.MisoLosFd) or isinstance(my_miso_chan,
+                                                                             channel.MisoTwoPathFd):
+                    # reroll location
+                    my_standard_rx.set_position(
+                        cord_x=rx_loc_x + loc_rng.uniform(low=-rx_loc_var / 2.0, high=rx_loc_var / 2.0),
+                        cord_y=rx_loc_y + loc_rng.uniform(low=-rx_loc_var / 2.0, high=rx_loc_var / 2.0),
+                        cord_z=my_standard_rx.cord_z)
+                    my_miso_chan.calc_channel_mat(tx_transceivers=my_array.array_elements,
+                                                  rx_transceiver=my_standard_rx,
+                                                  skip_attenuation=False)
+                else:
+                    my_miso_rayleigh_chan.reroll_channel_coeffs()
+
+                chan_mat_at_point = my_miso_chan.get_channel_mat_fd()
+                my_array.set_precoding_matrix(channel_mat_fd=chan_mat_at_point, mr_precoding=True)
+
                 tx_bits = bit_rng.choice((0, 1), my_tx.modem.n_bits_per_ofdm_sym)
                 arr_tx_sig_fd, clean_sig_mat_fd = my_array.transmit(in_bits=tx_bits, out_domain_fd=True,
                                                                     return_both=True)
@@ -197,7 +213,7 @@ plt.gca().add_artist(leg2)
 #               loc="lower right", ncol=3, title="Channel and N antennas:", columnspacing=0.2) # Two columns, horizontal group labels
 #
 
-
+# %%
 ax1.set_title("SDR vs IBO for given channel")
 ax1.set_xlabel("IBO [dB]")
 ax1.set_ylabel("SDR [dB]")
