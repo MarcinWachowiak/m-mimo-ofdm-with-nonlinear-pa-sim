@@ -12,10 +12,10 @@ import matplotlib.pyplot as plt
 import utilities
 from plot_settings import set_latex_plot_style
 
-set_latex_plot_style(use_tex=False, fig_width_in=3.5)
+set_latex_plot_style(use_tex=True, fig_width_in=3.5)
 
 cnc_n_iter_lst = [0, 1, 2, 3, 4, 5, 6, 7, 8]
-sel_cnc_iter_val = [0, 2, 5, 8]
+sel_cnc_iter_val = [0, 1, 2, 5, 8]
 
 n_ant_val = 64
 ebn0_db = 15
@@ -25,7 +25,7 @@ ibo_min = 0
 ibo_max = 8
 ibo_step = 0.5
 
-my_miso_chan = "los"
+my_miso_chan = "rayleigh"
 
 cnc_filename_str = "ber_vs_ibo_cnc_%s_nant%d_ebn0_%d_ibo_min%d_max%d_step%1.2f_niter%s" % (
     my_miso_chan, n_ant_val, ebn0_db, ibo_min, ibo_max, ibo_step,
@@ -52,7 +52,7 @@ plot_settings.reset_color_cycle()
 
 for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
     if ite_val in sel_cnc_iter_val:
-        ax1.plot(mcnc_ibo_arr, mcnc_bers_per_ibo[ite_idx], "--")
+        ax1.plot(mcnc_ibo_arr, mcnc_bers_per_ibo[ite_idx], "--", dashes=(5, 1 + ite_idx))
 
 import matplotlib.lines as mlines
 
@@ -80,7 +80,7 @@ plt.gca().add_artist(leg1)
 
 cnc_leg = mlines.Line2D([0], [0], linestyle='-', color='k', label='CNC')
 mcnc_leg = mlines.Line2D([0], [0], linestyle='--', color='k', label='MCNC')
-ax1.legend(handles=[cnc_leg, mcnc_leg], loc="upper center", framealpha=0.9)
+ax1.legend(handles=[cnc_leg, mcnc_leg], loc="center left", framealpha=0.9)  # bbox_to_anchor=(0.55, 1.0)
 # plt.gca().add_artist(leg2)
 
 ax1.set_xlim([0, 8])
@@ -95,7 +95,7 @@ filename_str = "ber_vs_ibo_%s_nant%d_ebn0_%d_ibo_min%d_max%d_step%1.2f_niter%s" 
     '_'.join([str(val) for val in sel_cnc_iter_val[1:]]))
 # timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 # filename_str += "_" + timestamp
-plt.savefig("../figs/final_figs/%s.png" % filename_str, dpi=600, bbox_inches='tight')
+plt.savefig("../figs/final_figs/%s.pdf" % filename_str, dpi=600, bbox_inches='tight')
 plt.show()
 
 print("Finished execution!")
