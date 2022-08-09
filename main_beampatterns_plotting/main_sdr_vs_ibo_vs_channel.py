@@ -32,7 +32,7 @@ print("IBO values:", ibo_arr)
 n_ant_arr = [1, 4, 32, 64, 128]
 print("N ANT values:", n_ant_arr)
 
-n_snapshots = 10
+n_snapshots = 500
 rx_loc_x, rx_loc_y = 212.0, 212.0
 rx_loc_var = 10.0
 
@@ -43,8 +43,8 @@ my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.dee
                                 carrier_spacing=int(15e3))
 
 my_standard_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
-                                         cord_x=212,
-                                         cord_y=212, cord_z=1.5, center_freq=int(3.5e9),
+                                         cord_x=rx_loc_x,
+                                         cord_y=rx_loc_y, cord_z=1.5, center_freq=int(3.5e9),
                                          carrier_spacing=int(15e3))
 
 my_array = antenna_arrray.LinearArray(n_elements=np.min(n_ant_arr), base_transceiver=my_tx, center_freq=int(3.5e9),
@@ -77,8 +77,7 @@ for n_ant_idx, n_ant_val in enumerate(n_ant_arr):
 
     chan_lst = [my_miso_los_chan, my_miso_two_path_chan, my_miso_rayleigh_chan]
 
-    for chan_idx, chan_obj in enumerate(chan_lst):
-        my_miso_chan = chan_obj
+    for chan_idx, my_miso_chan in enumerate(chan_lst):
         channel_mat_at_point_fd = my_miso_chan.get_channel_mat_fd()
         my_array.set_precoding_matrix(channel_mat_fd=channel_mat_at_point_fd, mr_precoding=True)
 
