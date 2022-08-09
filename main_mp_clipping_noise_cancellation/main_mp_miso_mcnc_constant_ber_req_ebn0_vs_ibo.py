@@ -80,7 +80,7 @@ if __name__ == '__main__':
         my_miso_rayleigh_chan = channel.RayleighMisoFd(tx_transceivers=my_array.array_elements,
                                                        rx_transceiver=my_standard_rx,
                                                        seed=1234)
-        chan_lst = [my_miso_los_chan]
+        chan_lst = [my_miso_los_chan, my_miso_two_path_chan, my_miso_rayleigh_chan]
         my_noise = noise.Awgn(snr_db=10, seed=1234)
 
         for my_miso_chan in chan_lst:

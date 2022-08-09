@@ -33,14 +33,15 @@ if __name__ == '__main__':
     num_cores = mp.cpu_count()
 
     # %%
-    n_ant_arr = [1]
+    n_ant_arr = [64]
     target_ber_arr = [1e-2]
-    ebn0_step_arr = [2]
-    ibo_step_arr = [2]
+    ebn0_step_arr = [0.5]
+    ibo_step_arr = [0.5]
     cnc_n_iter_lst = [1, 2, 3, 4, 5, 6, 7, 8]
     cnc_n_iter_lst = np.insert(cnc_n_iter_lst, 0, 0)
     incl_clean_run = False
     reroll_chan = True
+
     # modulation
     constel_size = 64
     n_fft = 4096
@@ -48,8 +49,8 @@ if __name__ == '__main__':
     cp_len = 128
 
     # BER accuracy settings
-    bits_sent_max = int(1e4)
-    n_err_min = int(1e4)
+    bits_sent_max = int(1e6)
+    n_err_min = int(1e5)
 
     rx_loc_x, rx_loc_y = 212.0, 212.0
     rx_loc_var = 10.0
@@ -80,7 +81,7 @@ if __name__ == '__main__':
         my_miso_rayleigh_chan = channel.RayleighMisoFd(tx_transceivers=my_array.array_elements,
                                                        rx_transceiver=my_standard_rx,
                                                        seed=1234)
-        chan_lst = [my_miso_los_chan]
+        chan_lst = [my_miso_los_chan, my_miso_two_path_chan, my_miso_rayleigh_chan]
         my_noise = noise.Awgn(snr_db=10, seed=1234)
 
         for my_miso_chan in chan_lst:
