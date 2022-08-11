@@ -45,22 +45,23 @@ ax1.set_yscale('log', base=10)
 ax1.set_xticks(n_ant_arr)
 ax1.set_xticklabels(n_ant_arr)
 
-CB_color_cycle = ['#377eb8', '#ff7f00', '#4daf4a',
-                  '#f781bf', '#a65628', '#984ea3',
-                  '#999999', '#e41a1c', '#dede00']
+CB_color_cycle = ['#006BA4', '#FF800E', '#ABABAB', '#595959', '#5F9ED1', '#C85200', '#898989', '#A2C8EC', '#FFBC79',
+                  '#CFCFCF']
 
 cnc_chan_linestyles = ['o-', 's-', '*-']
+
 for chan_idx, chan_obj in enumerate(chan_lst):
+    color_idx = 1
     for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
         if ite_val in sel_cnc_iter_val:
             ax1.plot(cnc_n_ant_arr, cnc_bers_per_chan_per_nite_per_n_ant[ite_idx + chan_idx * len(cnc_n_iter_lst)],
-                     cnc_chan_linestyles[chan_idx],
-                     fillstyle="none", label=ite_val)
+                     cnc_chan_linestyles[chan_idx], fillstyle="none", label=ite_val, color=CB_color_cycle[color_idx])
+            color_idx += 1
     plot_settings.reset_color_cycle()
 
 mcnc_chan_linestyles = ['o--', 's--', '*--']
 for chan_idx, chan_obj in enumerate(chan_lst):
-    color_idx = 0
+    color_idx = 1
     for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
         if ite_val in sel_cnc_iter_val:
             # if not (chan_idx == 2 and ite_val == 0):
@@ -86,7 +87,8 @@ n_ite_legend = []
 
 import matplotlib.patches as mpatches
 
-color_idx = 0
+n_ite_legend.append(mpatches.Patch(color=CB_color_cycle[0], label="No dist"))
+color_idx = 1
 for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
     if ite_val in sel_cnc_iter_val:
         n_ite_legend.append(mpatches.Patch(color=CB_color_cycle[color_idx], label=ite_val))

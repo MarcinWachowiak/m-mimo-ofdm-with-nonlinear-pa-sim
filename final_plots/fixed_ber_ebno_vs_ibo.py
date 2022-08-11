@@ -31,7 +31,7 @@ ibo_min = 0
 ibo_max = 7
 ibo_step = 0.5
 
-my_miso_chan = "rayleigh"
+my_miso_chan = "los"
 
 ebn0_db_arr = np.arange(ebn0_min, ebn0_max, ebn0_step)
 cnc_filename_str = "fixed_ber%1.1e_cnc_%s_nant%d_ebn0_min%d_max%d_step%1.2f_ibo_min%d_max%d_step%1.2f_niter%s" % \
@@ -49,6 +49,8 @@ for ibo_idx, ibo_val_db in enumerate(cnc_ibo_arr):
             cnc_ber_per_ibo_snr_iter[ibo_idx, snr_idx, ite_idx] = cnc_tmp_data[ibo_idx * len(ebn0_db_arr) + snr_idx][
                 ite_idx]
 
+CB_color_cycle = ['#006BA4', '#FF800E', '#ABABAB', '#595959', '#5F9ED1', '#C85200', '#898989', '#A2C8EC', '#FFBC79',
+                  '#CFCFCF']
 # %%
 # extract SNR value providing given BER from collected data
 cnc_req_ebn0_per_ibo = np.zeros((len(cnc_n_iter_lst), len(cnc_ibo_arr)))
@@ -83,10 +85,12 @@ for iter_idx, iter_val in enumerate(cnc_n_iter_lst):
             cnc_req_ebn0_per_ibo[iter_idx, ibo_idx] = np.inf
 
 # %%
+color_idx = 1
 fig1, ax1 = plt.subplots(1, 1)
 for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
     if ite_val in sel_cnc_iter_val:
-        ax1.plot(cnc_ibo_arr, cnc_req_ebn0_per_ibo[ite_idx], "-")
+        ax1.plot(cnc_ibo_arr, cnc_req_ebn0_per_ibo[ite_idx], "-", color=CB_color_cycle[color_idx])
+        color_idx += 1
 
 plot_settings.reset_color_cycle()
 
@@ -137,21 +141,20 @@ plot_settings.reset_color_cycle()
 #             # value not found in interpolation, replace with inf
 #             mcnc_req_ebn0_per_ibo[iter_idx, ibo_idx] = np.inf
 #
+# color_idx = 1
 # for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
 #     if ite_val in sel_cnc_iter_val:
-#         ax1.plot(mcnc_ibo_arr, mcnc_req_ebn0_per_ibo[ite_idx], "--")
-
+#         ax1.plot(mcnc_ibo_arr, mcnc_req_ebn0_per_ibo[ite_idx], "--", color=CB_color_cycle[color_idx])
+#         color_idx +=
 
 import matplotlib.lines as mlines
+import matplotlib.patches as mpatches
 
-CB_color_cycle = ['#377eb8', '#ff7f00', '#4daf4a',
-                  '#f781bf', '#a65628', '#984ea3',
-                  '#999999', '#e41a1c', '#dede00']
 n_ite_legend = []
-color_idx = 0
+color_idx = 1
 for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
     if ite_val in sel_cnc_iter_val:
-        n_ite_legend.append(mlines.Line2D([0], [0], color=CB_color_cycle[color_idx], label=ite_val))
+        n_ite_legend.append(mpatches.Patch(color=CB_color_cycle[color_idx], label=ite_val))
         color_idx += 1
 leg1 = plt.legend(handles=n_ite_legend, title="I iterations:", loc="upper right", ncol=1, framealpha=0.9)
 plt.gca().add_artist(leg1)

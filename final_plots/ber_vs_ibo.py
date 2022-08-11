@@ -25,7 +25,7 @@ ibo_min = 0
 ibo_max = 8
 ibo_step = 0.5
 
-my_miso_chan = "rayleigh"
+my_miso_chan = "two_path"
 
 cnc_filename_str = "ber_vs_ibo_cnc_%s_nant%d_ebn0_%d_ibo_min%d_max%d_step%1.2f_niter%s" % (
     my_miso_chan, n_ant_val, ebn0_db, ibo_min, ibo_max, ibo_step,
@@ -44,21 +44,25 @@ mcnc_bers_per_ibo = mcnc_data_lst[1:]
 # %%
 fig1, ax1 = plt.subplots(1, 1)
 ax1.set_yscale('log')
+
+CB_color_cycle = ['#006BA4', '#FF800E', '#ABABAB', '#595959', '#5F9ED1', '#C85200', '#898989', '#A2C8EC', '#FFBC79',
+                  '#CFCFCF']
+
+color_idx = 1
 for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
     if ite_val in sel_cnc_iter_val:
-        ax1.plot(cnc_ibo_arr, cnc_bers_per_ibo[ite_idx], "-")
-
+        ax1.plot(cnc_ibo_arr, cnc_bers_per_ibo[ite_idx], "-", color=CB_color_cycle[color_idx])
+        color_idx += 1
 plot_settings.reset_color_cycle()
 
+color_idx = 1
 for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
     if ite_val in sel_cnc_iter_val:
-        ax1.plot(mcnc_ibo_arr, mcnc_bers_per_ibo[ite_idx], "--", dashes=(5, 1 + ite_idx))
-
+        ax1.plot(mcnc_ibo_arr, mcnc_bers_per_ibo[ite_idx], "--",
+                 color=CB_color_cycle[color_idx])  # , dashes=(5, 1 + ite_idx))
+        color_idx += 1
 import matplotlib.lines as mlines
 
-CB_color_cycle = ['#377eb8', '#ff7f00', '#4daf4a',
-                  '#f781bf', '#a65628', '#984ea3',
-                  '#999999', '#e41a1c', '#dede00']
 n_ite_legend = []
 # color_idx = 0
 # for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
@@ -69,7 +73,7 @@ n_ite_legend = []
 
 import matplotlib.patches as mpatches
 
-color_idx = 0
+color_idx = 1
 for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
     if ite_val in sel_cnc_iter_val:
         n_ite_legend.append(mpatches.Patch(color=CB_color_cycle[color_idx], label=ite_val))
@@ -80,7 +84,7 @@ plt.gca().add_artist(leg1)
 
 cnc_leg = mlines.Line2D([0], [0], linestyle='-', color='k', label='CNC')
 mcnc_leg = mlines.Line2D([0], [0], linestyle='--', color='k', label='MCNC')
-ax1.legend(handles=[cnc_leg, mcnc_leg], loc="center left", framealpha=0.9)  # bbox_to_anchor=(0.55, 1.0)
+ax1.legend(handles=[cnc_leg, mcnc_leg], loc="upper center", framealpha=0.9, bbox_to_anchor=(0.55, 1.0))
 # plt.gca().add_artist(leg2)
 
 ax1.set_xlim([0, 8])
