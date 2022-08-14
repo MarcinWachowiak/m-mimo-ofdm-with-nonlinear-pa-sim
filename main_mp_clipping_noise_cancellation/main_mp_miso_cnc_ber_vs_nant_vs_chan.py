@@ -47,7 +47,7 @@ if __name__ == '__main__':
     cp_len = 128
 
     # BER accuracy settings
-    bits_sent_max = int(1e7)
+    bits_sent_max = int(2e7)
     n_err_min = int(1e6)
 
     rx_loc_x, rx_loc_y = 212.0, 212.0
@@ -117,7 +117,7 @@ if __name__ == '__main__':
             for p in processes:
                 p.join()
 
-            for ite_idx in range(len(cnc_n_iter_lst)):
+            for ite_idx in range(len(cnc_n_iter_lst) + 1):
                 if n_bits_sent_shared_arr[ite_idx] == 0:
                     bers_per_ite[ite_idx] = np.nan
                 else:
@@ -132,7 +132,7 @@ if __name__ == '__main__':
     bers_per_chan_per_nite_per_n_ant = []
     for chan_idx, chan_obj in enumerate(chan_lst):
         ber_per_ite_lst = []
-        for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
+        for ite_idx in range(len(cnc_n_iter_lst) + 1):
             ber_per_nant = np.zeros(len(n_ant_arr))
             for nant_idx, n_ant_val in enumerate(n_ant_arr):
                 ber_per_nant[nant_idx] = bers_per_nant[nant_idx][chan_idx][ite_idx]
