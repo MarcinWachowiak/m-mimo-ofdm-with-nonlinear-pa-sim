@@ -10,7 +10,7 @@ sys.path.append(os.getcwd())
 import matplotlib.pyplot as plt
 import utilities
 from plot_settings import set_latex_plot_style
-
+import channel
 set_latex_plot_style(use_tex=True, fig_width_in=3.5, fig_height_in=3.5)
 
 n_ant_arr = [1, 2, 4, 8, 16, 32, 64, 128]
@@ -38,8 +38,8 @@ mcnc_data_lst = utilities.read_from_csv(filename=mcnc_filename_str)
 mcnc_n_ant_arr = mcnc_data_lst[0]
 mcnc_bers_per_chan_per_nite_per_n_ant = mcnc_data_lst[1:]
 
-cnc_n_iter_lst = [-1, 0, 1, 2, 3, 4, 5, 6, 7]
-sel_cnc_iter_val = [-1, 0, 2, 5, 7]
+cnc_n_iter_lst = [-1, 0, 1, 2, 3, 4, 5, 6, 7, 8]
+sel_cnc_iter_val = [-1, 0, 2, 5, 8]
 # %%
 fig1, ax1 = plt.subplots(1, 1)
 ax1.set_xscale('log', base=2)
@@ -53,12 +53,16 @@ CB_color_cycle = ['#006BA4', '#FF800E', '#ABABAB', '#595959', '#5F9ED1', '#C8520
 cnc_chan_linestyles = ['o-', 's-', '*-']
 
 for chan_idx, chan_obj in enumerate(chan_lst):
-    color_idx = 0
+    color_idx = 1
     for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
+        if ite_val == -1:
+            ax1.plot(cnc_n_ant_arr, cnc_bers_per_chan_per_nite_per_n_ant[0 + chan_idx * len(cnc_n_iter_lst)],
+                     cnc_chan_linestyles[chan_idx], fillstyle="none", label="No dist", color=CB_color_cycle[0])
+            continue
         if ite_val == 1:
             color_idx += 1
         if ite_val in sel_cnc_iter_val:
-            ax1.plot(cnc_n_ant_arr, cnc_bers_per_chan_per_nite_per_n_ant[ite_idx + chan_idx * (len(cnc_n_iter_lst))],
+            ax1.plot(cnc_n_ant_arr, cnc_bers_per_chan_per_nite_per_n_ant[ite_idx + chan_idx * len(cnc_n_iter_lst)],
                      cnc_chan_linestyles[chan_idx], fillstyle="none", label=ite_val, color=CB_color_cycle[color_idx])
             color_idx += 1
 plot_settings.reset_color_cycle()
@@ -67,14 +71,24 @@ mcnc_chan_linestyles = ['o--', 's--', '*--']
 for chan_idx, chan_obj in enumerate(chan_lst):
     color_idx = 1
     for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
+        if ite_val == -1:
+            # ax1.plot(mcnc_n_ant_arr, mcnc_bers_per_chan_per_nite_per_n_ant[0 + chan_idx * (len(cnc_n_iter_lst))],
+            #          mcnc_chan_linestyles[chan_idx], fillstyle="none", label="No dist", color=CB_color_cycle[0])
+            continue
         if ite_val == 1:
             color_idx += 1
-        if ite_val == -1:
-            continue
         if ite_val in sel_cnc_iter_val:
             # if not (chan_idx == 2 and ite_val == 0):
-            ax1.plot(mcnc_n_ant_arr, mcnc_bers_per_chan_per_nite_per_n_ant[ite_idx + chan_idx * (len(cnc_n_iter_lst))],
-                     mcnc_chan_linestyles[chan_idx], fillstyle="none", label=ite_val, color=CB_color_cycle[color_idx])
+            if isinstance(chan_obj, channel.RayleighMisoFd):
+                ax1.plot(mcnc_n_ant_arr,
+                         mcnc_bers_per_chan_per_nite_per_n_ant[ite_idx + chan_idx * (len(cnc_n_iter_lst))],
+                         mcnc_chan_linestyles[chan_idx], fillstyle="none", label=ite_val,
+                         color=CB_color_cycle[color_idx], dashes=(5, 1 + color_idx))
+            else:
+                ax1.plot(mcnc_n_ant_arr,
+                         mcnc_bers_per_chan_per_nite_per_n_ant[ite_idx + chan_idx * (len(cnc_n_iter_lst))],
+                         mcnc_chan_linestyles[chan_idx], fillstyle="none", label=ite_val,
+                         color=CB_color_cycle[color_idx])
             color_idx += 1
 
 plot_settings.reset_color_cycle()
@@ -94,8 +108,8 @@ n_ite_legend = []
 
 import matplotlib.patches as mpatches
 
-cnc_n_iter_lst = [0, 1, 2, 3, 4, 5, 6, 7]
-sel_cnc_iter_val = [0, 2, 5, 7]
+cnc_n_iter_lst = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+sel_cnc_iter_val = [0, 2, 5, 8]
 n_ite_legend.append(mpatches.Patch(color=CB_color_cycle[0], label="No dist"))
 color_idx = 1
 for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
@@ -128,7 +142,7 @@ plt.tight_layout()
 # %%
 filename_str = "ber_vs_nant_nant%s_ebn0_%d_ibo%d_niter%s" % (
     '_'.join([str(val) for val in n_ant_arr]), ebn0_db, ibo_val_db,
-    '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
+    '_'.join([str(val) for val in sel_cnc_iter_val[1:]]))
 
 plt.savefig("../figs/final_figs/%s.pdf" % filename_str, dpi=600, bbox_inches='tight')
 plt.show()
