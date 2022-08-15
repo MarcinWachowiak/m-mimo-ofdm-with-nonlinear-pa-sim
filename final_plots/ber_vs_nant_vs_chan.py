@@ -38,6 +38,8 @@ mcnc_data_lst = utilities.read_from_csv(filename=mcnc_filename_str)
 mcnc_n_ant_arr = mcnc_data_lst[0]
 mcnc_bers_per_chan_per_nite_per_n_ant = mcnc_data_lst[1:]
 
+cnc_n_iter_lst = [-1, 0, 1, 2, 3, 4, 5, 6, 7]
+sel_cnc_iter_val = [-1, 0, 2, 5, 7]
 # %%
 fig1, ax1 = plt.subplots(1, 1)
 ax1.set_xscale('log', base=2)
@@ -51,26 +53,31 @@ CB_color_cycle = ['#006BA4', '#FF800E', '#ABABAB', '#595959', '#5F9ED1', '#C8520
 cnc_chan_linestyles = ['o-', 's-', '*-']
 
 for chan_idx, chan_obj in enumerate(chan_lst):
-    color_idx = 1
+    color_idx = 0
     for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
+        if ite_val == 1:
+            color_idx += 1
         if ite_val in sel_cnc_iter_val:
-            ax1.plot(cnc_n_ant_arr, cnc_bers_per_chan_per_nite_per_n_ant[ite_idx + chan_idx * len(cnc_n_iter_lst)],
+            ax1.plot(cnc_n_ant_arr, cnc_bers_per_chan_per_nite_per_n_ant[ite_idx + chan_idx * (len(cnc_n_iter_lst))],
                      cnc_chan_linestyles[chan_idx], fillstyle="none", label=ite_val, color=CB_color_cycle[color_idx])
             color_idx += 1
-    plot_settings.reset_color_cycle()
+plot_settings.reset_color_cycle()
 
 mcnc_chan_linestyles = ['o--', 's--', '*--']
 for chan_idx, chan_obj in enumerate(chan_lst):
     color_idx = 1
     for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
+        if ite_val == 1:
+            color_idx += 1
+        if ite_val == -1:
+            continue
         if ite_val in sel_cnc_iter_val:
             # if not (chan_idx == 2 and ite_val == 0):
-            ax1.plot(mcnc_n_ant_arr, mcnc_bers_per_chan_per_nite_per_n_ant[ite_idx + chan_idx * len(cnc_n_iter_lst)],
-                     mcnc_chan_linestyles[chan_idx],
-                     fillstyle="none", label=ite_val, color=CB_color_cycle[color_idx])
+            ax1.plot(mcnc_n_ant_arr, mcnc_bers_per_chan_per_nite_per_n_ant[ite_idx + chan_idx * (len(cnc_n_iter_lst))],
+                     mcnc_chan_linestyles[chan_idx], fillstyle="none", label=ite_val, color=CB_color_cycle[color_idx])
             color_idx += 1
-    plot_settings.reset_color_cycle()
 
+plot_settings.reset_color_cycle()
 # ax1.set_title("BER vs N ant, CNC, QAM %d, IBO = %d [dB], Eb/n0 = %d [dB], " % (constel_size, ibo_val_db, ebn0_db))
 ax1.set_xlim([1, 128])
 ax1.set_xlabel("K antennas [-]")
@@ -87,9 +94,13 @@ n_ite_legend = []
 
 import matplotlib.patches as mpatches
 
+cnc_n_iter_lst = [0, 1, 2, 3, 4, 5, 6, 7]
+sel_cnc_iter_val = [0, 2, 5, 7]
 n_ite_legend.append(mpatches.Patch(color=CB_color_cycle[0], label="No dist"))
 color_idx = 1
 for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
+    if ite_val == 1:
+        color_idx += 1
     if ite_val in sel_cnc_iter_val:
         n_ite_legend.append(mpatches.Patch(color=CB_color_cycle[color_idx], label=ite_val))
         color_idx += 1

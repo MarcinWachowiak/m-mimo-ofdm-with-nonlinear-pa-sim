@@ -39,7 +39,7 @@ if __name__ == '__main__':
     # standard RX
     cnc_n_iter_lst = np.insert(cnc_n_iter_lst, 0, 0)
     incl_clean_run = True
-    reroll_chan = True
+    reroll_chan = False
     # modulation
     constel_size = 64
     n_fft = 4096
@@ -117,7 +117,7 @@ if __name__ == '__main__':
             for p in processes:
                 p.join()
 
-            for ite_idx in range(len(cnc_n_iter_lst)):
+            for ite_idx in range(len(cnc_n_iter_lst) + 1):
                 if n_bits_sent_shared_arr[ite_idx] == 0:
                     bers_per_ite[ite_idx] = np.nan
                 else:
@@ -132,7 +132,7 @@ if __name__ == '__main__':
     bers_per_chan_per_nite_per_n_ant = []
     for chan_idx, chan_obj in enumerate(chan_lst):
         ber_per_ite_lst = []
-        for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
+        for ite_idx in range(len(cnc_n_iter_lst) + 1):
             ber_per_nant = np.zeros(len(n_ant_arr))
             for nant_idx, n_ant_val in enumerate(n_ant_arr):
                 ber_per_nant[nant_idx] = bers_per_nant[nant_idx][chan_idx][ite_idx]

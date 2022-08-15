@@ -31,7 +31,7 @@ ibo_min = 0
 ibo_max = 7
 ibo_step = 0.5
 
-my_miso_chan = "rayleigh"
+my_miso_chan = "two_path"
 
 ebn0_db_arr = np.arange(ebn0_min, ebn0_max, ebn0_step)
 cnc_filename_str = "fixed_ber%1.1e_cnc_%s_nant%d_ebn0_min%d_max%d_step%1.2f_ibo_min%d_max%d_step%1.2f_niter%s" % \
@@ -145,8 +145,8 @@ for iter_idx, iter_val in enumerate(cnc_n_iter_lst):
 color_idx = 1
 for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
     if ite_val in sel_cnc_iter_val:
-        ax1.plot(mcnc_ibo_arr, mcnc_req_ebn0_per_ibo[ite_idx], "--", color=CB_color_cycle[color_idx],
-                 dashes=(5, 1 + color_idx))
+        ax1.plot(mcnc_ibo_arr, mcnc_req_ebn0_per_ibo[ite_idx], "--", color=CB_color_cycle[color_idx])
+        # dashes=(5, 1 + color_idx))
         color_idx += 1
 
 import matplotlib.lines as mlines
@@ -158,19 +158,19 @@ for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
     if ite_val in sel_cnc_iter_val:
         n_ite_legend.append(mpatches.Patch(color=CB_color_cycle[color_idx], label=ite_val))
         color_idx += 1
-leg1 = plt.legend(handles=n_ite_legend, title="I iterations:", loc="upper left", ncol=1, framealpha=0.9)
+leg1 = plt.legend(handles=n_ite_legend, title="I iterations:", loc="upper right", ncol=1, framealpha=0.9)
 plt.gca().add_artist(leg1)
 
 cnc_leg = mlines.Line2D([0], [0], linestyle='-', color='k', label='CNC')
 mcnc_leg = mlines.Line2D([0], [0], linestyle='--', color='k', label='MCNC')
-ax1.legend(handles=[cnc_leg, mcnc_leg], loc="upper center", framealpha=0.9, bbox_to_anchor=(0.425, 1.0))
+ax1.legend(handles=[cnc_leg, mcnc_leg], loc="upper center", framealpha=0.9, bbox_to_anchor=(0.575, 1.0))
 # plt.gca().add_artist(leg2)
 # ax1.set_title("Fixed BER = %1.1e, %s, CNC, QAM %d, N ANT = %d" % (target_ber_val, my_miso_chan, constel_size, n_ant_val))
 ax1.set_xlabel("IBO [dB]")
-ax1.set_ylabel("Eb/n0 [dB]")
+ax1.set_ylabel("Eb/N0 [dB]")
 ax1.set_xlim([0, 7])
-# ax1.set_ylim([11.5, 20])
-ax1.set_ylim([11.5, 16])
+ax1.set_ylim([11.5, 20])
+# ax1.set_ylim([11.5, 16])
 ax1.grid()
 plt.tight_layout()
 
