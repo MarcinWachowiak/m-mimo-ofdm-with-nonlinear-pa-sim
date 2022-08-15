@@ -47,8 +47,8 @@ if __name__ == '__main__':
     cp_len = 128
 
     # BER accuracy settings
-    bits_sent_max = int(5e7)
-    n_err_min = int(1e7)
+    bits_sent_max = int(1e7)
+    n_err_min = int(1e6)
 
     rx_loc_x, rx_loc_y = 212.0, 212.0
     rx_loc_var = 10.0
@@ -101,9 +101,9 @@ if __name__ == '__main__':
                                         bits_sent_max=bits_sent_max, is_mcnc=False)
             mp_link_obj.set_snr(snr_db_val=snr_db_val)
 
-            n_err_shared_arr = mp.Array(ctypes.c_double, len(cnc_n_iter_lst) + 1, lock=True)
-            n_bits_sent_shared_arr = mp.Array(ctypes.c_double, len(cnc_n_iter_lst) + 1, lock=True)
-            bers_per_ite = np.zeros(len(cnc_n_iter_lst) + 1)
+            n_err_shared_arr = mp.Array(ctypes.c_double, len(cnc_n_iter_lst)+1, lock=True)
+            n_bits_sent_shared_arr = mp.Array(ctypes.c_double, len(cnc_n_iter_lst)+1, lock=True)
+            bers_per_ite = np.zeros(len(cnc_n_iter_lst)+1)
 
             proc_seed_lst = seed_rng.integers(0, high=sys.maxsize, size=(num_cores, 3))
             processes = []
