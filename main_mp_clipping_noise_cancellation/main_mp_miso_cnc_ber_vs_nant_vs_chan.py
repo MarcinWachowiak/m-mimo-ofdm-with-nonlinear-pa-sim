@@ -39,7 +39,7 @@ if __name__ == '__main__':
     # standard RX
     cnc_n_iter_lst = np.insert(cnc_n_iter_lst, 0, 0)
     incl_clean_run = True
-    reroll_chan = False
+    reroll_chan = True
     # modulation
     constel_size = 64
     n_fft = 4096
@@ -47,8 +47,8 @@ if __name__ == '__main__':
     cp_len = 128
 
     # BER accuracy settings
-    bits_sent_max = int(2e7)
-    n_err_min = int(1e6)
+    bits_sent_max = int(10e7)
+    n_err_min = int(3e6)
 
     rx_loc_x, rx_loc_y = 212.0, 212.0
     rx_loc_var = 10.0
