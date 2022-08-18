@@ -11,7 +11,8 @@ import matplotlib.pyplot as plt
 import utilities
 from plot_settings import set_latex_plot_style
 import channel
-set_latex_plot_style(use_tex=True, fig_width_in=3.5, fig_height_in=3.5)
+
+set_latex_plot_style(use_tex=True, fig_width_in=5.89572, fig_height_in=5.89572)
 
 n_ant_arr = [1, 2, 4, 8, 16, 32, 64, 128]
 
@@ -120,7 +121,7 @@ for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
         color_idx += 1
 
 leg1 = plt.legend(handles=n_ite_legend, title="I iterations:", loc="upper center", ncol=1, framealpha=0.9,
-                  bbox_to_anchor=(0.5 + 0.02, -0.15))
+                  bbox_to_anchor=(0.5, -0.09))
 plt.gca().add_artist(leg1)
 
 import matplotlib.lines as mlines
@@ -129,14 +130,15 @@ los = mlines.Line2D([0], [0], linestyle='none', marker="o", fillstyle="none", co
 twopath = mlines.Line2D([0], [0], linestyle='none', marker="s", fillstyle="none", color='k', label='Two-path')
 rayleigh = mlines.Line2D([0], [0], linestyle='none', marker="*", fillstyle="none", color='k', label='Rayleigh')
 leg2 = plt.legend(handles=[los, twopath, rayleigh], title="Channels:", loc="upper left", framealpha=0.9,
-                  bbox_to_anchor=(-0.05 + 0.02, -0.15))
+                  bbox_to_anchor=(0.2, -0.09))
 plt.gca().add_artist(leg2)
 
 cnc_leg = mlines.Line2D([0], [0], linestyle='-', color='k', label='CNC')
 mcnc_leg = mlines.Line2D([0], [0], linestyle='--', color='k', label='MCNC')
-ax1.legend(handles=[cnc_leg, mcnc_leg], loc="upper left", framealpha=0.9, bbox_to_anchor=(0.68 + 0.01, -0.15))
+ax1.legend(handles=[cnc_leg, mcnc_leg], loc="upper left", framealpha=0.9, bbox_to_anchor=(0.6, -0.09))
 # plt.gca().add_artist(leg3)
-
+ax1.set_title(
+    "BER in regard to number of antennas for selected channels, QAM %d, Eb/N0 = %d dB" % (constel_size, ebn0_db))
 
 plt.tight_layout()
 # %%
@@ -144,7 +146,7 @@ filename_str = "ber_vs_nant_nant%s_ebn0_%d_ibo%d_niter%s" % (
     '_'.join([str(val) for val in n_ant_arr]), ebn0_db, ibo_val_db,
     '_'.join([str(val) for val in sel_cnc_iter_val[1:]]))
 
-plt.savefig("../figs/final_figs/%s.pdf" % filename_str, dpi=600, bbox_inches='tight')
+plt.savefig("../figs/msc_figs/%s.pdf" % filename_str, dpi=600, bbox_inches='tight')
 plt.show()
 
 print("Finished execution!")
