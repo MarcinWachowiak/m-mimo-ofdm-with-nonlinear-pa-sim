@@ -212,7 +212,7 @@ for channel_type_str in channel_type_lst:
         ax4.legend(title="IBO = %d [dB]" % my_tx.impairment.ibo_db)
         ax4.grid()
         plt.tight_layout()
-        plt.savefig("../figs/beampatterns/%s.png" % psd_max_filename_str, dpi=600, bbox_inches='tight')
+        plt.savefig("figs/beampatterns/%s.png" % psd_max_filename_str, dpi=600, bbox_inches='tight')
         # plt.show()
         plt.cla()
         plt.close()
@@ -243,7 +243,7 @@ for channel_type_str in channel_type_lst:
         ax5.legend(title="IBO = %d [dB]" % my_tx.impairment.ibo_db)
         ax5.grid()
         plt.tight_layout()
-        plt.savefig("../figs/beampatterns/%s.png" % psd_sel_filename_str, dpi=600, bbox_inches='tight')
+        plt.savefig("figs/beampatterns/%s.png" % psd_sel_filename_str, dpi=600, bbox_inches='tight')
         # plt.show()
         plt.cla()
         plt.close()
@@ -275,8 +275,8 @@ for channel_type_str in channel_type_lst:
     ax1.set_title("Desired signal PSD at angle [dB]", pad=-15)
     ax1.legend(title="N antennas:", ncol=len(n_ant_vec), loc='lower center', borderaxespad=0)
     ax1.grid(True)
-    plt.savefig("../figs/beampatterns/%s_desired_signal_beampattern_ibo%d_angle%d_npoints%d_nsnap%d_nant%s.png" % (
-    my_miso_chan, ibo_val_db, precoding_angle, n_points, n_snapshots, '_'.join([str(val) for val in n_ant_vec])),
+    plt.savefig("figs/beampatterns/%s_desired_signal_beampattern_ibo%d_angle%d_npoints%d_nsnap%d_nant%s.png" % (
+        my_miso_chan, ibo_val_db, precoding_angle, n_points, n_snapshots, '_'.join([str(val) for val in n_ant_vec])),
                 dpi=600, bbox_inches='tight')
     # plt.show()
     plt.cla()
@@ -296,8 +296,8 @@ for channel_type_str in channel_type_lst:
     ax2.set_title("Distortion signal PSD at angle [dB]", pad=-15)
     ax2.legend(title="N antennas:", ncol=len(n_ant_vec), loc='lower center', borderaxespad=0)
     ax2.grid(True)
-    plt.savefig("../figs/beampatterns/%s_distortion_signal_beampattern_ibo%d_angle%d_npoints%d_nsnap%d_nant%s.png" % (
-    my_miso_chan, ibo_val_db, precoding_angle, n_points, n_snapshots, '_'.join([str(val) for val in n_ant_vec])),
+    plt.savefig("figs/beampatterns/%s_distortion_signal_beampattern_ibo%d_angle%d_npoints%d_nsnap%d_nant%s.png" % (
+        my_miso_chan, ibo_val_db, precoding_angle, n_points, n_snapshots, '_'.join([str(val) for val in n_ant_vec])),
                 dpi=600, bbox_inches='tight')
 
     # plt.show()
@@ -320,8 +320,8 @@ for channel_type_str in channel_type_lst:
     ax3.legend(title="N antennas:", ncol=len(n_ant_vec), loc='lower center', borderaxespad=0)
     ax3.grid(True)
     plt.tight_layout()
-    plt.savefig("../figs/beampatterns/%s_sdr_beampattern_ibo%d_angle%d_npoints%d_nsnap%d_nant%s.png" % (
-    my_miso_chan, ibo_val_db, precoding_angle, n_points, n_snapshots, '_'.join([str(val) for val in n_ant_vec])),
+    plt.savefig("figs/beampatterns/%s_sdr_beampattern_ibo%d_angle%d_npoints%d_nsnap%d_nant%s.png" % (
+        my_miso_chan, ibo_val_db, precoding_angle, n_points, n_snapshots, '_'.join([str(val) for val in n_ant_vec])),
                 dpi=600, bbox_inches='tight')
 
     # plt.show()
