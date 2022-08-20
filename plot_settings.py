@@ -5,9 +5,8 @@ from matplotlib import rcParams, cycler, rc
 
 
 def set_latex_plot_style(use_tex=False, fig_width_in=7.0, fig_height_in=None):
-    CB_color_cycle = ['#377eb8', '#ff7f00', '#4daf4a',
-                      '#f781bf', '#a65628', '#984ea3',
-                      '#999999', '#e41a1c', '#dede00']
+    CB_color_cycle = ['#006BA4', '#FF800E', '#ABABAB', '#595959', '#5F9ED1', '#C85200', '#898989', '#A2C8EC', '#FFBC79',
+                      '#CFCFCF']
     rcParams['axes.prop_cycle'] = cycler(color=CB_color_cycle)
 
     # uncomment only for final hq plots with latex fonts - latex fonts highly slow down plotting

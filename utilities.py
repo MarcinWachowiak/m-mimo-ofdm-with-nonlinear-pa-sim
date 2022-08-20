@@ -195,7 +195,6 @@ def snr_to_ebn0(snr, n_fft, n_sub_carr, constel_size):
     return 10 * np.log10(10 ** (snr / 10) * (n_fft / (n_sub_carr * np.log2(constel_size))))
 
 
-@jit(nopython=True)
 def to_db(samples):
     return 10 * np.log10(samples)
 
