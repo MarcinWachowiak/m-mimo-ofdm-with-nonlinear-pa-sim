@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # antenna array evaluation
 # %%
 import os
