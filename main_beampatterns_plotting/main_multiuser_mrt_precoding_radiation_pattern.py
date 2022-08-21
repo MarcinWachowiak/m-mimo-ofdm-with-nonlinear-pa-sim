@@ -31,20 +31,20 @@ set_latex_plot_style(use_tex=False, fig_width_in=7.0)
 # %%
 ibo_val_db = 3
 n_snapshots = 10
-n_points = 180
+n_points = 180 * 10
 radial_distance = 300
 sel_psd_angle = 78
 
 # Multiple users data
-usr_angles = [45, 140]
-usr_distances = [200, 150]
+usr_angles = [30, 60, 90, 135]
+usr_distances = [200, 250, 100, 150]
 n_users = len(usr_angles)
 
 sel_ptx_idx = int(n_points / 180 * sel_psd_angle)
 
 # PSD plotting params
 psd_nfft = 4096
-n_samp_per_seg = 1024
+n_samp_per_seg = 2048
 
 rx_points = pts_on_semicircum(r=radial_distance, n=n_points)
 radian_vals = np.radians(np.linspace(0, 180, n_points + 1))
@@ -61,7 +61,7 @@ my_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.dee
 
 my_miso_chan = channel.MisoLosFd()
 
-n_ant_vec = [8, 16]
+n_ant_vec = [64, 128]
 channel_type_lst = ["two_path"]
 
 for channel_type_str in channel_type_lst:
@@ -207,7 +207,7 @@ for channel_type_str in channel_type_lst:
         ax5.legend(title="IBO = %d [dB]" % my_tx.impairment.ibo_db)
         ax5.grid()
         plt.tight_layout()
-        plt.savefig("../figs/beampatterns/%s.png" % psd_sel_filename_str, dpi=600, bbox_inches='tight')
+        plt.savefig("figs/beampatterns/%s.png" % psd_sel_filename_str, dpi=600, bbox_inches='tight')
         # plt.show()
         plt.cla()
         plt.close()
@@ -244,7 +244,7 @@ for channel_type_str in channel_type_lst:
     ax1.legend(title="N antennas:", ncol=len(n_ant_vec), loc='lower center', borderaxespad=0)
     ax1.grid(True)
     plt.savefig(
-        "../figs/beampatterns/multiuser_%s_desired_signal_beampattern_ibo%d_angles%s_distances%s_npoints%d_nsnap%d_nant%s.png" % (
+        "figs/beampatterns/multiuser_%s_desired_signal_beampattern_ibo%d_angles%s_distances%s_npoints%d_nsnap%d_nant%s.png" % (
             my_miso_chan, ibo_val_db, '_'.join([str(val) for val in usr_angles]),
             '_'.join([str(val) for val in usr_distances]), n_points, n_snapshots,
             '_'.join([str(val) for val in n_ant_vec])),
@@ -272,7 +272,7 @@ for channel_type_str in channel_type_lst:
     ax2.legend(title="N antennas:", ncol=len(n_ant_vec), loc='lower center', borderaxespad=0)
     ax2.grid(True)
     plt.savefig(
-        "../figs/beampatterns/multiuser_%s_distortion_signal_beampattern_ibo%d_angles%s_distances%s_npoints%d_nsnap%d_nant%s.png" % (
+        "figs/beampatterns/multiuser_%s_distortion_signal_beampattern_ibo%d_angles%s_distances%s_npoints%d_nsnap%d_nant%s.png" % (
             my_miso_chan, ibo_val_db, '_'.join([str(val) for val in usr_angles]),
             '_'.join([str(val) for val in usr_distances]), n_points, n_snapshots,
             '_'.join([str(val) for val in n_ant_vec])),
@@ -303,7 +303,7 @@ for channel_type_str in channel_type_lst:
     ax3.grid(True)
     plt.tight_layout()
     plt.savefig(
-        "../figs/beampatterns/multiuser_%s_sdr_beampattern_ibo%d_angles%s_distances%s_npoints%d_nsnap%d_nant%s.png" % (
+        "figs/beampatterns/multiuser_%s_sdr_beampattern_ibo%d_angles%s_distances%s_npoints%d_nsnap%d_nant%s.png" % (
             my_miso_chan, ibo_val_db, '_'.join([str(val) for val in usr_angles]),
             '_'.join([str(val) for val in usr_distances]), n_points, n_snapshots,
             '_'.join([str(val) for val in n_ant_vec])),
