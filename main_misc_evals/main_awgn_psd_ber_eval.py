@@ -151,7 +151,7 @@ if plot_psd:
 
     ax1.set_title("Power spectral density of transmitted OFDM signal in regard to IBO")
     ax1.set_xlabel("Subcarrier index [-]")
-    ax1.set_ylabel("Relative power [dB]")
+    ax1.set_ylabel("Power spectral density [dB]")
     ax1.legend(title="IBO [dB]:")
     ax1.grid()
 
@@ -175,7 +175,7 @@ if plot_psd:
 
     ax2.set_title("Power spectral density of distortion signal in regard to IBO")
     ax2.set_xlabel("Subcarrier index [-]")
-    ax2.set_ylabel("Relative power [dB]")
+    ax2.set_ylabel("Power spectral density [dB]")
     ax2.legend(title="Signal components:")
     ax2.grid()
 
