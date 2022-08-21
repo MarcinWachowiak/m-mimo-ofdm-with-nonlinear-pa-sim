@@ -35,8 +35,8 @@ if __name__ == '__main__':
     # %%
     n_ant_arr = [1]
     target_ber_arr = [1e-2]
-    ebn0_step_arr = [0.5]
-    ibo_step_arr = [0.5]
+    ebn0_step_arr = [0.25]
+    ibo_step_arr = [0.25]
     cnc_n_iter_lst = [1, 2, 3, 4, 5, 6, 7, 8]
     cnc_n_iter_lst = np.insert(cnc_n_iter_lst, 0, 0)
     incl_clean_run = False
@@ -49,7 +49,7 @@ if __name__ == '__main__':
     cp_len = 128
 
     # BER accuracy settings
-    bits_sent_max = int(1e6)
+    bits_sent_max = int(5e6)
     n_err_min = int(1e5)
 
     rx_loc_x, rx_loc_y = 212.0, 212.0
@@ -81,7 +81,7 @@ if __name__ == '__main__':
         my_miso_rayleigh_chan = channel.RayleighMisoFd(tx_transceivers=my_array.array_elements,
                                                        rx_transceiver=my_standard_rx,
                                                        seed=1234)
-        chan_lst = [my_miso_los_chan, my_miso_two_path_chan, my_miso_rayleigh_chan]
+        chan_lst = [my_miso_rayleigh_chan]
         my_noise = noise.Awgn(snr_db=10, seed=1234)
 
         for my_miso_chan in chan_lst:
@@ -100,7 +100,7 @@ if __name__ == '__main__':
                         start_time = time.time()
                         print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
-                        ebn0_db_arr = np.arange(10, 22.1, ebn0_step_val)
+                        ebn0_db_arr = np.arange(20.0, 23.1, ebn0_step_val)
                         snr_db_vals = ebn0_to_snr(ebn0_db_arr, my_mod.n_sub_carr, my_mod.n_sub_carr,
                                                   my_mod.constel_size)
                         ber_per_ibo_snr_iter = np.zeros((len(ibo_arr), len(snr_db_vals), len(cnc_n_iter_lst)))
