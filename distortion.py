@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+import plot_settings
 from speedup import jit
 
 
@@ -29,18 +30,20 @@ class SoftLimiter:
         in_sig_ampl = np.arange(in_ampl_min, in_ampl_max + step, step)
         out_sig_ampl = self.process(in_sig_ampl)
 
+        plot_settings.set_latex_plot_style(use_tex=True, fig_width_in=5.89572, fig_height_in=3)
         fig, ax = plt.subplots(1, 1)
+        ax.set_ylim([-5, 5])
         ax.plot(in_sig_ampl, out_sig_ampl, label=self.ibo_db)
         ax.set_title("Soft limiter transfer characteristic")
         ax.set_xlabel("Input signal amplitude [V]")
         ax.set_ylabel("Output signal amplitude [V]")
         ax.legend(title="IBO [dB]")
         props = dict(boxstyle="round", fc="w", ec="0.5", alpha=0.9)
-        ax.text(0.46, 0.05, ("Average sample power = %2.1f" % self.avg_samp_pow), transform=ax.transAxes,
+        ax.text(0.63, 0.05, ("Average sample power = %2.1f [W]" % self.avg_samp_pow), transform=ax.transAxes,
                 fontsize=8, verticalalignment='bottom', bbox=props)
         ax.grid()
         plt.tight_layout()
-        plt.savefig("../figs/soft_lim_tf_ibo%d.png" % self.ibo_db, dpi=600, bbox_inches='tight')
+        plt.savefig("../figs/msc_figs/soft_lim_tf_ibo%d.pdf" % self.ibo_db, dpi=600, bbox_inches='tight')
         plt.show()
 
     def process(self, in_sig):
