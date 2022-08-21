@@ -11,23 +11,12 @@ import numpy as np
 
 import utilities
 from plot_settings import set_latex_plot_style
-from utilities import to_db, pts_on_circum, pts_on_semicircum
+from utilities import to_db
 
 set_latex_plot_style(use_tex=True, )
 # %%
 print("Multi antenna processing init!")
 bit_rng = np.random.default_rng(4321)
-
-plot_full_circle = False
-
-if plot_full_circle:
-    n_points = 360
-    rx_points = pts_on_circum(r=300, n=n_points)
-else:
-    n_points = 180
-    rx_points = pts_on_semicircum(r=300, n=n_points)
-
-radian_vals = np.radians(np.linspace(0, n_points, n_points + 1))
 
 # %%
 # plot PSD for chosen point/angle
@@ -44,6 +33,7 @@ n_ant_vec = [1, 2, 4, 8, 16, 32, 64, 128]
 n_ant_vec_sel = [16, 32, 64, 128]
 n_ant_val_max = 128
 
+radian_vals = np.radians(np.linspace(0, n_points, n_points + 1))
 filename_str = "mrt_sig_powers_vs_angle_%s_chan_ibo%d_npoints%d_nsnap%d_angle%d_nant%d" % (
     "los", ibo_val_db, n_points, n_snapshots, precoding_angle, n_ant_val_max)
 los_read_data = utilities.read_from_csv(filename=filename_str)
