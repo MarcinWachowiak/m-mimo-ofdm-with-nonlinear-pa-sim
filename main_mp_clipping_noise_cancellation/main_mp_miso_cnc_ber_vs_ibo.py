@@ -32,9 +32,9 @@ if __name__ == '__main__':
     num_cores = mp.cpu_count()
 
     # %%
-    n_ant_arr = [64]
+    n_ant_arr = [1]
     ebn0_db_arr = [15]
-    ibo_step_arr = [0.25]
+    ibo_step_arr = [0.5]
     cnc_n_iter_lst = [1, 2, 3, 4, 5, 6, 7, 8]
     # standard RX
     cnc_n_iter_lst = np.insert(cnc_n_iter_lst, 0, 0)
