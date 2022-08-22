@@ -36,8 +36,8 @@ radial_distance = 300
 sel_psd_angle = 78
 
 # Multiple users data
-usr_angles = [30, 60, 90, 135]
-usr_distances = [200, 250, 100, 150]
+usr_angles = [30, 60, 135]
+usr_distances = [200, 250, 150]
 n_users = len(usr_angles)
 
 sel_ptx_idx = int(n_points / 180 * sel_psd_angle)
@@ -61,7 +61,7 @@ my_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.dee
 
 my_miso_chan = channel.MisoLosFd()
 
-n_ant_vec = [64, 128]
+n_ant_vec = [128]
 channel_type_lst = ["two_path"]
 
 for channel_type_str in channel_type_lst:
