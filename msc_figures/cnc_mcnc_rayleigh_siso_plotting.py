@@ -223,20 +223,20 @@ for chan_idx, my_miso_chan in enumerate(my_miso_chan_lst):
     print("Finished execution!")
 
 # FIXED BER EVAL
-
+# %%
 cnc_n_iter_lst = [0, 1, 2, 3, 4, 5, 6, 7, 8]
 sel_cnc_iter_val = [0, 1, 2, 5, 8]
 target_ber_val = 1e-2
 n_ant_val = 1
 constel_size = 64
 
-ebn0_min = 10
-ebn0_max = 22.1
-ebn0_step = 0.5
+ebn0_min = 20.0
+ebn0_max = 23.1
+ebn0_step = 0.25
 
 ibo_min = 0
 ibo_max = 7
-ibo_step = 0.5
+ibo_step = 0.25
 
 my_miso_chan_lst = ["rayleigh"]
 miso_chan_str = ["Rayleigh"]
@@ -388,10 +388,7 @@ for chan_idx, my_miso_chan in enumerate(my_miso_chan_lst):
     ax1.set_xlabel("IBO [dB]")
     ax1.set_ylabel("Eb/N0 [dB]")
     ax1.set_xlim([0, 7])
-    # if my_miso_chan == "rayleigh":
-    #     ax1.set_ylim([11.5, 16])
-    # else:
-    #     ax1.set_ylim([11.5, 20])
+    ax1.set_ylim([20, 23])
 
     ax1.grid()
     plt.tight_layout()
