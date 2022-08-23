@@ -78,7 +78,7 @@ if __name__ == '__main__':
         my_miso_rayleigh_chan = channel.RayleighMisoFd(tx_transceivers=my_array.array_elements,
                                                        rx_transceiver=my_standard_rx,
                                                        seed=1234)
-        chan_lst = [my_miso_los_chan, my_miso_two_path_chan, my_miso_rayleigh_chan]
+        chan_lst = [my_miso_rayleigh_chan]
         my_noise = noise.Awgn(snr_db=10, seed=1234)
 
         for my_miso_chan in chan_lst:
@@ -95,7 +95,7 @@ if __name__ == '__main__':
                     start_time = time.time()
                     print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
-                    ebn0_arr = np.arange(5, 20.1, ebn0_step_val)
+                    ebn0_arr = np.arange(5, 25.1, ebn0_step_val)
                     snr_arr = ebn0_to_snr(ebn0_arr, my_mod.n_sub_carr, my_mod.n_sub_carr, my_mod.constel_size)
                     ber_per_dist = []
 

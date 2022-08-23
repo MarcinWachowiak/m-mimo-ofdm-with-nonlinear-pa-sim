@@ -35,8 +35,8 @@ if __name__ == '__main__':
     # %%
     n_ant_arr = [1]
     target_ber_arr = [1e-2]
-    ebn0_step_arr = [0.25]
-    ibo_step_arr = [0.25]
+    ebn0_step_arr = [0.5]
+    ibo_step_arr = [0.5]
     cnc_n_iter_lst = [1, 2, 3, 4, 5, 6, 7, 8]
     cnc_n_iter_lst = np.insert(cnc_n_iter_lst, 0, 0)
     incl_clean_run = False
