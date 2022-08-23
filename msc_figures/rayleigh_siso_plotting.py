@@ -13,8 +13,9 @@ import matplotlib.pyplot as plt
 
 import utilities
 from plot_settings import set_latex_plot_style
+from matplotlib.ticker import MaxNLocator
 
-set_latex_plot_style(use_tex=True, fig_width_in=5.89572)
+set_latex_plot_style(use_tex=False, fig_width_in=5.89572)
 
 # BER VS EB/N0
 cnc_n_iter_lst = [0, 1, 2, 3, 4, 5, 6, 7, 8]
@@ -24,7 +25,7 @@ ibo_val_db = 0
 constel_size = 64
 
 ebn0_min = 5
-ebn0_max = 20
+ebn0_max = 25
 ebn0_step = 1
 
 my_miso_chan_lst = ["rayleigh"]
@@ -42,8 +43,8 @@ for chan_idx, my_miso_chan in enumerate(my_miso_chan_lst):
     cnc_ebn0_arr = cnc_data_lst[0]
     cnc_ber_per_dist = cnc_data_lst[1:]
 
-    mcnc_filename_str = "ber_vs_ebn0_mcnc_%s_nant%d_ibo%d_ebn0_min%d_max%d_step0.50_niter%s" % (
-        my_miso_chan, n_ant_val, ibo_val_db, ebn0_min, ebn0_max,
+    mcnc_filename_str = "ber_vs_ebn0_mcnc_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s" % (
+        my_miso_chan, n_ant_val, ibo_val_db, ebn0_min, ebn0_max, ebn0_step,
         '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
     mcnc_data_lst = utilities.read_from_csv(filename=mcnc_filename_str)
     mcnc_ebn0_arr = mcnc_data_lst[0]
@@ -106,7 +107,9 @@ for chan_idx, my_miso_chan in enumerate(my_miso_chan_lst):
 
     ax1.set_title("BER in regard to Eb/N0, %s channel, QAM %d, K=%d, IBO=%d dB" % (
         miso_chan_str[chan_idx], constel_size, n_ant_val, ibo_val_db))
-    ax1.set_xlim([10, 20])
+    ax1.set_xlim([10, 25])
+    ax1.xaxis.set_major_locator(MaxNLocator(7))
+
     # ax1.set_ylim([1e-5, 3e-1])
 
     ax1.grid(which='major', linestyle='-')
@@ -131,7 +134,7 @@ cnc_n_iter_lst = [0, 1, 2, 3, 4, 5, 6, 7, 8]
 sel_cnc_iter_val = [0, 1, 2, 5, 8]
 
 n_ant_val = 1
-ebn0_db = 15
+ebn0_db = 20
 constel_size = 64
 
 ibo_min = 0
