@@ -234,12 +234,12 @@ n_ant_val = 1
 constel_size = 64
 
 ebn0_min = 20.0
-ebn0_max = 23.1
-ebn0_step = 0.25
+ebn0_max = 28.1
+ebn0_step = 0.5
 
 ibo_min = 0
 ibo_max = 7
-ibo_step = 0.25
+ibo_step = 0.5
 
 my_miso_chan_lst = ["rayleigh"]
 miso_chan_str = ["Rayleigh"]
@@ -358,6 +358,9 @@ for chan_idx, my_miso_chan in enumerate(my_miso_chan_lst):
 
     color_idx = 1
     for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
+        if ite_val == 0:
+            color_idx += 1
+            continue
         if ite_val in sel_cnc_iter_val:
             ax1.plot(mcnc_ibo_arr, mcnc_req_ebn0_per_ibo[ite_idx], "--", color=CB_color_cycle[color_idx])
             # dashes=(5, 1 + color_idx))
