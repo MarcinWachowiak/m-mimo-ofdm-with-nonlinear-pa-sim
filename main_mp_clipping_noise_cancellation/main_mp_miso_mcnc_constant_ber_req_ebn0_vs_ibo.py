@@ -99,7 +99,7 @@ if __name__ == '__main__':
                         start_time = time.time()
                         print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
-                        ebn0_db_arr = np.arange(10.0, 21.1, ebn0_step_val)
+                        ebn0_db_arr = np.arange(10.0, 23.1, ebn0_step_val)
                         snr_db_vals = ebn0_to_snr(ebn0_db_arr, my_mod.n_sub_carr, my_mod.n_sub_carr,
                                                   my_mod.constel_size)
                         ber_per_ibo_snr_iter = np.zeros((len(ibo_arr), len(snr_db_vals), len(cnc_n_iter_lst)))
