@@ -16,7 +16,7 @@ set_latex_plot_style()
 # %%
 print("Multi antenna processing init!")
 
-set_latex_plot_style(use_tex=True, fig_width_in=7.0)
+set_latex_plot_style(use_tex=True, fig_width_in=5.89572)
 # %%
 ibo_val_db = 3
 n_snapshots = 10
@@ -60,8 +60,8 @@ dist_lines_lst = []
 norm_coeff = np.max(np.array([desired_sig_power, distortion_sig_power]))
 ax1.plot(radian_vals, to_db(np.divide(desired_sig_power, norm_coeff)), label="Desired", linewidth=1.5)
 ax1.plot(radian_vals, to_db(np.divide(distortion_sig_power, norm_coeff)), label="Distortion", linewidth=1.5)
-ax1.legend(title="Multi-user precoding, two-path channel, K=128, IBO=3 dB, Signals:", ncol=2, loc='lower center',
-           borderaxespad=5)
+ax1.legend(title="Multi-user precoding, two-path channel, K = 128, IBO = 3 dB, Signals:", ncol=2, loc='lower center',
+           borderaxespad=6)
 # plot reference angles/directions
 (y_min, y_max) = ax1.get_ylim()
 ax1.vlines(np.deg2rad(usr_angles), y_min, y_max, colors='k', linestyles='--')  # label="Users")
@@ -94,8 +94,8 @@ ax3.vlines(np.deg2rad(usr_angles), y_min, y_max, colors='k', linestyles='--')  #
 ax3.margins(0.0, 0.0)
 
 ax3.set_title("Signal to distortion ratio at angle [dB]", pad=-60)
-ax3.legend(title="Multi-user precoding, two-path channel, K=128, IBO=3 dB, K antennas:", ncol=len(n_ant_vec),
-           loc='lower center', borderaxespad=5)
+ax3.legend(title="Multi-user precoding, two-path channel, K = 128, IBO = 3 dB, K antennas:", ncol=len(n_ant_vec),
+           loc='lower center', borderaxespad=6)
 ax3.grid(True)
 plt.tight_layout()
 plt.savefig(

@@ -90,7 +90,7 @@ for chan_idx, my_miso_chan in enumerate(my_miso_chan_lst):
     mcnc_leg = mlines.Line2D([0], [0], linestyle='--', color='k', label='MCNC')
     ax1.legend(handles=[cnc_leg, mcnc_leg], loc="upper center", framealpha=0.9, bbox_to_anchor=(0.76, 1.0))
     # plt.gca().add_artist(leg2)
-    ax1.set_title("BER in regard to IBO, %s channel, QAM %d, K=%d, Eb/N0=%d dB" % (
+    ax1.set_title("BER in regard to IBO, %s channel, QAM %d, K = %d, Eb/N0 = %d dB" % (
         miso_chan_str[chan_idx], constel_size, n_ant_val, ebn0_db))
     ax1.set_xlim([0, 8])
     ax1.set_xlabel("IBO [dB]")

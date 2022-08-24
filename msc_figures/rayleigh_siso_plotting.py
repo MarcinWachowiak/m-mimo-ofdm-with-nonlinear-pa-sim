@@ -15,7 +15,7 @@ import utilities
 from plot_settings import set_latex_plot_style
 from matplotlib.ticker import MaxNLocator
 
-set_latex_plot_style(use_tex=False, fig_width_in=5.89572)
+set_latex_plot_style(use_tex=True, fig_width_in=5.89572)
 
 # BER VS EB/N0
 cnc_n_iter_lst = [0, 1, 2, 3, 4, 5, 6, 7, 8]
@@ -105,7 +105,7 @@ for chan_idx, my_miso_chan in enumerate(my_miso_chan_lst):
     ax1.legend(handles=[cnc_leg, mcnc_leg], loc="lower left", framealpha=0.9, bbox_to_anchor=(0.17, 0.0))
     # plt.gca().add_artist(leg2)
 
-    ax1.set_title("BER in regard to Eb/N0, %s channel, QAM %d, K=%d, IBO=%d dB" % (
+    ax1.set_title("BER in regard to Eb/N0, %s channel, QAM %d, K = %d, IBO = %d dB" % (
         miso_chan_str[chan_idx], constel_size, n_ant_val, ibo_val_db))
     ax1.set_xlim([10, 25])
     ax1.xaxis.set_major_locator(MaxNLocator(7))
@@ -205,7 +205,7 @@ for chan_idx, my_miso_chan in enumerate(my_miso_chan_lst):
     mcnc_leg = mlines.Line2D([0], [0], linestyle='--', color='k', label='MCNC')
     ax1.legend(handles=[cnc_leg, mcnc_leg], loc="upper center", framealpha=0.9, bbox_to_anchor=(0.76, 1.0))
     # plt.gca().add_artist(leg2)
-    ax1.set_title("BER in regard to IBO, %s channel, QAM %d, K=%d, Eb/N0=%d dB" % (
+    ax1.set_title("BER in regard to IBO, %s channel, QAM %d, K = %d, Eb/N0 = %d dB" % (
         miso_chan_str[chan_idx], constel_size, n_ant_val, ebn0_db))
     ax1.set_xlim([0, 8])
     ax1.set_xlabel("IBO [dB]")
@@ -389,7 +389,7 @@ for chan_idx, my_miso_chan in enumerate(my_miso_chan_lst):
     else:
         ax1.legend(handles=[cnc_leg, mcnc_leg], loc="upper center", framealpha=0.9, bbox_to_anchor=(0.76, 1.0))
     # plt.gca().add_artist(leg2)
-    ax1.set_title("Eb/N0 in regard to IBO for fixed BER=$10^{-2}$, %s channel, QAM %d, K=%d" % (
+    ax1.set_title("Eb/N0 in regard to IBO for fixed BER = $10^{-2}$, %s channel, QAM %d, K = %d" % (
         miso_chan_str[chan_idx], constel_size, n_ant_val))
     ax1.set_xlabel("IBO [dB]")
     ax1.set_ylabel("Eb/N0 [dB]")

@@ -63,7 +63,7 @@ for idx, ant_val in enumerate(n_ant_vec):
     ax1.plot(radian_vals, to_db(two_path_dist_norm[idx]), label=ant_val, linewidth=1.5)
 
 ax1.set_title("Normalized radiation pattern of distortion signal [dB]", pad=-50)
-ax1.legend(title="Two-path channel, IBO=3 dB, Number of antennas:", ncol=4, loc='lower center', borderaxespad=4)
+ax1.legend(title="Two-path channel, IBO = 3 dB, Number of antennas:", ncol=4, loc='lower center', borderaxespad=4)
 ax1.grid(True)
 
 plt.savefig("../figs/msc_figs/%s_distortion_signal_beampattern_ibo%d_angle%d_npoints%d_nsnap%d_nant%s.pdf" % (
@@ -92,7 +92,7 @@ for idx, ant_val in enumerate(n_ant_vec):
     ax1.plot(radian_vals, to_db(rayleigh_dist_norm[idx]), label=ant_val, linewidth=1.5)
 
 ax1.set_title("Normalized radiation pattern of distortion signal [dB]", pad=-50)
-ax1.legend(title="Rayleigh channel, IBO=3 dB, Number of antennas:", ncol=4, loc='lower center', borderaxespad=4)
+ax1.legend(title="Rayleigh channel, IBO = 3 dB, Number of antennas:", ncol=4, loc='lower center', borderaxespad=4)
 ax1.grid(True)
 
 plt.savefig("../figs/msc_figs/%s_distortion_signal_beampattern_ibo%d_angle%d_npoints%d_nsnap%d_nant%s.pdf" % (
@@ -119,7 +119,7 @@ ax1.plot(radian_vals, to_db(np.divide(two_path_des_sig[-1], norm_coeff)), label=
 ax1.plot(radian_vals, to_db(np.divide(two_path_dist_sig[-1], norm_coeff)), label="Distortion", linewidth=1.5)
 
 ax1.set_title("Normalized radiation pattern of signal components [dB]", pad=-50)
-ax1.legend(title="Two-path channel, K=128, IBO=3 dB, Signals:", ncol=2, loc='lower center', borderaxespad=4)
+ax1.legend(title="Two-path channel, K = 128, IBO = 3 dB, Signals:", ncol=2, loc='lower center', borderaxespad=4)
 ax1.grid(True)
 
 plt.savefig(

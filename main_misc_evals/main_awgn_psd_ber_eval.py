@@ -167,7 +167,7 @@ if plot_psd:
     for idx, dist_val in enumerate(dist_vals_db):
         if include_clean_run:
             if idx == 0:
-                ax2.plot(freq_arr[0], clean_ofdm_psd[0], label="No distortion")
+                ax2.plot(freq_arr[0], clean_ofdm_psd[0], label="Desired (No dist)")
             else:
                 ax2.plot(freq_arr[0], distortion_psd[idx], label="Distortion IBO = %d [dB]" % dist_val)
         else:
