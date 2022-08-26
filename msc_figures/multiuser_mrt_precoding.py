@@ -94,22 +94,21 @@ su_two_path_read_data = utilities.read_from_csv(filename=su_filename_str)
 su_two_path_des_sig = su_two_path_read_data[0]
 su_two_path_dist_sig = su_two_path_read_data[1]
 su_two_path_sdr_at_angle = to_db(np.divide(np.array(su_two_path_des_sig), np.array(su_two_path_dist_sig)))
-
 # plot signal to distortion ratio
 fig3, ax3 = plt.subplots(1, 1)
-
-# sinle user plot
-ax3.plot(np.rad2deg(radian_vals), su_two_path_sdr_at_angle, label="Single-user precoding at 45$\degree$", linewidth=1.5)
 
 # multiuser plot
 ax3.plot(np.rad2deg(radian_vals), to_db(np.array(desired_sig_power) / np.array(distortion_sig_power)),
          label="Multi-user precoding, 3 users at 45, 120, 150$\degree$",
          linewidth=1.5)
 
+# single user plot
+ax3.plot(np.rad2deg(radian_vals), su_two_path_sdr_at_angle, label="Single-user precoding at 45$\degree$", linewidth=1.5)
+
 # plot reference angles/directions
 ax3.margins(0, 0)
 ax3.set_xlim([0, 180])
-ax3.set_ylim([-20, 40])
+ax3.set_ylim([-20, 30])
 
 (y_min, y_max) = ax3.get_ylim()
 ax3.vlines(usr_angles, y_min, y_max, colors='k', linestyles='--', label="Precoding angles", zorder=3)
