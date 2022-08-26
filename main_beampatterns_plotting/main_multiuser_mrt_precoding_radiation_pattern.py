@@ -36,8 +36,8 @@ radial_distance = 300
 sel_psd_angle = 78
 
 # Multiple users data
-usr_angles = [30, 60, 135]
-usr_distances = [200, 250, 150]
+usr_angles = [45, 120, 150]
+usr_distances = [300, 300, 300]
 n_users = len(usr_angles)
 
 sel_ptx_idx = int(n_points / 180 * sel_psd_angle)
@@ -109,7 +109,9 @@ for channel_type_str in channel_type_lst:
         my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
 
         vk_mat = my_array.get_precoding_mat()
-        vk_pow_vec = np.sum(np.power(np.abs(np.sum(vk_mat, axis=2)), 2), axis=1)
+        # vk_pow_vec = np.sum(np.power(np.abs(np.sum(vk_mat, axis=2)), 2), axis=1)
+        vk_pow_vec = np.sum(np.sum(np.power(np.abs(vk_mat), 2), axis=2), axis=1)
+
         ibo_vec = 10 * np.log10(10 ** (ibo_val_db / 10) * my_mod.n_sub_carr / (vk_pow_vec * n_ant_val))
         ak_vect = my_mod.calc_alpha(ibo_db=ibo_vec)
         ak_vect = np.expand_dims(ak_vect, axis=1)
