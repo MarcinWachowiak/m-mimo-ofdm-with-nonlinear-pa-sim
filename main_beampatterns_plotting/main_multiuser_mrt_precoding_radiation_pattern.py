@@ -110,6 +110,7 @@ for channel_type_str in channel_type_lst:
 
         vk_mat = my_array.get_precoding_mat()
         vk_pow_vec = np.sum(np.sum(np.power(np.abs(vk_mat), 2), axis=2), axis=1)
+
         ibo_vec = 10 * np.log10(10 ** (ibo_val_db / 10) * my_mod.n_sub_carr / (vk_pow_vec * n_ant_val))
         ak_vect = my_mod.calc_alpha(ibo_db=ibo_vec)
         ak_vect = np.expand_dims(ak_vect, axis=1)
