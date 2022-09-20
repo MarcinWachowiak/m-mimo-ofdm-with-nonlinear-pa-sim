@@ -241,7 +241,7 @@ def plot_spatial_config(ant_array, rx_transceiver, plot_3d=True):
         ax.grid()
         ax.set_axisbelow(True)
         plt.tight_layout()
-        plt.savefig("figs/spatial_rx_tx_config_3d.png", dpi=600, bbox_inches='tight')
+        plt.savefig("../figs/msc_figs/spatial_rx_tx_config_3d.png", dpi=600, bbox_inches='tight')
         plt.show()
     else:
         fig, ax = plt.subplots()
@@ -267,7 +267,7 @@ def plot_spatial_config(ant_array, rx_transceiver, plot_3d=True):
         ax.legend()
         ax.set_axisbelow(True)
         plt.tight_layout()
-        plt.savefig("figs/spatial_rx_tx_config_2d.png", dpi=600, bbox_inches='tight')
+        plt.savefig("../figs/msc_figs/spatial_rx_tx_config_2d.png", dpi=600, bbox_inches='tight')
         plt.show()
 
 
