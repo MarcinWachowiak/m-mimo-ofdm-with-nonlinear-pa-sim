@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 
+import distortion
 from antenna_arrray import LinearArray
 from distortion import SoftLimiter
 from modulation import OfdmQamModem
@@ -11,7 +12,10 @@ class CncReceiver():
     def __init__(self, modem: OfdmQamModem, impairment: SoftLimiter):
         self.modem = modem
         self.impairment = impairment
-        self.modem.alpha = self.modem.calc_alpha(self.impairment.ibo_db)
+        if isinstance(self.impairment, distortion.SoftLimiter):
+            self.modem.alpha = self.modem.calc_alpha(self.impairment.ibo_db)
+        else:
+            self.modem.alpha = 1.0
         self.upsample_factor = self.modem.n_fft / self.modem.n_sub_carr
         self.impairment.set_avg_sample_power(avg_samp_pow=self.modem.avg_symbol_power * (1 / self.upsample_factor))
 
