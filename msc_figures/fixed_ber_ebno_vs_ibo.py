@@ -177,7 +177,7 @@ for chan_idx, my_miso_chan in enumerate(my_miso_chan_lst):
         ax1.legend(handles=[cnc_leg, mcnc_leg], loc="upper center", framealpha=0.9, bbox_to_anchor=(0.76, 1.0))
     # plt.gca().add_artist(leg2)
     ax1.set_title("Eb/N0 in regard to IBO for fixed BER = $10^{-2}$, %s channel, QAM %d, K = %d" % (
-    miso_chan_str[chan_idx], constel_size, n_ant_val))
+        miso_chan_str[chan_idx], constel_size, n_ant_val))
     ax1.set_xlabel("IBO [dB]")
     ax1.set_ylabel("Eb/N0 [dB]")
     ax1.set_xlim([0, 7])

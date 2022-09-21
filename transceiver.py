@@ -1,5 +1,6 @@
 import numpy as np
 
+import distortion
 import utilities
 
 
@@ -10,7 +11,8 @@ class Transceiver:
         self.center_freq = center_freq
         self.carrier_spacing = carrier_spacing
         # update modem alpha in regard to impairment object
-        self.modem.update_alpha(ibo_db=impairment.ibo_db)
+        if isinstance(impairment, distortion.SoftLimiter):
+            self.modem.update_alpha(ibo_db=impairment.ibo_db)
         # antenna gains
         self.tx_ant_gain_db = 0
         self.rx_ant_gain_db = 0

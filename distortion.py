@@ -95,7 +95,7 @@ class Rapp:
 
 @jit(nopython=True)
 def _process_toi(cubic_dist_coeff, in_sig):
-    return in_sig - cubic_dist_coeff * np.power(in_sig, 3)
+    return in_sig - cubic_dist_coeff * in_sig * np.power(np.abs(in_sig), 2)
 
 
 # TODO: verify proper third order coefficient calculation
@@ -108,6 +108,9 @@ class ThirdOrderNonLin:
     def set_toi(self, toi_db):
         self.toi_db = toi_db
         self.cubic_dist_coeff = 1 / (np.power(10, (toi_db / 10)))
+
+    def set_avg_sample_power(self, avg_samp_pow):
+        pass
 
     def plot_characteristics(self, in_ampl_min=-10, in_ampl_max=10, step=0.1):
         in_sig_ampl = np.arange(in_ampl_min, in_ampl_max + step, step)

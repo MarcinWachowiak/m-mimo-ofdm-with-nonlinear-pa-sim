@@ -103,7 +103,7 @@ for chan_idx, my_miso_chan in enumerate(my_miso_chan_lst):
     # plt.gca().add_artist(leg2)
 
     ax1.set_title("BER in regard to Eb/N0, %s channel, QAM %d, K = %d, IBO = %d dB" % (
-    miso_chan_str[chan_idx], constel_size, n_ant_val, ibo_val_db))
+        miso_chan_str[chan_idx], constel_size, n_ant_val, ibo_val_db))
     ax1.set_xlim([10, 20])
     ax1.set_ylim([1e-5, 3e-1])
 
