@@ -32,7 +32,7 @@ if __name__ == '__main__':
     num_cores = mp.cpu_count()
 
     # %%
-    n_ant_arr = [64]
+    n_ant_arr = [4]
     ebn0_db_arr = [15]
     ibo_step_arr = [0.5]
     cnc_n_iter_lst = [1, 2, 3, 4, 5, 6, 7, 8]
@@ -58,7 +58,9 @@ if __name__ == '__main__':
     # check modifications before copy and what you copy!
     my_mod = modulation.OfdmQamModem(constel_size=constel_size, n_fft=n_fft, n_sub_carr=n_sub_carr, cp_len=cp_len)
 
-    my_distortion = distortion.SoftLimiter(ibo_db=0, avg_samp_pow=my_mod.avg_sample_power)
+    # my_distortion = distortion.SoftLimiter(ibo_db=0, avg_samp_pow=my_mod.avg_sample_power)
+    my_distortion = distortion.Rapp(ibo_db=0, p_hardness=4.0, avg_samp_pow=my_mod.avg_sample_power)
+
     my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
                                     center_freq=int(3.5e9),
                                     carrier_spacing=int(15e3))

@@ -33,7 +33,7 @@ if __name__ == '__main__':
 
     # %%
     # parameters
-    n_ant_arr = [64]
+    n_ant_arr = [4]
     ibo_arr = [0]
     ebn0_step = [1]
     cnc_n_iter_lst = [1, 2, 3, 4, 5, 6, 7, 8]
@@ -58,7 +58,9 @@ if __name__ == '__main__':
 
     my_mod = modulation.OfdmQamModem(constel_size=constel_size, n_fft=n_fft, n_sub_carr=n_sub_carr, cp_len=cp_len)
 
-    my_distortion = distortion.SoftLimiter(0, my_mod.avg_sample_power)
+    # my_distortion = distortion.SoftLimiter(0, my_mod.avg_sample_power)
+    my_distortion = distortion.Rapp(ibo_db=0, p_hardness=4.0, avg_samp_pow=my_mod.avg_sample_power)
+
     my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion))
     my_standard_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
                                              cord_x=rx_loc_x, cord_y=rx_loc_y, cord_z=1.5,
