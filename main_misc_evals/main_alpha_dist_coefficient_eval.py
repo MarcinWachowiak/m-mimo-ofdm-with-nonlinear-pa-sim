@@ -52,7 +52,7 @@ for ibo_idx, ibo_val_db in enumerate(ibo_arr):
 my_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(3.5e9),
                                       wav_len_spacing=0.5,
                                       cord_x=0, cord_y=0, cord_z=15)
-my_miso_rayleigh_chan = channel.RayleighMisoFd(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx, seed=1234)
+my_miso_rayleigh_chan = channel.MisoRayleighFd(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx, seed=1234)
 my_miso_los_chan = channel.MisoLosFd()
 my_miso_two_path_chan = channel.MisoTwoPathFd()
 

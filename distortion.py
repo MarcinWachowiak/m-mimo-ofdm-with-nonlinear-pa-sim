@@ -70,6 +70,10 @@ class Rapp:
         self.ibo_db = ibo_db
         self.sat_pow = np.power(10, ibo_db / 10) * self.avg_samp_pow
 
+    def set_avg_sample_power(self, avg_samp_pow):
+        self.avg_samp_pow = avg_samp_pow
+        self.sat_pow = np.power(10, self.ibo_db / 10) * avg_samp_pow
+
     def plot_characteristics(self, in_ampl_min=-10, in_ampl_max=10, step=0.1):
         in_sig_ampl = np.arange(in_ampl_min, in_ampl_max + step, step)
         out_sig_ampl = self.process(in_sig_ampl)

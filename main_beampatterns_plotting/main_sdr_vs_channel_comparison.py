@@ -224,7 +224,7 @@ for n_ant in n_ant_vec:
                                           cord_x=0, cord_y=0, cord_z=15)
     my_rx.set_position(cord_x=212, cord_y=212, cord_z=1.5)
 
-    my_miso_chan = channel.RayleighMisoFd(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx, seed=1234)
+    my_miso_chan = channel.MisoRayleighFd(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx, seed=1234)
 
     chan_mat_at_point_fd = my_miso_chan.get_channel_mat_fd()
     # if n_ant != 1:

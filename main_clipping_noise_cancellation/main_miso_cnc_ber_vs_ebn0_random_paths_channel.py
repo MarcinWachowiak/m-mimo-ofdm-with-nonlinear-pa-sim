@@ -28,9 +28,8 @@ set_latex_plot_style()
 
 # %%
 # parameters
-n_ant_arr = [1]
-# set ibo very high as alpha is equal to 1 for TOI
-ibo_arr = [5.71]
+n_ant_arr = [4]
+ibo_arr = [0]
 ebn0_step = [1]
 cnc_n_iter_lst = [1, 2, 3, 4, 5, 6, 7, 8]
 # include clean run is always True
@@ -55,20 +54,17 @@ rx_loc_x, rx_loc_y = 212.0, 212.0
 rx_loc_var = 10.0
 
 my_mod = modulation.OfdmQamModem(constel_size=constel_size, n_fft=n_fft, n_sub_carr=n_sub_carr, cp_len=cp_len)
-print("Analytical alpha: ", my_mod.calc_alpha(ibo_db=ibo_arr[0]))
 
-my_distortion = distortion.ThirdOrderNonLin(toi_db=35, avg_samp_pow=my_mod.avg_sample_power)
-# my_distortion.plot_characteristics(in_ampl_min=0, in_ampl_max=42, step=0.1)
-test_sig_in = np.arange(0.0, 100, 10)
-test_sig_out = my_distortion.process(test_sig_in)
+my_distortion = distortion.SoftLimiter(0, my_mod.avg_sample_power)
+my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
+                                center_freq=int(3.5e9), carrier_spacing=int(15e3))
 
-my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion))
 my_standard_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
                                          cord_x=rx_loc_x, cord_y=rx_loc_y, cord_z=1.5,
                                          center_freq=int(3.5e9), carrier_spacing=int(15e3))
 
-# %%
 for n_ant_val in n_ant_arr:
+    # %%
     my_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(3.5e9),
                                           wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
     # channel type
@@ -82,50 +78,34 @@ for n_ant_val in n_ant_arr:
     my_miso_rayleigh_chan = channel.MisoRayleighFd(tx_transceivers=my_array.array_elements,
                                                    rx_transceiver=my_standard_rx,
                                                    seed=1234)
-    chan_lst = [my_miso_two_path_chan]
 
+    my_random_paths_miso_channel = channel.MisoRandomPathsFd(tx_transceivers=my_array.array_elements,
+                                                             rx_transceiver=my_standard_rx, n_paths=10,
+                                                             max_delay_spread=1000e-9)
+    chan_lst = [my_random_paths_miso_channel]
+
+    # # plot the random path channel transfer function
+    # fd_chan_max = my_random_paths_miso_channel.get_channel_mat_fd()
+    # fig1, ax1 = plt.subplots(1, 1)
+    # for tx_idx in range(len(my_array.array_elements)):
+    #     ax1.plot(np.abs(fd_chan_max[tx_idx, :]), label=tx_idx)
+    #
+    # ax1.set_title("Random paths channel model transfer function")
+    # ax1.set_xlabel("Transfer function")
+    # ax1.set_ylabel("Subcarrier index [-]")
+    # ax1.grid()
+    # ax1.legend()
+    # plt.tight_layout()
+    # plt.show()
+
+    # %%
     for my_miso_chan in chan_lst:
-        estimate_alpha = True
-        # lambda estimation phase
-        if estimate_alpha:
-            start_time = time.time()
-            bit_rng = np.random.default_rng(4321)
-            n_ofdm_symb = 1e4
-            ofdm_symb_idx = 0
-            alpha_val_vec = []
-            while ofdm_symb_idx < n_ofdm_symb:
-                tx_bits = bit_rng.choice((0, 1), my_tx.modem.n_bits_per_ofdm_sym)
-                tx_ofdm_symbol_fd, clean_ofdm_symbol_fd = my_array.transmit(tx_bits, out_domain_fd=True,
-                                                                            return_both=True)
-
-                rx_sig_fd = my_miso_chan.propagate(in_sig_mat=tx_ofdm_symbol_fd)
-                rx_sig_clean_fd = my_miso_chan.propagate(in_sig_mat=clean_ofdm_symbol_fd)
-
-                clean_nsc_ofdm_symb_fd = np.concatenate(
-                    (rx_sig_clean_fd[-my_mod.n_sub_carr // 2:], rx_sig_clean_fd[1:(my_mod.n_sub_carr // 2) + 1]))
-                rx_nsc_ofdm_symb_fd = np.concatenate(
-                    (rx_sig_fd[-my_mod.n_sub_carr // 2:], rx_sig_fd[1:(my_mod.n_sub_carr // 2) + 1]))
-
-                alpha_numerator_vec = np.multiply(rx_nsc_ofdm_symb_fd, np.conjugate(clean_nsc_ofdm_symb_fd))
-                alpha_denominator_vec = np.multiply(clean_nsc_ofdm_symb_fd, np.conjugate(clean_nsc_ofdm_symb_fd))
-
-                ofdm_symb_idx += 1
-                alpha_val_vec.append(np.abs(np.average(alpha_numerator_vec / alpha_denominator_vec)))
-
-            # calculate alpha average
-            alpha_coeff = np.average(alpha_val_vec)
-            print("Alpha coeff estimate:", alpha_coeff)
-            # TODO: use the alpha estimate in the CNC and processing
-            print("--- Computation time: %f ---" % (time.time() - start_time))
-        else:
-            abs_alpha_per_ibo = my_mod.calc_alpha(ibo_arr)
-
         loc_rng = np.random.default_rng(2137)
         my_cnc_rx = corrector.CncReceiver(copy.deepcopy(my_mod), copy.deepcopy(my_distortion))
 
         for ibo_val_db in ibo_arr:
-            # my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
-            # my_cnc_rx.update_distortion(ibo_db=ibo_val_db)
+            my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
+            my_cnc_rx.update_distortion(ibo_db=ibo_val_db)
 
             for ebn0_step_val in ebn0_step:
                 ebn0_arr = np.arange(5, 21, ebn0_step_val)
@@ -157,8 +137,10 @@ for n_ant_val in n_ant_arr:
                             my_miso_chan.calc_channel_mat(tx_transceivers=my_array.array_elements,
                                                           rx_transceiver=my_standard_rx,
                                                           skip_attenuation=False)
+                        elif isinstance(my_miso_chan, channel.MisoRandomPathsFd):
+                            my_miso_chan.reroll_channel_coeffs(tx_transceivers=my_array.array_elements)
                         else:
-                            my_miso_rayleigh_chan.reroll_channel_coeffs()
+                            my_miso_chan.reroll_channel_coeffs()
 
                         chan_mat_at_point = my_miso_chan.get_channel_mat_fd()
                         my_array.set_precoding_matrix(channel_mat_fd=chan_mat_at_point, mr_precoding=True)
