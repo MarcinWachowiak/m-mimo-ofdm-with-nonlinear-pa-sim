@@ -28,7 +28,7 @@ plt.ylim([5.5, 7.0])
 ax.set_yticks([5.5, 5.75, 6.0, 6.25, 6.5, 6.75, 7.0])
 plt.tight_layout()
 plt.grid(axis='y')
-plt.savefig("ericcson_mobile_usr_growth.pdf", dpi=600, bbox_inches='tight')
+plt.savefig("../figs/msc_figs/ericcson_mobile_usr_growth.pdf", dpi=600, bbox_inches='tight')
 plt.show()
 
 # %%
@@ -71,5 +71,5 @@ plt.xticks(x_years)
 
 plt.tight_layout()
 plt.grid()
-plt.savefig("../figs/ericsson_global_mobile_data.pdf", dpi=600, bbox_inches='tight')
+plt.savefig("../figs/msc_figs/ericsson_global_mobile_data.pdf", dpi=600, bbox_inches='tight')
 plt.show()

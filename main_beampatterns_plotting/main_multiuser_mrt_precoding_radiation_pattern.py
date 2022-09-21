@@ -44,7 +44,7 @@ sel_ptx_idx = int(n_points / 180 * sel_psd_angle)
 
 # PSD plotting params
 psd_nfft = 4096
-n_samp_per_seg = 2048
+n_samp_per_seg = 1024
 
 rx_points = pts_on_semicircum(r=radial_distance, n=n_points)
 radian_vals = np.radians(np.linspace(0, 180, n_points + 1))
@@ -86,7 +86,7 @@ for channel_type_str in channel_type_lst:
         elif channel_type_str == "two_path":
             my_miso_chan = channel.MisoTwoPathFd()
         elif channel_type_str == "rayleigh":
-            my_miso_chan = channel.RayleighMisoFd(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx,
+            my_miso_chan = channel.MisoRayleighFd(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx,
                                                   seed=1234)
         else:
             raise ValueError('Unknown channel type!')
@@ -109,7 +109,6 @@ for channel_type_str in channel_type_lst:
         my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
 
         vk_mat = my_array.get_precoding_mat()
-        # vk_pow_vec = np.sum(np.power(np.abs(np.sum(vk_mat, axis=2)), 2), axis=1)
         vk_pow_vec = np.sum(np.sum(np.power(np.abs(vk_mat), 2), axis=2), axis=1)
 
         ibo_vec = 10 * np.log10(10 ** (ibo_val_db / 10) * my_mod.n_sub_carr / (vk_pow_vec * n_ant_val))

@@ -80,7 +80,7 @@ for chan_idx, chan_obj in enumerate(chan_lst):
             color_idx += 1
         if ite_val in sel_cnc_iter_val:
             # if not (chan_idx == 2 and ite_val == 0):
-            if isinstance(chan_obj, channel.RayleighMisoFd):
+            if isinstance(chan_obj, channel.MisoRayleighFd):
                 ax1.plot(mcnc_n_ant_arr,
                          mcnc_bers_per_chan_per_nite_per_n_ant[ite_idx + chan_idx * (len(cnc_n_iter_lst))],
                          mcnc_chan_linestyles[chan_idx], fillstyle="none", label=ite_val,
@@ -138,7 +138,8 @@ mcnc_leg = mlines.Line2D([0], [0], linestyle='--', color='k', label='MCNC')
 ax1.legend(handles=[cnc_leg, mcnc_leg], loc="upper left", framealpha=0.9, bbox_to_anchor=(0.6, -0.09))
 # plt.gca().add_artist(leg3)
 ax1.set_title(
-    "BER in regard to number of antennas for selected channels, QAM %d, Eb/N0 = %d dB" % (constel_size, ebn0_db))
+    "BER in regard to number of antennas for selected channels, \n QAM %d, IBO = %d dB, Eb/N0 = %d dB" % (
+    constel_size, ibo_val_db, ebn0_db))
 
 plt.tight_layout()
 # %%

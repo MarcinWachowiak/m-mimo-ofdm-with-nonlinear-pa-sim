@@ -80,7 +80,7 @@ ax1.legend(handles=[los, twopath, rayleigh], title="Channels:", loc="upper left"
 ax1.set_ylim([4, 54])
 ax1.set_xlim([0, 7])
 
-ax1.set_title("SDR in regard to IBO for selected number of antennas and channels")
+ax1.set_title("SDR in regard to IBO for selected channels and number of antennas ")
 ax1.set_xlabel("IBO [dB]")
 ax1.set_ylabel("SDR [dB]")
 ax1.grid()

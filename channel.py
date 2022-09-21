@@ -110,7 +110,7 @@ class MisoTwoPathFd:
             return fd_sigmat_after_chan
 
 
-class RayleighMisoFd:
+class MisoRayleighFd:
     def __init__(self, tx_transceivers, rx_transceiver, seed=None):
         self.n_inputs = len(tx_transceivers)
         self.fd_samp_size = tx_transceivers[0].modem.n_fft
@@ -165,6 +165,76 @@ class RayleighMisoFd:
             self.channel_mat_fd = fd_rayleigh_coeffs
         else:
             self.channel_mat_fd = np.multiply(fd_rayleigh_coeffs, self.los_fd_att_mat)
+
+    def propagate(self, in_sig_mat, sum=True):
+        # channel in frequency domain
+        # multiply signal by rayleigh channel coefficients in frequency domain
+        fd_sigmat_after_chan = np.multiply(in_sig_mat, self.channel_mat_fd)
+        # sum columns
+        if sum:
+            return np.sum(fd_sigmat_after_chan, axis=0)
+        else:
+            return fd_sigmat_after_chan
+
+
+class MisoRandomPathsFd:
+    def __init__(self, tx_transceivers, rx_transceiver, seed=None, n_paths=10, max_delay_spread=1000e-9):
+        self.n_inputs = len(tx_transceivers)
+        self.fd_samp_size = tx_transceivers[0].modem.n_fft
+        self.n_paths = n_paths
+        self.max_delay_spread = max_delay_spread
+        # seed for random channel coefficients
+        if seed is not None:
+            self.seed = seed
+            self.rng_gen = np.random.default_rng(seed)
+        else:
+            self.rng_gen = np.random.default_rng(1234)
+
+        # get frequencies of subcarriers
+        sig_freq_vals = torch.fft.fftfreq(rx_transceiver.modem.n_fft, d=1 / rx_transceiver.modem.n_fft).numpy() \
+                        * rx_transceiver.carrier_spacing + rx_transceiver.center_freq
+
+        self.channel_mat_fd = np.ones((len(tx_transceivers), self.fd_samp_size), dtype=np.complex)
+
+        # default to reference position as (0,0,15)
+        # TODO include different reference positions
+        for tx_idx, tx_transceiver in enumerate(tx_transceivers):
+            # relative distance to array center
+            delta_m = np.sqrt(np.power(tx_transceiver.cord_x - 0.0, 2) + np.power(
+                tx_transceiver.cord_y - 0.0, 2) + np.power(
+                tx_transceiver.cord_z - 15.0, 2))
+            for freq_idx, freq_val in enumerate(sig_freq_vals):
+                angles_of_dep = self.rng_gen.uniform(low=-np.pi / 2.0, high=np.pi / 2, size=self.n_paths)
+                tau_delays = self.rng_gen.uniform(low=0.0, high=self.max_delay_spread, size=self.n_paths)
+
+                path_coeffs = np.exp(
+                    -2j * freq_val * (tau_delays + delta_m * np.sin(angles_of_dep / scp_constants.speed_of_light)))
+                channel_coeff = 1 / np.sqrt(self.n_paths) * np.sum(path_coeffs)
+                self.channel_mat_fd[tx_idx, freq_idx] = channel_coeff
+
+    def __str__(self):
+        return "random_paths"
+
+    def get_channel_mat_fd(self):
+        return self.channel_mat_fd
+
+    def reroll_channel_coeffs(self, tx_transceivers):
+        # get frequencies of subcarriers
+        sig_freq_vals = torch.fft.fftfreq(tx_transceivers[0].modem.n_fft, d=1 / tx_transceivers[0].modem.n_fft).numpy() \
+                        * tx_transceivers[0].carrier_spacing + tx_transceivers[0].center_freq
+        for tx_idx, tx_transceiver in enumerate(tx_transceivers):
+            # relative distance to array center
+            delta_m = np.sqrt(np.power(tx_transceiver.cord_x - 0.0, 2) + np.power(
+                tx_transceiver.cord_y - 0.0, 2) + np.power(
+                tx_transceiver.cord_z - 15.0, 2))
+            for freq_idx, freq_val in enumerate(sig_freq_vals):
+                angles_of_dep = self.rng_gen.uniform(low=-np.pi / 2.0, high=np.pi / 2, size=self.n_paths)
+                tau_delays = self.rng_gen.uniform(low=0.0, high=self.max_delay_spread, size=self.n_paths)
+
+                path_coeffs = np.exp(
+                    -2j * freq_val * (tau_delays + delta_m * np.sin(angles_of_dep / scp_constants.speed_of_light)))
+                channel_coeff = 1 / np.sqrt(self.n_paths) * np.sum(path_coeffs)
+                self.channel_mat_fd[tx_idx, freq_idx] = channel_coeff
 
     def propagate(self, in_sig_mat, sum=True):
         # channel in frequency domain

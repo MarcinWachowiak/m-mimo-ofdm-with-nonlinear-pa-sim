@@ -28,7 +28,7 @@ set_latex_plot_style(use_tex=False, fig_width_in=7.0)
 ibo_val_db = 3
 n_snapshots = 100
 n_points = 180
-radial_distance = 300
+radial_distance = 300  # fix users position at radial/beampattern measurment distance
 precoding_angle = 45
 sel_psd_angle = 78
 
@@ -67,6 +67,7 @@ for channel_type_str in channel_type_lst:
 
         rx_sig_at_sel_point_des = []
         rx_sig_at_sel_point_dist = []
+        rx_sig_at_sel_point_cln = []
         rx_sig_at_max_point_des = []
         rx_sig_at_max_point_dist = []
 
@@ -79,7 +80,7 @@ for channel_type_str in channel_type_lst:
         elif channel_type_str == "two_path":
             my_miso_chan = channel.MisoTwoPathFd()
         elif channel_type_str == "rayleigh":
-            my_miso_chan = channel.RayleighMisoFd(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx,
+            my_miso_chan = channel.MisoRayleighFd(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx,
                                                   seed=1234)
         else:
             raise ValueError('Unknown channel type!')
@@ -108,6 +109,7 @@ for channel_type_str in channel_type_lst:
         desired_sig_pow_per_pt = []
         distorted_sig_pow_per_pt = []
         for pt_idx, point in enumerate(rx_points):
+
             (x_cord, y_cord) = point
             my_rx.set_position(cord_x=x_cord, cord_y=y_cord, cord_z=1.5)
             # update channel matrix constant for a given point
@@ -145,6 +147,7 @@ for channel_type_str in channel_type_lst:
                     # for PSD plotting take into consideration full BW not only SC
                     desired_sig = np.sum(ak_vect * clean_rx_sig_fd, axis=0)
                     distortion_sig = np.sum(np.subtract(rx_sig_fd, (ak_vect * clean_rx_sig_fd)), axis=0)
+                    rx_sig_at_sel_point_cln.append(utilities.to_time_domain(clean_rx_sig_fd))
                     rx_sig_at_sel_point_des.append(utilities.to_time_domain(desired_sig))
                     rx_sig_at_sel_point_dist.append(utilities.to_time_domain(distortion_sig))
 
@@ -178,6 +181,7 @@ for channel_type_str in channel_type_lst:
 
         rx_sig_at_sel_point_des_arr = np.concatenate(rx_sig_at_sel_point_des).ravel()
         rx_sig_at_sel_point_dist_arr = np.concatenate(rx_sig_at_sel_point_dist).ravel()
+        rx_sig_at_sel_point_cln_arr = np.concatenate(rx_sig_at_sel_point_cln).ravel()
 
         rx_des_at_sel_point_freq_arr, rx_des_at_sel_point_psd = welch(rx_sig_at_sel_point_des_arr, fs=psd_nfft,
                                                                       nfft=psd_nfft, nperseg=n_samp_per_seg,
@@ -185,6 +189,9 @@ for channel_type_str in channel_type_lst:
         rx_dist_at_sel_point_freq_arr, rx_dist_at_sel_point_psd = welch(rx_sig_at_sel_point_dist_arr, fs=psd_nfft,
                                                                         nfft=psd_nfft, nperseg=n_samp_per_seg,
                                                                         return_onesided=False)
+        rx_cln_at_sel_point_freq_arr, rx_cln_at_sel_point_psd = welch(rx_sig_at_sel_point_cln_arr, fs=psd_nfft,
+                                                                      nfft=psd_nfft, nperseg=n_samp_per_seg,
+                                                                      return_onesided=False)
 
         psd_max_filename_str = "psd_mrt_%s_chan_ibo%d_npoints%d_nsnap%d_angle%d_nant%d" % (
             my_miso_chan, ibo_val_db, n_points, n_snapshots, precoding_angle, n_ant_val)
@@ -222,7 +229,7 @@ for channel_type_str in channel_type_lst:
 
         data_lst_sel = []
         tmp_lst_sel = [rx_des_at_sel_point_freq_arr, rx_des_at_sel_point_psd, rx_dist_at_sel_point_freq_arr,
-                       rx_dist_at_sel_point_psd]
+                       rx_dist_at_sel_point_psd, rx_cln_at_sel_point_freq_arr, rx_cln_at_sel_point_psd]
         for arr1 in tmp_lst_sel:
             data_lst_sel.append(arr1)
         utilities.save_to_csv(data_lst=data_lst_sel, filename=psd_sel_filename_str)

@@ -76,7 +76,7 @@ if channel_type_str == "los":
 elif channel_type_str == "two_path":
     my_miso_chan = channel.MisoTwoPathFd()
 elif channel_type_str == "rayleigh":
-    my_miso_chan = channel.RayleighMisoFd(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx,
+    my_miso_chan = channel.MisoRayleighFd(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx,
                                           seed=1234)
 else:
     raise ValueError('Unknown channel type!')

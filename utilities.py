@@ -241,7 +241,7 @@ def plot_spatial_config(ant_array, rx_transceiver, plot_3d=True):
         ax.grid()
         ax.set_axisbelow(True)
         plt.tight_layout()
-        plt.savefig("figs/spatial_rx_tx_config_3d.png", dpi=600, bbox_inches='tight')
+        plt.savefig("../figs/msc_figs/spatial_rx_tx_config_3d.png", dpi=600, bbox_inches='tight')
         plt.show()
     else:
         fig, ax = plt.subplots()
@@ -267,7 +267,7 @@ def plot_spatial_config(ant_array, rx_transceiver, plot_3d=True):
         ax.legend()
         ax.set_axisbelow(True)
         plt.tight_layout()
-        plt.savefig("figs/spatial_rx_tx_config_2d.png", dpi=600, bbox_inches='tight')
+        plt.savefig("../figs/msc_figs/spatial_rx_tx_config_2d.png", dpi=600, bbox_inches='tight')
         plt.show()
 
 
@@ -316,13 +316,13 @@ def to_time_domain(in_sig_mat_fd):
 
 
 def save_to_csv(data_lst, filename):
-    with open("figs/csv_results/%s.csv" % filename, 'w', newline='') as csv_file:
+    with open("../figs/csv_results/%s.csv" % filename, 'w', newline='') as csv_file:
         writer = csv.writer(csv_file)
         writer.writerows(data_lst)
 
 
 def read_from_csv(filename):
-    with open("figs/csv_results/%s.csv" % filename, 'r', newline='') as csv_file:
+    with open("../figs/csv_results/%s.csv" % filename, 'r', newline='') as csv_file:
         reader = csv.reader(csv_file, quoting=csv.QUOTE_NONNUMERIC)
         data_lst = list(reader)
     return data_lst

@@ -82,7 +82,7 @@ if __name__ == '__main__':
         my_miso_two_path_chan.calc_channel_mat(tx_transceivers=my_array.array_elements, rx_transceiver=my_standard_rx,
                                                skip_attenuation=False)
 
-        my_miso_rayleigh_chan = channel.RayleighMisoFd(tx_transceivers=my_array.array_elements,
+        my_miso_rayleigh_chan = channel.MisoRayleighFd(tx_transceivers=my_array.array_elements,
                                                        rx_transceiver=my_standard_rx,
                                                        seed=1234)
         chan_lst = [my_miso_los_chan, my_miso_two_path_chan, my_miso_rayleigh_chan]

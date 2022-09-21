@@ -40,7 +40,7 @@ my_standard_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment
 my_cnc_rx = corrector.CncReceiver(copy.deepcopy(my_mod), copy.deepcopy(my_distortion))
 
 # my_miso_chan = channel.MisoTwoPathFd()
-my_miso_chan = channel.RayleighMisoFd(tx_transceivers=my_array.array_elements, rx_transceiver=my_standard_rx, seed=1234)
+my_miso_chan = channel.MisoRayleighFd(tx_transceivers=my_array.array_elements, rx_transceiver=my_standard_rx, seed=1234)
 my_noise = noise.Awgn(snr_db=10, seed=1234)
 bit_rng = np.random.default_rng(4321)
 
@@ -49,7 +49,7 @@ print("SNR values:", snr_arr)
 n_symb_sent_max = int(1e6)
 n_symb_err_min = 10e3
 
-if not isinstance(my_miso_chan, channel.RayleighMisoFd):
+if not isinstance(my_miso_chan, channel.MisoRayleighFd):
     my_miso_chan.calc_channel_mat(tx_transceivers=my_array.array_elements, rx_transceiver=my_standard_rx,
                                   skip_attenuation=False)
 
