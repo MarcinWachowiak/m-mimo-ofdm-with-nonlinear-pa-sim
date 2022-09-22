@@ -19,9 +19,13 @@ class CncReceiver():
         self.upsample_factor = self.modem.n_fft / self.modem.n_sub_carr
         self.impairment.set_avg_sample_power(avg_samp_pow=self.modem.avg_symbol_power * (1 / self.upsample_factor))
 
-    def update_distortion(self, ibo_db):
-        self.impairment.set_ibo(ibo_db)
-        self.modem.alpha = self.modem.calc_alpha(ibo_db)
+    def update_distortion(self, ibo_db, alpha_val=None):
+        if isinstance(self.impairment, distortion.ThirdOrderNonLin):
+            self.impairment.set_toi(ibo_db)
+            self.modem.alpha = alpha_val
+        else:
+            self.impairment.set_ibo(ibo_db)
+            self.modem.alpha = self.modem.calc_alpha(ibo_db)
 
     def receive(self, n_iters_lst, in_sig_fd, alpha_estimation=None):
         # strip input fd signal of the OOB - include only the symbol data
@@ -72,7 +76,7 @@ class CncReceiver():
 
 
 class McncReceiver():
-    def __init__(self, antenna_array: LinearArray, channel):
+    def __init__(self, antenna_array: LinearArray, channel, alpha_estimate=None):
         self.antenna_array = antenna_array
         self.channel = channel
         channel_mat_at_point = self.channel.get_channel_mat_fd()
@@ -87,8 +91,14 @@ class McncReceiver():
         vk_pow_vec = np.sum(np.power(np.abs(vk_mat), 2), axis=1)
         hk_vk_agc = np.multiply(hk_mat, vk_mat)
 
-        ibo_vec = 10 * np.log10(10 ** (self.antenna_array.array_elements[0].impairment.ibo_db / 10) * self.n_sub_carr / (vk_pow_vec * len(self.antenna_array.array_elements)))
-        ak_vect = self.antenna_array.array_elements[0].modem.calc_alpha(ibo_db=ibo_vec)
+        if isinstance(self.antenna_array.array_elements[0].impairment, distortion.ThirdOrderNonLin):
+            ak_vect = np.repeat(alpha_estimate, len(self.antenna_array.array_elements))
+        else:
+            ibo_vec = 10 * np.log10(
+                10 ** (self.antenna_array.array_elements[0].impairment.ibo_db / 10) * self.n_sub_carr / (
+                            vk_pow_vec * len(self.antenna_array.array_elements)))
+            ak_vect = self.antenna_array.array_elements[0].modem.calc_alpha(ibo_db=ibo_vec)
+
         ak_vect = np.expand_dims(ak_vect, axis=1)
 
         ak_hk_vk_agc = ak_vect * hk_vk_agc
@@ -100,7 +110,7 @@ class McncReceiver():
 
         self.agc_corr_vec = ak_hk_vk_agc_nfft
 
-    def receive(self, n_iters_lst, in_sig_fd, alpha_estimation=None):
+    def receive(self, n_iters_lst, in_sig_fd):
         # strip input fd signal of the OOB - include only the symbol data
         rx_ofdm_nsc_fd = np.concatenate((in_sig_fd[-self.n_sub_carr // 2:], in_sig_fd[1:(self.n_sub_carr // 2) + 1]))
 
@@ -129,15 +139,11 @@ class McncReceiver():
             rx_symbols_estimate = np.concatenate(
                 (rx_ofdm_symbol[-self.n_sub_carr // 2:], rx_ofdm_symbol[1:(self.n_sub_carr // 2) + 1]))
 
-            # calculate distortion estimate
-            if alpha_estimation is not None:
-                distortion_estimate_fd = rx_symbols_estimate - rx_symbols
-            else:
-                distortion_estimate_fd = rx_symbols_estimate - rx_symbols
+            distortion_estimate_fd = rx_symbols_estimate - rx_symbols
 
         return bits_per_iter_lst
 
-    def update_agc(self):
+    def update_agc(self, alpha_estimate=None):
         # channel_mat_at_point = self.channel.get_channel_mat_fd()
         # self.antenna_array.set_precoding_matrix(channel_mat_fd=channel_mat_at_point, mr_precoding=True)
         # self.n_sub_carr = self.antenna_array.array_elements[0].modem.n_sub_carr
@@ -150,10 +156,13 @@ class McncReceiver():
         vk_pow_vec = np.sum(np.power(np.abs(vk_mat), 2), axis=1)
         hk_vk_agc = np.multiply(hk_mat, vk_mat)
 
-        ibo_vec = 10 * np.log10(
-            10 ** (self.antenna_array.array_elements[0].impairment.ibo_db / 10) * self.n_sub_carr / (
-                    vk_pow_vec * len(self.antenna_array.array_elements)))
-        ak_vect = self.antenna_array.array_elements[0].modem.calc_alpha(ibo_db=ibo_vec)
+        if alpha_estimate is None:
+            ibo_vec = 10 * np.log10(
+                10 ** (self.antenna_array.array_elements[0].impairment.ibo_db / 10) * self.n_sub_carr / (
+                        vk_pow_vec * len(self.antenna_array.array_elements)))
+            ak_vect = self.antenna_array.array_elements[0].modem.calc_alpha(ibo_db=ibo_vec)
+        else:
+            ak_vect = np.repeat(alpha_estimate, len(self.antenna_array.array_elements))
         ak_vect = np.expand_dims(ak_vect, axis=1)
 
         ak_hk_vk_agc = ak_vect * hk_vk_agc

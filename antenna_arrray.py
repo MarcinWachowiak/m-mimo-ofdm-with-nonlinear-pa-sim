@@ -3,6 +3,8 @@ import copy
 import numpy as np
 import scipy as scp
 
+import distortion
+
 
 class LinearArray:
     def __init__(self, n_elements, base_transceiver, center_freq, wav_len_spacing, cord_x=0, cord_y=0, cord_z=0):
@@ -145,7 +147,7 @@ class LinearArray:
                 mu_precoding_slice = precoding_mat_fd[:, tx_idx, :]
                 tx_transceiver.modem.set_precoding(mu_precoding_slice)
 
-    def update_distortion(self, ibo_db, avg_sample_pow):
+    def update_distortion(self, ibo_db, avg_sample_pow, alpha_val=None):
         # calculate the avg precoding gain only for the desired signal - withing the idx range of subcarriers
         # for idx, tx_transceiver in enumerate(self.array_elements):
         # select coefficients based on carrier frequencies
@@ -176,8 +178,13 @@ class LinearArray:
         # print("AVG precoding gain: ", avg_precoding_gain)
 
         for idx, array_transceiver in enumerate(self.array_elements):
-            array_transceiver.modem.alpha = array_transceiver.modem.calc_alpha(ibo_db=ibo_db)
-            array_transceiver.impairment.set_ibo(ibo_db)
+            if isinstance(array_transceiver.impairment, distortion.ThirdOrderNonLin):
+                array_transceiver.modem.alpha = alpha_val
+                array_transceiver.impairment.set_toi(ibo_db)
+            else:
+                array_transceiver.modem.alpha = array_transceiver.modem.calc_alpha(ibo_db=ibo_db)
+                array_transceiver.impairment.set_ibo(ibo_db)
+
             array_transceiver.impairment.set_avg_sample_power(avg_sample_pow * avg_precoding_gain)
 
     def get_avg_precoding_gain(self):
