@@ -61,7 +61,9 @@ if __name__ == '__main__':
     # my_distortion = distortion.SoftLimiter(0, my_mod.avg_sample_power)
     my_distortion = distortion.Rapp(ibo_db=0, p_hardness=4.0, avg_samp_pow=my_mod.avg_sample_power)
 
-    my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion))
+    my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
+                                    center_freq=int(3.5e9),
+                                    carrier_spacing=int(15e3))
     my_standard_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
                                              cord_x=rx_loc_x, cord_y=rx_loc_y, cord_z=1.5,
                                              center_freq=int(3.5e9), carrier_spacing=int(15e3))
@@ -80,7 +82,12 @@ if __name__ == '__main__':
         my_miso_rayleigh_chan = channel.MisoRayleighFd(tx_transceivers=my_array.array_elements,
                                                        rx_transceiver=my_standard_rx,
                                                        seed=1234)
-        chan_lst = [my_miso_los_chan, my_miso_two_path_chan, my_miso_rayleigh_chan]
+
+        my_random_paths_miso_channel = channel.MisoRandomPathsFd(tx_transceivers=my_array.array_elements,
+                                                                 rx_transceiver=my_standard_rx, n_paths=8,
+                                                                 max_delay_spread=100e-9)
+
+        chan_lst = [my_random_paths_miso_channel]
         my_noise = noise.Awgn(snr_db=10, seed=1234)
 
         for my_miso_chan in chan_lst:

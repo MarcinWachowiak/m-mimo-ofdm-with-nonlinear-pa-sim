@@ -22,7 +22,7 @@ set_latex_plot_style()
 
 # %%
 # parameters
-n_ant_val = 4
+n_ant_val = 8
 ibo_arr = [0]
 ebn0_step = [1]
 cnc_n_iter_lst = [1, 2, 3, 4, 5, 6, 7, 8]
@@ -73,20 +73,38 @@ my_miso_rayleigh_chan = channel.MisoRayleighFd(tx_transceivers=my_array.array_el
                                                seed=1234)
 
 my_random_paths_miso_channel = channel.MisoRandomPathsFd(tx_transceivers=my_array.array_elements,
-                                                         rx_transceiver=my_standard_rx, n_paths=3,
+                                                         rx_transceiver=my_standard_rx, n_paths=8,
                                                          max_delay_spread=100e-9)
 chan_lst = [my_random_paths_miso_channel]
 
+# %%
 # plot the random path channel transfer function
-fd_chan_max = my_random_paths_miso_channel.get_channel_mat_fd()
+freq_bin_vec = np.fft.fftfreq(my_mod.n_fft, 1 / my_mod.n_fft)
+sorted_freq_bin_vec = sorted(freq_bin_vec)
+
+chanels_tf_func_lst = []
+for channel_idx, chan_obj in enumerate(chan_lst):
+    channel_siso_tf = []
+    channel_mat = chan_obj.get_channel_mat_fd()
+    for ant_idx in range(channel_mat.shape[0]):
+        siso_channel_tf_func = channel_mat[ant_idx, :]
+        _, siso_channel_tf_func = zip(*sorted(zip(freq_bin_vec, siso_channel_tf_func)))
+        channel_siso_tf.append(np.asarray(siso_channel_tf_func))
+    chanels_tf_func_lst.append(channel_siso_tf)
+
 fig1, ax1 = plt.subplots(1, 1)
-for tx_idx in range(len(my_array.array_elements)):
-    ax1.plot(10 * np.log10(np.abs(fd_chan_max[tx_idx, :])), label=tx_idx)
+for chan_idx, channel_obj in enumerate(chan_lst):
+    for tx_idx in range(len(my_array.array_elements)):
+        ax1.plot(10 * np.log10(np.abs(chanels_tf_func_lst[chan_idx][tx_idx])), label=tx_idx)
 
 ax1.set_title("Random paths channel model transfer function")
-ax1.set_xlabel("Transfer function")
-ax1.set_ylabel("Subcarrier index [-]")
+ax1.set_ylabel("Transfer function |h(f)| [dB]")
+ax1.set_xlabel("Subcarrier index [-]")
 ax1.grid()
-ax1.legend()
+ax1.legend(title="TX-RX idx:")
 plt.tight_layout()
+plt.savefig(
+    "../figs/random_paths_channel_tf_npaths%d_maxdelayspr%1.2e.png" % (
+    my_random_paths_miso_channel.n_paths, my_random_paths_miso_channel.max_delay_spread),
+    dpi=600, bbox_inches='tight')
 plt.show()

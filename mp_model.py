@@ -67,6 +67,8 @@ class Link():
                             self.my_miso_chan.calc_channel_mat(tx_transceivers=self.my_array.array_elements,
                                                                rx_transceiver=self.my_standard_rx,
                                                                skip_attenuation=False)
+                        elif isinstance(self.my_miso_chan, channel.MisoRandomPathsFd):
+                            self.my_miso_chan.reroll_channel_coeffs(tx_transceivers=self.my_array.array_elements)
                         else:
                             self.my_miso_chan.reroll_channel_coeffs()
 
@@ -117,6 +119,8 @@ class Link():
                     self.my_miso_chan.calc_channel_mat(tx_transceivers=self.my_array.array_elements,
                                                        rx_transceiver=self.my_standard_rx,
                                                        skip_attenuation=False)
+                elif isinstance(self.my_miso_chan, channel.MisoRandomPathsFd):
+                    self.my_miso_chan.reroll_channel_coeffs(tx_transceivers=self.my_array.array_elements)
                 else:
                     self.my_miso_chan.reroll_channel_coeffs()
 

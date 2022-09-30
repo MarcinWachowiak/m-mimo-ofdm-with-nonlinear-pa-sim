@@ -196,17 +196,17 @@ class MisoRandomPathsFd:
 
         self.channel_mat_fd = np.ones((len(tx_transceivers), self.fd_samp_size), dtype=np.complex)
 
-        # default to reference position as (0,0,15)
-        # TODO include different reference positions
+        angles_of_dep = self.rng_gen.uniform(low=-np.pi / 2.0, high=np.pi / 2, size=self.n_paths)
+        tau_delays = self.rng_gen.uniform(low=0.0, high=self.max_delay_spread, size=self.n_paths)
+
+        # default reference antenna position to first of the array
+        ref_x, ref_y, ref_z = tx_transceivers[0].cord_x, tx_transceivers[0].cord_y, tx_transceivers[0].cord_z
         for tx_idx, tx_transceiver in enumerate(tx_transceivers):
             # relative distance to array center
-            delta_m = np.sqrt(np.power(tx_transceiver.cord_x - 0.0, 2) + np.power(
-                tx_transceiver.cord_y - 0.0, 2) + np.power(
-                tx_transceiver.cord_z - 15.0, 2))
+            delta_m = np.sqrt(np.power(tx_transceiver.cord_x - ref_x, 2) + np.power(
+                tx_transceiver.cord_y - ref_y, 2) + np.power(
+                tx_transceiver.cord_z - ref_z, 2))
             for freq_idx, freq_val in enumerate(sig_freq_vals):
-                angles_of_dep = self.rng_gen.uniform(low=-np.pi / 2.0, high=np.pi / 2, size=self.n_paths)
-                tau_delays = self.rng_gen.uniform(low=0.0, high=self.max_delay_spread, size=self.n_paths)
-
                 path_coeffs = np.exp(
                     -2j * freq_val * (tau_delays + delta_m * np.sin(angles_of_dep / scp_constants.speed_of_light)))
                 channel_coeff = 1 / np.sqrt(self.n_paths) * np.sum(path_coeffs)
@@ -222,15 +222,18 @@ class MisoRandomPathsFd:
         # get frequencies of subcarriers
         sig_freq_vals = torch.fft.fftfreq(tx_transceivers[0].modem.n_fft, d=1 / tx_transceivers[0].modem.n_fft).numpy() \
                         * tx_transceivers[0].carrier_spacing + tx_transceivers[0].center_freq
+
+        angles_of_dep = self.rng_gen.uniform(low=-np.pi / 2.0, high=np.pi / 2, size=self.n_paths)
+        tau_delays = self.rng_gen.uniform(low=0.0, high=self.max_delay_spread, size=self.n_paths)
+
+        # default reference antenna position to first of the array
+        ref_x, ref_y, ref_z = tx_transceivers[0].cord_x, tx_transceivers[0].cord_y, tx_transceivers[0].cord_z
         for tx_idx, tx_transceiver in enumerate(tx_transceivers):
             # relative distance to array center
-            delta_m = np.sqrt(np.power(tx_transceiver.cord_x - 0.0, 2) + np.power(
-                tx_transceiver.cord_y - 0.0, 2) + np.power(
-                tx_transceiver.cord_z - 15.0, 2))
+            delta_m = np.sqrt(np.power(tx_transceiver.cord_x - ref_x, 2) + np.power(
+                tx_transceiver.cord_y - ref_y, 2) + np.power(
+                tx_transceiver.cord_z - ref_z, 2))
             for freq_idx, freq_val in enumerate(sig_freq_vals):
-                angles_of_dep = self.rng_gen.uniform(low=-np.pi / 2.0, high=np.pi / 2, size=self.n_paths)
-                tau_delays = self.rng_gen.uniform(low=0.0, high=self.max_delay_spread, size=self.n_paths)
-
                 path_coeffs = np.exp(
                     -2j * freq_val * (tau_delays + delta_m * np.sin(angles_of_dep / scp_constants.speed_of_light)))
                 channel_coeff = 1 / np.sqrt(self.n_paths) * np.sum(path_coeffs)
