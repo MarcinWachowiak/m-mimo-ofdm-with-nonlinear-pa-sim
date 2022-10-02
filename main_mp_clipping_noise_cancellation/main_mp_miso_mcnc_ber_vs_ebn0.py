@@ -34,7 +34,7 @@ if __name__ == '__main__':
 
     # %%
     # parameters
-    n_ant_arr = [4]
+    n_ant_arr = [16]
     ibo_arr = [0]
     ebn0_step = [1]
     cnc_n_iter_lst = [1, 2, 3, 4, 5, 6, 7, 8]
