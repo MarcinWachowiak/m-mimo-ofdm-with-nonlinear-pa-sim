@@ -28,7 +28,7 @@ set_latex_plot_style()
 
 # %%
 # parameters
-n_ant_arr = [4]
+n_ant_arr = [1]
 dist_val_arr = [22.75]
 ebn0_step = [1]
 cnc_n_iter_lst = [1, 2, 3, 4, 5, 6, 7, 8]
@@ -86,7 +86,7 @@ for n_ant_val in n_ant_arr:
         if estimate_alpha:
             start_time = time.time()
             bit_rng = np.random.default_rng(4321)
-            n_ofdm_symb = 1e3
+            n_ofdm_symb = 1e4
             ofdm_symb_idx = 0
             alpha_val_vec = []
             while ofdm_symb_idx < n_ofdm_symb:
@@ -172,19 +172,6 @@ for n_ant_val in n_ant_arr:
                         hk_vk_agc_nfft[-(n_sub_carr // 2):] = hk_vk_agc_avg_vec[0:n_sub_carr // 2]
                         hk_vk_agc_nfft[1:(n_sub_carr // 2) + 1] = hk_vk_agc_avg_vec[n_sub_carr // 2:]
 
-                        ibo_vec = 10 * np.log10(
-                            10 ** (dist_val_db / 10) * my_mod.n_sub_carr / (vk_pow_vec * n_ant_val))
-                        ak_vect = my_mod.calc_alpha(ibo_db=ibo_vec)
-                        ak_vect = np.expand_dims(ak_vect, axis=1)
-
-                        ak_hk_vk_agc = ak_vect * hk_vk_agc
-                        ak_hk_vk_agc_avg_vec = np.sum(ak_hk_vk_agc, axis=0)
-                        ak_hk_vk_noise_scaler = np.mean(np.power(np.abs(ak_hk_vk_agc_avg_vec), 2))
-
-                        ak_hk_vk_agc_nfft = np.ones(my_mod.n_fft, dtype=np.complex128)
-                        ak_hk_vk_agc_nfft[-(n_sub_carr // 2):] = ak_hk_vk_agc_avg_vec[0:n_sub_carr // 2]
-                        ak_hk_vk_agc_nfft[1:(n_sub_carr // 2) + 1] = ak_hk_vk_agc_avg_vec[n_sub_carr // 2:]
-
                         if np.logical_and((n_err[0] < n_err_min), (bits_sent[0] < bits_sent_max)):
                             tx_bits = bit_rng.choice((0, 1), my_tx.modem.n_bits_per_ofdm_sym)
                             clean_ofdm_symbol = my_array.transmit(tx_bits, out_domain_fd=True, return_both=False,
@@ -247,9 +234,13 @@ for n_ant_val in n_ant_arr:
                         hk_vk_agc_nfft[-(n_sub_carr // 2):] = hk_vk_agc_avg_vec[0:n_sub_carr // 2]
                         hk_vk_agc_nfft[1:(n_sub_carr // 2) + 1] = hk_vk_agc_avg_vec[n_sub_carr // 2:]
 
-                        ibo_vec = 10 * np.log10(
-                            10 ** (dist_val_db / 10) * my_mod.n_sub_carr / (vk_pow_vec * n_ant_val))
-                        ak_vect = my_mod.calc_alpha(ibo_db=ibo_vec)
+                        if isinstance(my_distortion, distortion.ThirdOrderNonLin):
+                            ak_vect = np.repeat(alpha_estimate, n_ant_val)
+                        else:
+                            ibo_vec = 10 * np.log10(
+                                10 ** (dist_val_db / 10) * my_mod.n_sub_carr / (vk_pow_vec * n_ant_val))
+                            ak_vect = my_mod.calc_alpha(ibo_db=ibo_vec)
+
                         ak_vect = np.expand_dims(ak_vect, axis=1)
 
                         ak_hk_vk_agc = ak_vect * hk_vk_agc
