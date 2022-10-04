@@ -84,7 +84,7 @@ if __name__ == '__main__':
                                                        seed=1234)
 
         my_random_paths_miso_channel = channel.MisoRandomPathsFd(tx_transceivers=my_array.array_elements,
-                                                                 rx_transceiver=my_standard_rx, n_paths=8,
+                                                                 rx_transceiver=my_standard_rx, n_paths=3,
                                                                  max_delay_spread=100e-9)
 
         chan_lst = [my_random_paths_miso_channel]
