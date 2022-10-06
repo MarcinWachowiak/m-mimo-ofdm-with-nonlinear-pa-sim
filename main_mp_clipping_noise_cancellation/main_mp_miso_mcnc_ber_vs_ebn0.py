@@ -86,8 +86,8 @@ if __name__ == '__main__':
                                                        seed=1234)
 
         my_random_paths_miso_channel = channel.MisoRandomPathsFd(tx_transceivers=my_array.array_elements,
-                                                                 rx_transceiver=my_standard_rx, n_paths=3,
-                                                                 max_delay_spread=1e-6)
+                                                                 rx_transceiver=my_standard_rx, n_paths=8,
+                                                                 max_delay_spread=1e-7)
 
         chan_lst = [my_random_paths_miso_channel]
         my_noise = noise.Awgn(snr_db=10, seed=1234)
