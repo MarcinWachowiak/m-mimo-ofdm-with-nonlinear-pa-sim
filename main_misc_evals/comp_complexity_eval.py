@@ -9,25 +9,25 @@ N = 4096
 K = 64
 I = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8])
 # standard rx:
-std_add = 5 * N_U + 5 * ((N / 2) * np.log2(N)) + 2 * N * np.log2(N) + N_U * (3 * M)
-std_mul = 3 * N_U + 3 * ((N / 2) * np.log2(N)) + N_U * (2 * M)
+std_add = 5 * N_U + 5 * ((N / 2) * np.log2(N)) + 2 * N * np.log2(N) + N_U * (3 * 2 * np.sqrt(M))
+std_mul = 3 * N_U + 3 * ((N / 2) * np.log2(N)) + N_U * (2 * 2 * np.sqrt(M))
 print(std_add)
 print(std_mul)
 
 # CNC rx:
 cnc_add = 5 * N_U + 5 * ((N / 2) * np.log2(N)) + 2 * N * np.log2(N) + N_U * (3 * M) + I * (
-        2 * (5 * ((N / 2) * np.log2(N)) + 2 * N * np.log2(N)) + 70 * N + 2 * N_U + N_U * (3 * M))
+        2 * (5 * ((N / 2) * np.log2(N)) + 2 * N * np.log2(N)) + 70 * N + 2 * N_U + N_U * (3 * 2 * np.sqrt(M)))
 cnc_mul = 3 * N_U + 3 * ((N / 2) * np.log2(N)) + N_U * (2 * M) + I * (
-        2 * (3 * ((N / 2) * np.log2(N))) + 5 * N + 2 * N_U + N_U * (2 * M))
+        2 * (3 * ((N / 2) * np.log2(N))) + 5 * N + 2 * N_U + N_U * (2 * 2 * np.sqrt(M)))
 print("cnc_add ", cnc_add)
 print("cnc_mul ", cnc_mul)
 
 # MCNC rx:
 mcnc_add = 5 * N_U + 5 * ((N / 2) * np.log2(N)) + 2 * N * np.log2(N) + N_U * (3 * M) + I * (
         (K + 1) * (5 * ((N / 2) * np.log2(N)) + 2 * N * np.log2(N)) + K * (70 * N) + (2 * K + 1) * (5 * N_U) + (
-        K - 1) + 2 * N_U + N_U * (3 * M))
+        K - 1) + 2 * N_U + N_U * (3 * 2 * np.sqrt(M)))
 mcnc_mul = 3 * N_U + 3 * ((N / 2) * np.log2(N)) + N_U * (2 * M) + I * (
-        (K + 1) * (3 * ((N / 2) * np.log2(N))) + K * (5 * N) + (2 * K + 1) * 3 * N_U + N_U * (2 * M))
+        (K + 1) * (3 * ((N / 2) * np.log2(N))) + K * (5 * N) + (2 * K + 1) * 3 * N_U + N_U * (2 * 2 * np.sqrt(M)))
 print("mcnc_add", mcnc_add)
 print("mcnc_mul", mcnc_mul)
 
