@@ -8,10 +8,10 @@ sys.path.append(os.getcwd())
 
 filename_str_lst = [
     # "main_clipping_noise_cancellation/main_miso_cnc_ber_vs_ebn0_toi.py",
-    # "main_clipping_noise_cancellation/main_miso_mcnc_ber_vs_ebn0_toi.py",
+    # "main_clipping_noise_cancellation/main_miso_mcnc_ber_vs_ebn0_toi.py"
 
     "main_mp_clipping_noise_cancellation/main_mp_miso_mcnc_ber_vs_ebn0.py",
-    "main_mp_clipping_noise_cancellation/main_mp_miso_cnc_ber_vs_ebn0.py"
+    "main_mp_clipping_noise_cancellation/main_mp_miso_cnc_ber_vs_ebn0.py",
 
     # "main_mp_clipping_noise_cancellation/main_mp_miso_cnc_ber_vs_ebn0.py",
     # "main_mp_clipping_noise_cancellation/main_mp_miso_cnc_ber_vs_ibo.py",
