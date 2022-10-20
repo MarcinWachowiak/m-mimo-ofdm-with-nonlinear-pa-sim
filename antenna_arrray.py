@@ -9,6 +9,7 @@ import distortion
 class LinearArray:
     def __init__(self, n_elements, base_transceiver, center_freq, wav_len_spacing, cord_x=0, cord_y=0, cord_z=0):
         self.n_elements = n_elements
+        self.n_users = base_transceiver.modem.self.n_users
         self.base_transceiver = base_transceiver
         self.center_freq = center_freq
         self.wav_len_spacing = wav_len_spacing
@@ -103,12 +104,11 @@ class LinearArray:
 
         # multiple user precoding
         else:
-            n_users = len(channel_mat_fd)
-            precoding_mat_fd = np.empty((n_users, self.n_elements, tx_n_sc), dtype=np.complex128)
+            precoding_mat_fd = np.empty((self.n_users, self.n_elements, tx_n_sc), dtype=np.complex128)
 
             # old normalization for simple conjugate precoding
             # #multiple user TX power normalization factor
-            # ant_norm_mat = np.empty((n_users, self.n_elements))
+            # ant_norm_mat = np.empty((self.n_users, self.n_elements))
             # for usr_idx, usr_chan_mat_fd in enumerate(channel_mat_fd):
             #     sc_channel_mat_fd = np.concatenate(
             #         (usr_chan_mat_fd[:, 1:(tx_n_sc // 2) + 1], usr_chan_mat_fd[:, -tx_n_sc // 2:]), axis=1)
@@ -116,7 +116,7 @@ class LinearArray:
             # ant_norm_coeff_vec = 1/np.sqrt(np.sum(ant_norm_mat, axis=0))
 
             # calculate the normalizing factor K
-            usrs_vects = np.empty((n_users, tx_n_sc))
+            usrs_vects = np.empty((self.n_users, tx_n_sc))
             for usr_idx, usr_chan_mat_fd in enumerate(channel_mat_fd):
                 sc_channel_mat_fd = np.concatenate(
                     (usr_chan_mat_fd[:, -tx_n_sc // 2:], usr_chan_mat_fd[:, 1:(tx_n_sc // 2) + 1]), axis=1)
@@ -141,7 +141,15 @@ class LinearArray:
                     usr_precoding_mat_fd = np.exp(1j * np.angle(sc_channel_mat_fd_conjugate))
 
                 if zf_precoding:
-                    pass
+                    try:
+                        usr_precoding_mat_fd = np.sqrt(
+                            self.n_elements - self.n_users) * sc_channel_mat_fd_conjugate * np.linalg.inv(
+                            np.transpose(sc_channel_mat_fd) * sc_channel_mat_fd_conjugate)
+                    except:
+                        # try pseudoinverse if the standard one fails
+                        usr_precoding_mat_fd = np.sqrt(
+                            self.n_elements - self.n_users) * sc_channel_mat_fd_conjugate * np.linalg.pinv(
+                            np.transpose(sc_channel_mat_fd) * sc_channel_mat_fd_conjugate)
 
                 precoding_mat_fd[usr_idx, :, :] = usr_precoding_mat_fd
 
@@ -157,9 +165,8 @@ class LinearArray:
         # select coefficients based on carrier frequencies
         tx_n_sc = self.base_transceiver.modem.n_sub_carr
         # Equal total TX power precoding distortion normalization
-        n_users = self.base_transceiver.modem.n_users
 
-        if n_users == 1:
+        if self.n_users == 1:
             # get precoding matrix
             precoding_matrix = np.ones((self.n_elements, self.base_transceiver.modem.n_sub_carr), dtype=np.complex128)
             for idx, array_tx in enumerate(self.array_elements):
@@ -193,8 +200,7 @@ class LinearArray:
 
     def get_avg_precoding_gain(self):
 
-        n_users = self.base_transceiver.modem.n_users
-        if n_users == 1:
+        if self.n_users == 1:
             # get precoding matrix
             precoding_matrix = np.empty((self.n_elements, self.base_transceiver.modem.n_sub_carr), dtype=np.complex128)
             for idx, array_tx in enumerate(self.array_elements):
@@ -210,13 +216,12 @@ class LinearArray:
         return avg_precoding_gain
 
     def get_precoding_mat(self):
-        n_users = self.base_transceiver.modem.n_users
-        if n_users == 1:
+        if self.n_users == 1:
             precoding_matrix = np.empty((self.n_elements, self.base_transceiver.modem.n_sub_carr), dtype=np.complex128)
             for idx, array_tx in enumerate(self.array_elements):
                 precoding_matrix[idx, :] = array_tx.modem.precoding_mat
         else:
-            precoding_matrix = np.empty((self.n_elements, n_users, self.base_transceiver.modem.n_sub_carr),
+            precoding_matrix = np.empty((self.n_elements, self.n_users, self.base_transceiver.modem.n_sub_carr),
                                         dtype=np.complex128)
             for idx, array_tx in enumerate(self.array_elements):
                 precoding_matrix[idx, :, :] = array_tx.modem.precoding_mat

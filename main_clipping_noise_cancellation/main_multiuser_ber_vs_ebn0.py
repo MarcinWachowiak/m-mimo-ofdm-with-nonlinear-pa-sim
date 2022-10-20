@@ -27,8 +27,8 @@ from plot_settings import set_latex_plot_style
 if __name__ == '__main__':
     set_latex_plot_style()
     # Multiple users data
-    usr_angles = [45, 120, 150]
-    usr_distances = [300, 300, 300]
+    usr_angles = [45, 150]
+    usr_distances = [300, 300]
     usr_pos_tup = []
     for usr_idx, usr_angle in enumerate(usr_angles):
         usr_pos_x = np.cos(np.deg2rad(usr_angle)) * usr_distances[usr_idx]
@@ -39,7 +39,7 @@ if __name__ == '__main__':
     n_users = len(usr_pos_tup)
 
     n_ant_arr = [8]
-    ibo_arr = [0]
+    ibo_arr = [5]
     ebn0_step = [1]
     cnc_n_iter_lst = [1, 2, 3, 4]  # 5, 6, 7, 8]
     # include clean run is always True
@@ -59,7 +59,7 @@ if __name__ == '__main__':
     # BER analysis
     bits_sent_max = int(1e5)
     n_err_min = int(1e5)
-    ber_reroll_pos = False
+    ber_reroll_pos = True
 
     rx_loc_x, rx_loc_y = 212.0, 212.0
     rx_loc_var = 10.0
@@ -67,10 +67,10 @@ if __name__ == '__main__':
     # SDR
     meas_usr_sdr = True
     sdr_n_snapshots = 10
-    sdr_reroll_pos = False
+    sdr_reroll_pos = True
 
     # Beampatterns
-    plot_precoding_beampatterns = False
+    plot_precoding_beampatterns = True
     beampattern_n_snapshots = 1
     n_points = 180 * 1
     radial_distance = 300
@@ -102,7 +102,7 @@ if __name__ == '__main__':
         my_miso_rayleigh_chan = channel.MisoRayleighFd(tx_transceivers=my_array.array_elements,
                                                        rx_transceiver=my_standard_rx,
                                                        seed=1234)
-        chan_lst = [my_miso_rayleigh_chan]
+        chan_lst = [my_miso_two_path_chan]
 
         for my_miso_chan in chan_lst:
             loc_rng = np.random.default_rng(2137)
