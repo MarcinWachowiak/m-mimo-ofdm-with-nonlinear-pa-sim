@@ -71,7 +71,7 @@ class LinearArray:
                                                               return_both=return_both, skip_dist=skip_dist)
             return np.squeeze(out_sig_mat)
 
-    def set_precoding_matrix(self, channel_mat_fd=None, mr_precoding=False):
+    def set_precoding_matrix(self, channel_mat_fd=None, mr_precoding=False, zf_precoding=False):
         # set precoding vector based on provided channel mat coefficients
         # only the subcarriers are precoded, other normalization operations should be performed in regard to carrier pool
         tx_n_sc = self.base_transceiver.modem.n_sub_carr
@@ -128,7 +128,7 @@ class LinearArray:
                     (usr_chan_mat_fd[:, -tx_n_sc // 2:], usr_chan_mat_fd[:, 1:(tx_n_sc // 2) + 1]), axis=1)
                 sc_channel_mat_fd_conjugate = np.conjugate(sc_channel_mat_fd)
 
-                if mr_precoding is True:
+                if mr_precoding:
                     # normalize the precoding vector in regard to number of antennas and power
                     # equal sum of TX power MR precoding
                     usr_precoding_mat_fd = np.divide(sc_channel_mat_fd_conjugate, nsc_power_normalzing_vec)
@@ -139,6 +139,10 @@ class LinearArray:
                     # take only phases into consideration
                     # normalize channel precoding coefficients
                     usr_precoding_mat_fd = np.exp(1j * np.angle(sc_channel_mat_fd_conjugate))
+
+                if zf_precoding:
+                    pass
+
                 precoding_mat_fd[usr_idx, :, :] = usr_precoding_mat_fd
 
             # apply precoding matrix to each tx node
