@@ -38,8 +38,8 @@ if __name__ == '__main__':
     # usr_pos_tup = [(45, 45), (120, 120), (150, 150)]
     n_users = len(usr_pos_tup)
 
-    n_ant_arr = [8]
-    ibo_arr = [5]
+    n_ant_arr = [32]
+    ibo_arr = [3]
     ebn0_step = [1]
     cnc_n_iter_lst = [1, 2, 3, 4]  # 5, 6, 7, 8]
     # include clean run is always True
@@ -77,8 +77,6 @@ if __name__ == '__main__':
     rx_points = utilities.pts_on_semicircum(r=radial_distance, n=n_points)
     radian_vals = np.radians(np.linspace(0, 180, n_points + 1))
 
-    my_mod = modulation.OfdmQamModem(constel_size=constel_size, n_fft=n_fft, n_sub_carr=n_sub_carr, cp_len=cp_len,
-                                     n_users=n_users)
     my_mod = modulation.OfdmQamModem(constel_size=constel_size, n_fft=n_fft, n_sub_carr=n_sub_carr, cp_len=cp_len,
                                      n_users=n_users)
 

@@ -9,7 +9,7 @@ import distortion
 class LinearArray:
     def __init__(self, n_elements, base_transceiver, center_freq, wav_len_spacing, cord_x=0, cord_y=0, cord_z=0):
         self.n_elements = n_elements
-        self.n_users = base_transceiver.modem.self.n_users
+        self.n_users = base_transceiver.modem.n_users
         self.base_transceiver = base_transceiver
         self.center_freq = center_freq
         self.wav_len_spacing = wav_len_spacing
