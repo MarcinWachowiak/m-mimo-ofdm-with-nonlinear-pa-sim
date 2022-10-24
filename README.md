@@ -52,14 +52,15 @@ MIMO simulation in python
        ```
     6. Install packages:
        ```
-       conda install matplotlib, numpy, scipy, pytorch, numba
+       conda install matplotlib, numpy, scipy, numba
+       conda install pytorch cudatoolkit=11.6 -c pytorch -c conda-forge
        ```
 8. Install VS Code via snap:
    ```
    sudo apt install snapd
    sudo snap install code --classic
    ```
-9. Create and add SSH key to Github:
+9. Create and add SSH key to GitHub:
    ```
    ssh-keygen -t ed25519 -C "your_email@example.com"
    clip < ~/.ssh/id_ed25519.pub or nano ~/.ssh/id_ed25519.pub
