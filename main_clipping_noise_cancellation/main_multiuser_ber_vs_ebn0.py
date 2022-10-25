@@ -27,7 +27,7 @@ from plot_settings import set_latex_plot_style
 if __name__ == '__main__':
     set_latex_plot_style()
     # Multiple users data
-    usr_angles = [45, 150]
+    usr_angles = [90, 150]
     usr_distances = [300, 300]
     usr_pos_tup = []
     for usr_idx, usr_angle in enumerate(usr_angles):
@@ -38,7 +38,7 @@ if __name__ == '__main__':
     # usr_pos_tup = [(45, 45), (120, 120), (150, 150)]
     n_users = len(usr_pos_tup)
 
-    n_ant_arr = [32]
+    n_ant_arr = [16]
     ibo_arr = [3]
     ebn0_step = [1]
     cnc_n_iter_lst = [1, 2, 3, 4]  # 5, 6, 7, 8]
@@ -534,9 +534,11 @@ if __name__ == '__main__':
                     ax1.legend()
                     plt.tight_layout()
                     # %%
-                    filename_str = "mu_ber_vs_ebn0_cnc_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s" % (
+                    filename_str = "mu_ber_vs_ebn0_cnc_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s_angles%s_distances%s" % (
                         my_miso_chan, n_ant_val, ibo_val_db, min(ebn0_arr), max(ebn0_arr), ebn0_arr[1] - ebn0_arr[0],
-                        '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
+                        '_'.join([str(val) for val in cnc_n_iter_lst[1:]]), '_'.join([str(val) for val in usr_angles]),
+                    '_'.join([str(val) for val in usr_distances]) )
+
                     # timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
                     # filename_str += "_" + timestamp
                     plt.savefig("../figs/multiuser/%s.png" % filename_str, dpi=600, bbox_inches='tight')
