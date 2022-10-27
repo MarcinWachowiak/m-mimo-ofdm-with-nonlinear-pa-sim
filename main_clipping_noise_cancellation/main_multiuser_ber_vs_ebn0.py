@@ -26,8 +26,10 @@ from plot_settings import set_latex_plot_style
 
 if __name__ == '__main__':
     set_latex_plot_style()
+    CB_color_cycle = ['#006BA4', '#FF800E', '#ABABAB', '#595959', '#5F9ED1', '#C85200', '#898989', '#A2C8EC', '#FFBC79',
+                      '#CFCFCF']
     # Multiple users data
-    usr_angles_rel = np.array([-10, 20])
+    usr_angles_rel = np.array([-45, -37.5])
     usr_angles = 90 + usr_angles_rel
     usr_distances = [300, 300]
     usr_pos_tup = []
@@ -39,7 +41,7 @@ if __name__ == '__main__':
     # usr_pos_tup = [(45, 45), (120, 120), (150, 150)]
     n_users = len(usr_pos_tup)
 
-    n_ant_arr = [64]
+    n_ant_arr = [16]
     ibo_arr = [0]
     ebn0_step = [1]
     cnc_n_iter_lst = [1, 2, 3, 4]  # 5, 6, 7, 8]
@@ -66,12 +68,12 @@ if __name__ == '__main__':
     rx_loc_var = 10.0
 
     # SDR
-    meas_usr_sdr = False
+    meas_usr_sdr = True
     sdr_n_snapshots = 10
     sdr_reroll_pos = False
 
     # Beampatterns
-    plot_precoding_beampatterns = True
+    plot_precoding_beampatterns = False
     beampattern_n_snapshots = 1
     n_points = 180 * 1
     radial_distance = 300
@@ -80,15 +82,11 @@ if __name__ == '__main__':
 
     my_mod = modulation.OfdmQamModem(constel_size=constel_size, n_fft=n_fft, n_sub_carr=n_sub_carr, cp_len=cp_len,
                                      n_users=len(usr_angles_rel))
-
     my_distortion = distortion.SoftLimiter(0, my_mod.avg_sample_power)
-
     my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion))
     my_standard_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
                                              cord_x=rx_loc_x, cord_y=rx_loc_y, cord_z=1.5,
                                              center_freq=int(3.5e9), carrier_spacing=int(15e3))
-
-
 
     for n_ant_val in n_ant_arr:
         my_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(3.5e9),
@@ -114,8 +112,8 @@ if __name__ == '__main__':
             for ibo_val_db in ibo_arr:
                 my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
                 my_cnc_rx.update_distortion(ibo_db=ibo_val_db)
-                usr_chan_mat_lst = []
 
+                usr_chan_mat_lst = []
                 for usr_idx, usr_pos_tuple_val in enumerate(usr_pos_tup):
                     usr_pos_x, usr_pos_y = usr_pos_tuple_val
                     my_standard_rx.set_position(cord_x=usr_pos_x, cord_y=usr_pos_y, cord_z=1.5)
@@ -126,17 +124,52 @@ if __name__ == '__main__':
                                                       skip_attenuation=False)
                     else:
                         my_miso_chan.reroll_channel_coeffs()
+
                     usr_chan_mat_lst.append(my_miso_chan.get_channel_mat_fd())
 
+                # set precoding and calculate AGC
                 my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=True)
                 my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
 
                 vk_mat = my_array.get_precoding_mat()
                 vk_pow_vec = np.sum(np.sum(np.power(np.abs(vk_mat), 2), axis=2), axis=1)
 
-                ibo_vec = 10 * np.log10(10 ** (ibo_val_db / 10) * my_mod.n_sub_carr / (vk_pow_vec * n_ant_val))
-                ak_vect = my_mod.calc_alpha(ibo_db=ibo_vec)
-                ak_vect = np.expand_dims(ak_vect, axis=1)
+                ak_hk_vk_noise_scaler_lst = []
+                hk_vk_noise_scaler_lst = []
+                hk_vk_agc_nfft_lst = []
+                ak_hk_vk_agc_nfft_lst = []
+
+                for usr_idx, usr_pos in enumerate(usr_pos_tup):
+                    chan_mat_at_point = usr_chan_mat_lst[usr_idx]
+                    hk_mat = np.concatenate((chan_mat_at_point[:, -my_mod.n_sub_carr // 2:],
+                                             chan_mat_at_point[:, 1:(my_mod.n_sub_carr // 2) + 1]), axis=1)
+                    vk_mat = my_array.get_precoding_mat()
+                    vk_pow_vec = np.sum(np.sum(np.power(np.abs(vk_mat), 2), axis=2), axis=1)
+
+                    hk_vk_agc = np.multiply(hk_mat, vk_mat[:, usr_idx, :])
+                    hk_vk_agc_avg_vec = np.sum(hk_vk_agc, axis=0)
+                    hk_vk_noise_scaler = np.mean(np.power(np.abs(hk_vk_agc_avg_vec), 2))
+                    hk_vk_noise_scaler_lst.append(hk_vk_noise_scaler)
+
+                    hk_vk_agc_nfft = np.ones(my_mod.n_fft, dtype=np.complex128)
+                    hk_vk_agc_nfft[-(n_sub_carr // 2):] = hk_vk_agc_avg_vec[0:n_sub_carr // 2]
+                    hk_vk_agc_nfft[1:(n_sub_carr // 2) + 1] = hk_vk_agc_avg_vec[n_sub_carr // 2:]
+                    hk_vk_agc_nfft_lst.append(hk_vk_agc_nfft)
+
+                    ibo_vec = 10 * np.log10(
+                        10 ** (ibo_val_db / 10) * my_mod.n_sub_carr / (vk_pow_vec * n_ant_val))
+                    ak_vect = my_mod.calc_alpha(ibo_db=ibo_vec)
+                    ak_vect = np.expand_dims(ak_vect, axis=1)
+
+                    ak_hk_vk_agc = ak_vect * hk_vk_agc
+                    ak_hk_vk_agc_avg_vec = np.sum(ak_hk_vk_agc, axis=0)
+                    ak_hk_vk_noise_scaler = np.mean(np.power(np.abs(ak_hk_vk_agc_avg_vec), 2))
+                    ak_hk_vk_noise_scaler_lst.append(ak_hk_vk_noise_scaler)
+
+                    ak_hk_vk_agc_nfft = np.ones(my_mod.n_fft, dtype=np.complex128)
+                    ak_hk_vk_agc_nfft[-(n_sub_carr // 2):] = ak_hk_vk_agc_avg_vec[0:n_sub_carr // 2]
+                    ak_hk_vk_agc_nfft[1:(n_sub_carr // 2) + 1] = ak_hk_vk_agc_avg_vec[n_sub_carr // 2:]
+                    ak_hk_vk_agc_nfft_lst.append(ak_hk_vk_agc_nfft)
 
                 # measure SDR at selected RX points
                 loc_rng = np.random.default_rng(2137)
@@ -296,25 +329,25 @@ if __name__ == '__main__':
 
                 # BER measurement
                 for ebn0_step_val in ebn0_step:
-                    ebn0_arr = np.arange(5, 31, ebn0_step_val)
+                    ebn0_arr = np.arange(5, 21, ebn0_step_val)
 
                     my_noise = noise.Awgn(snr_db=10, seed=1234)
                     bit_rng = np.random.default_rng(4321)
                     snr_arr = utilities.ebn0_to_snr(ebn0_arr, my_mod.n_sub_carr, my_mod.n_sub_carr, my_mod.constel_size)
 
-                    ber_per_dist = []
+                    bers_per_usr = [[] for x in range(n_users)]
                     start_time = time.time()
                     print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
                     for snr_idx, snr_db_val in enumerate(snr_arr):
                         my_noise.snr_db = snr_db_val
 
-                        bers = np.zeros([len(cnc_n_iter_lst) + 1])
-                        n_err = np.zeros([len(cnc_n_iter_lst) + 1])
-                        bits_sent = np.zeros([len(cnc_n_iter_lst) + 1])
+                        bers = np.zeros((n_users, len(cnc_n_iter_lst) + 1))
+                        n_err = np.zeros((n_users, len(cnc_n_iter_lst) + 1))
+                        bits_sent = np.zeros((n_users, len(cnc_n_iter_lst) + 1))
                         # clean RX run
                         snap_cnt = 0
                         while True:
-                            # for direct visibility channel and CNC algorithm channel impact must be averaged
+                            # for each frame reroll position and recalculate AGC
                             if ber_reroll_pos:
                                 usr_chan_mat_lst = []
                                 for usr_idx, user_pos_tup in enumerate(usr_pos_tup):
@@ -337,74 +370,71 @@ if __name__ == '__main__':
 
                                     usr_chan_mat_lst.append(my_miso_chan.get_channel_mat_fd())
 
-                            my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=True)
-                            my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
+                                my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=True)
+                                my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
 
-                            vk_mat = my_array.get_precoding_mat()
-                            vk_pow_vec = np.sum(np.sum(np.power(np.abs(vk_mat), 2), axis=2), axis=1)
-
-                            ak_hk_vk_noise_scaler_lst = []
-                            hk_vk_noise_scaler_lst = []
-                            hk_vk_agc_nfft_lst = []
-                            ak_hk_vk_agc_nfft_lst = []
-
-                            for usr_idx, usr_pos in enumerate(usr_pos_tup):
-                                chan_mat_at_point = usr_chan_mat_lst[usr_idx]
-                                hk_mat = np.concatenate((chan_mat_at_point[:, -my_mod.n_sub_carr // 2:],
-                                                         chan_mat_at_point[:, 1:(my_mod.n_sub_carr // 2) + 1]), axis=1)
                                 vk_mat = my_array.get_precoding_mat()
                                 vk_pow_vec = np.sum(np.sum(np.power(np.abs(vk_mat), 2), axis=2), axis=1)
 
-                                hk_vk_agc = np.multiply(hk_mat, vk_mat[:, usr_idx, :])
-                                hk_vk_agc_avg_vec = np.sum(hk_vk_agc, axis=0)
-                                hk_vk_noise_scaler = np.mean(np.power(np.abs(hk_vk_agc_avg_vec), 2))
-                                hk_vk_noise_scaler_lst.append(hk_vk_noise_scaler)
+                                ak_hk_vk_noise_scaler_lst = []
+                                hk_vk_noise_scaler_lst = []
+                                hk_vk_agc_nfft_lst = []
+                                ak_hk_vk_agc_nfft_lst = []
 
-                                hk_vk_agc_nfft = np.ones(my_mod.n_fft, dtype=np.complex128)
-                                hk_vk_agc_nfft[-(n_sub_carr // 2):] = hk_vk_agc_avg_vec[0:n_sub_carr // 2]
-                                hk_vk_agc_nfft[1:(n_sub_carr // 2) + 1] = hk_vk_agc_avg_vec[n_sub_carr // 2:]
-                                hk_vk_agc_nfft_lst.append(hk_vk_agc_nfft)
+                                for usr_idx, usr_pos in enumerate(usr_pos_tup):
+                                    chan_mat_at_point = usr_chan_mat_lst[usr_idx]
+                                    hk_mat = np.concatenate((chan_mat_at_point[:, -my_mod.n_sub_carr // 2:],
+                                                             chan_mat_at_point[:, 1:(my_mod.n_sub_carr // 2) + 1]), axis=1)
+                                    vk_mat = my_array.get_precoding_mat()
+                                    vk_pow_vec = np.sum(np.sum(np.power(np.abs(vk_mat), 2), axis=2), axis=1)
 
-                                ibo_vec = 10 * np.log10(
-                                    10 ** (ibo_val_db / 10) * my_mod.n_sub_carr / (vk_pow_vec * n_ant_val))
-                                ak_vect = my_mod.calc_alpha(ibo_db=ibo_vec)
-                                ak_vect = np.expand_dims(ak_vect, axis=1)
+                                    hk_vk_agc = np.multiply(hk_mat, vk_mat[:, usr_idx, :])
+                                    hk_vk_agc_avg_vec = np.sum(hk_vk_agc, axis=0)
+                                    hk_vk_noise_scaler = np.mean(np.power(np.abs(hk_vk_agc_avg_vec), 2))
+                                    hk_vk_noise_scaler_lst.append(hk_vk_noise_scaler)
 
-                                ak_hk_vk_agc = ak_vect * hk_vk_agc
-                                ak_hk_vk_agc_avg_vec = np.sum(ak_hk_vk_agc, axis=0)
-                                ak_hk_vk_noise_scaler = np.mean(np.power(np.abs(ak_hk_vk_agc_avg_vec), 2))
-                                ak_hk_vk_noise_scaler_lst.append(ak_hk_vk_noise_scaler)
+                                    hk_vk_agc_nfft = np.ones(my_mod.n_fft, dtype=np.complex128)
+                                    hk_vk_agc_nfft[-(n_sub_carr // 2):] = hk_vk_agc_avg_vec[0:n_sub_carr // 2]
+                                    hk_vk_agc_nfft[1:(n_sub_carr // 2) + 1] = hk_vk_agc_avg_vec[n_sub_carr // 2:]
+                                    hk_vk_agc_nfft_lst.append(hk_vk_agc_nfft)
 
-                                ak_hk_vk_agc_nfft = np.ones(my_mod.n_fft, dtype=np.complex128)
-                                ak_hk_vk_agc_nfft[-(n_sub_carr // 2):] = ak_hk_vk_agc_avg_vec[0:n_sub_carr // 2]
-                                ak_hk_vk_agc_nfft[1:(n_sub_carr // 2) + 1] = ak_hk_vk_agc_avg_vec[n_sub_carr // 2:]
-                                ak_hk_vk_agc_nfft_lst.append(ak_hk_vk_agc_nfft)
+                                    ibo_vec = 10 * np.log10(
+                                        10 ** (ibo_val_db / 10) * my_mod.n_sub_carr / (vk_pow_vec * n_ant_val))
+                                    ak_vect = my_mod.calc_alpha(ibo_db=ibo_vec)
+                                    ak_vect = np.expand_dims(ak_vect, axis=1)
+
+                                    ak_hk_vk_agc = ak_vect * hk_vk_agc
+                                    ak_hk_vk_agc_avg_vec = np.sum(ak_hk_vk_agc, axis=0)
+                                    ak_hk_vk_noise_scaler = np.mean(np.power(np.abs(ak_hk_vk_agc_avg_vec), 2))
+                                    ak_hk_vk_noise_scaler_lst.append(ak_hk_vk_noise_scaler)
+
+                                    ak_hk_vk_agc_nfft = np.ones(my_mod.n_fft, dtype=np.complex128)
+                                    ak_hk_vk_agc_nfft[-(n_sub_carr // 2):] = ak_hk_vk_agc_avg_vec[0:n_sub_carr // 2]
+                                    ak_hk_vk_agc_nfft[1:(n_sub_carr // 2) + 1] = ak_hk_vk_agc_avg_vec[n_sub_carr // 2:]
+                                    ak_hk_vk_agc_nfft_lst.append(ak_hk_vk_agc_nfft)
 
                             # analyze single user receiver performance in multi-user MRT
-                            sel_usr_idx = 0
-                            if np.logical_and((n_err[0] < n_err_min), (bits_sent[0] < bits_sent_max)):
+                            if any(np.logical_and((n_err[:, 0] < n_err_min), (bits_sent[:, 0] < bits_sent_max))):
                                 tx_bits = np.squeeze(bit_rng.choice((0, 1), (n_users, my_tx.modem.n_bits_per_ofdm_sym)))
                                 clean_ofdm_symbol = my_array.transmit(tx_bits, out_domain_fd=True, return_both=False,
                                                                       skip_dist=True)
+                                for usr_idx in range(n_users):
+                                    # clean_rx_ofdm_symbol = my_miso_chan.propagate(in_sig_mat=clean_ofdm_symbol)
+                                    clean_rx_ofdm_symbol = np.sum(
+                                        np.multiply(clean_ofdm_symbol, usr_chan_mat_lst[usr_idx]), axis=0)
 
-                                # clean_rx_ofdm_symbol = my_miso_chan.propagate(in_sig_mat=clean_ofdm_symbol)
-                                clean_rx_ofdm_symbol = np.sum(
-                                    np.multiply(clean_ofdm_symbol, usr_chan_mat_lst[sel_usr_idx]), axis=0)
+                                    clean_rx_ofdm_symbol = my_noise.process(clean_rx_ofdm_symbol,
+                                                                            avg_sample_pow=my_mod.avg_symbol_power *
+                                                                                           hk_vk_noise_scaler_lst[usr_idx], disp_data=False)
+                                    clean_rx_ofdm_symbol = np.divide(clean_rx_ofdm_symbol, hk_vk_agc_nfft_lst[usr_idx])
+                                    clean_rx_ofdm_symbol = utilities.to_time_domain(clean_rx_ofdm_symbol)
+                                    clean_rx_ofdm_symbol = np.concatenate(
+                                        (clean_rx_ofdm_symbol[-my_mod.cp_len:], clean_rx_ofdm_symbol))
+                                    rx_bits = my_standard_rx.receive(clean_rx_ofdm_symbol)
 
-                                clean_rx_ofdm_symbol = my_noise.process(clean_rx_ofdm_symbol,
-                                                                        avg_sample_pow=my_mod.avg_symbol_power *
-                                                                                       hk_vk_noise_scaler_lst[
-                                                                                           sel_usr_idx],
-                                                                        disp_data=False)
-                                clean_rx_ofdm_symbol = np.divide(clean_rx_ofdm_symbol, hk_vk_agc_nfft_lst[sel_usr_idx])
-                                clean_rx_ofdm_symbol = utilities.to_time_domain(clean_rx_ofdm_symbol)
-                                clean_rx_ofdm_symbol = np.concatenate(
-                                    (clean_rx_ofdm_symbol[-my_mod.cp_len:], clean_rx_ofdm_symbol))
-                                rx_bits = my_standard_rx.receive(clean_rx_ofdm_symbol)
-
-                                n_bit_err = utilities.count_mismatched_bits(tx_bits[sel_usr_idx], rx_bits)
-                                n_err[0] += n_bit_err
-                                bits_sent[0] += my_mod.n_bits_per_ofdm_sym
+                                    n_bit_err = utilities.count_mismatched_bits(tx_bits[usr_idx], rx_bits)
+                                    n_err[usr_idx, 0] += n_bit_err
+                                    bits_sent[usr_idx, 0] += my_mod.n_bits_per_ofdm_sym
                             else:
                                 break
                             snap_cnt += 1
@@ -413,11 +443,21 @@ if __name__ == '__main__':
                         # distorted RX run
                         snap_cnt = 0
                         while True:
-                            ite_use_flags = np.logical_and((n_err[1:] < n_err_min), (bits_sent[1:] < bits_sent_max))
+                            ite_use_flags_per_usr = []
+                            for usr_idx in range(n_users):
+                                ite_use_flags = np.logical_and((n_err[usr_idx, 1:] < n_err_min), (bits_sent[usr_idx, 1:] < bits_sent_max))
+                                ite_use_flags_per_usr.append(ite_use_flags)
 
-                            if ite_use_flags.any() == True:
-                                curr_ite_lst = cnc_n_iter_lst[ite_use_flags]
-                            else:
+                            curr_ite_lst_per_usr = []
+                            for usr_idx in range(n_users):
+                                if ite_use_flags_per_usr[usr_idx].any() == True:
+                                    curr_ite_lst = cnc_n_iter_lst[ite_use_flags_per_usr[usr_idx]]
+                                    curr_ite_lst_per_usr.append(curr_ite_lst)
+                                else:
+                                    curr_ite_lst_per_usr.append([])
+
+                            # check if there is any cnc iteration to run
+                            if not all(len(curr_ite_lst) for curr_ite_lst in curr_ite_lst_per_usr):
                                 break
 
                             # for direct visibility channel and CNC algorithm channel impact must be averaged
@@ -444,91 +484,100 @@ if __name__ == '__main__':
 
                                     usr_chan_mat_lst.append(my_miso_chan.get_channel_mat_fd())
 
-                            my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=True)
-                            my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
+                                my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=True)
+                                my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
 
-                            vk_mat = my_array.get_precoding_mat()
-                            vk_pow_vec = np.sum(np.sum(np.power(np.abs(vk_mat), 2), axis=2), axis=1)
-
-                            ak_hk_vk_noise_scaler_lst = []
-                            hk_vk_noise_scaler_lst = []
-                            hk_vk_agc_nfft_lst = []
-                            ak_hk_vk_agc_nfft_lst = []
-
-                            for usr_idx, usr_pos in enumerate(usr_pos_tup):
-                                chan_mat_at_point = usr_chan_mat_lst[usr_idx]
-                                hk_mat = np.concatenate((chan_mat_at_point[:, -my_mod.n_sub_carr // 2:],
-                                                         chan_mat_at_point[:, 1:(my_mod.n_sub_carr // 2) + 1]), axis=1)
                                 vk_mat = my_array.get_precoding_mat()
                                 vk_pow_vec = np.sum(np.sum(np.power(np.abs(vk_mat), 2), axis=2), axis=1)
 
-                                hk_vk_agc = np.multiply(hk_mat, vk_mat[:, usr_idx, :])
-                                hk_vk_agc_avg_vec = np.sum(hk_vk_agc, axis=0)
-                                hk_vk_noise_scaler = np.mean(np.power(np.abs(hk_vk_agc_avg_vec), 2))
-                                hk_vk_noise_scaler_lst.append(hk_vk_noise_scaler)
+                                ak_hk_vk_noise_scaler_lst = []
+                                hk_vk_noise_scaler_lst = []
+                                hk_vk_agc_nfft_lst = []
+                                ak_hk_vk_agc_nfft_lst = []
 
-                                hk_vk_agc_nfft = np.ones(my_mod.n_fft, dtype=np.complex128)
-                                hk_vk_agc_nfft[-(n_sub_carr // 2):] = hk_vk_agc_avg_vec[0:n_sub_carr // 2]
-                                hk_vk_agc_nfft[1:(n_sub_carr // 2) + 1] = hk_vk_agc_avg_vec[n_sub_carr // 2:]
-                                hk_vk_agc_nfft_lst.append(hk_vk_agc_nfft)
+                                for usr_idx, usr_pos in enumerate(usr_pos_tup):
+                                    chan_mat_at_point = usr_chan_mat_lst[usr_idx]
+                                    hk_mat = np.concatenate((chan_mat_at_point[:, -my_mod.n_sub_carr // 2:],
+                                                             chan_mat_at_point[:, 1:(my_mod.n_sub_carr // 2) + 1]), axis=1)
+                                    vk_mat = my_array.get_precoding_mat()
+                                    vk_pow_vec = np.sum(np.sum(np.power(np.abs(vk_mat), 2), axis=2), axis=1)
 
-                                ibo_vec = 10 * np.log10(
-                                    10 ** (ibo_val_db / 10) * my_mod.n_sub_carr / (vk_pow_vec * n_ant_val))
-                                ak_vect = my_mod.calc_alpha(ibo_db=ibo_vec)
-                                ak_vect = np.expand_dims(ak_vect, axis=1)
+                                    hk_vk_agc = np.multiply(hk_mat, vk_mat[:, usr_idx, :])
+                                    hk_vk_agc_avg_vec = np.sum(hk_vk_agc, axis=0)
+                                    hk_vk_noise_scaler = np.mean(np.power(np.abs(hk_vk_agc_avg_vec), 2))
+                                    hk_vk_noise_scaler_lst.append(hk_vk_noise_scaler)
 
-                                ak_hk_vk_agc = ak_vect * hk_vk_agc
-                                ak_hk_vk_agc_avg_vec = np.sum(ak_hk_vk_agc, axis=0)
-                                ak_hk_vk_noise_scaler = np.mean(np.power(np.abs(ak_hk_vk_agc_avg_vec), 2))
-                                ak_hk_vk_noise_scaler_lst.append(ak_hk_vk_noise_scaler)
+                                    hk_vk_agc_nfft = np.ones(my_mod.n_fft, dtype=np.complex128)
+                                    hk_vk_agc_nfft[-(n_sub_carr // 2):] = hk_vk_agc_avg_vec[0:n_sub_carr // 2]
+                                    hk_vk_agc_nfft[1:(n_sub_carr // 2) + 1] = hk_vk_agc_avg_vec[n_sub_carr // 2:]
+                                    hk_vk_agc_nfft_lst.append(hk_vk_agc_nfft)
 
-                                ak_hk_vk_agc_nfft = np.ones(my_mod.n_fft, dtype=np.complex128)
-                                ak_hk_vk_agc_nfft[-(n_sub_carr // 2):] = ak_hk_vk_agc_avg_vec[0:n_sub_carr // 2]
-                                ak_hk_vk_agc_nfft[1:(n_sub_carr // 2) + 1] = ak_hk_vk_agc_avg_vec[n_sub_carr // 2:]
-                                ak_hk_vk_agc_nfft_lst.append(ak_hk_vk_agc_nfft)
+                                    ibo_vec = 10 * np.log10(
+                                        10 ** (ibo_val_db / 10) * my_mod.n_sub_carr / (vk_pow_vec * n_ant_val))
+                                    ak_vect = my_mod.calc_alpha(ibo_db=ibo_vec)
+                                    ak_vect = np.expand_dims(ak_vect, axis=1)
+
+                                    ak_hk_vk_agc = ak_vect * hk_vk_agc
+                                    ak_hk_vk_agc_avg_vec = np.sum(ak_hk_vk_agc, axis=0)
+                                    ak_hk_vk_noise_scaler = np.mean(np.power(np.abs(ak_hk_vk_agc_avg_vec), 2))
+                                    ak_hk_vk_noise_scaler_lst.append(ak_hk_vk_noise_scaler)
+
+                                    ak_hk_vk_agc_nfft = np.ones(my_mod.n_fft, dtype=np.complex128)
+                                    ak_hk_vk_agc_nfft[-(n_sub_carr // 2):] = ak_hk_vk_agc_avg_vec[0:n_sub_carr // 2]
+                                    ak_hk_vk_agc_nfft[1:(n_sub_carr // 2) + 1] = ak_hk_vk_agc_avg_vec[n_sub_carr // 2:]
+                                    ak_hk_vk_agc_nfft_lst.append(ak_hk_vk_agc_nfft)
 
                             tx_bits = np.squeeze(bit_rng.choice((0, 1), (n_users, my_tx.modem.n_bits_per_ofdm_sym)))
                             tx_ofdm_symbol = my_array.transmit(tx_bits, out_domain_fd=True, skip_dist=False)
 
-                            # rx_ofdm_symbol = my_miso_chan.propagate(in_sig_mat=tx_ofdm_symbol)
-                            rx_ofdm_symbol = np.sum(np.multiply(tx_ofdm_symbol, usr_chan_mat_lst[sel_usr_idx]),
-                                                    axis=0)
+                            for usr_idx in range(n_users):
+                                if not any(curr_ite_lst_per_usr[usr_idx]):
+                                    continue
+                                # rx_ofdm_symbol = my_miso_chan.propagate(in_sig_mat=tx_ofdm_symbol)
+                                rx_ofdm_symbol = np.sum(np.multiply(tx_ofdm_symbol, usr_chan_mat_lst[usr_idx]),
+                                                        axis=0)
 
-                            rx_ofdm_symbol = my_noise.process(rx_ofdm_symbol,
-                                                              avg_sample_pow=my_mod.avg_symbol_power *
-                                                                             ak_hk_vk_noise_scaler_lst[sel_usr_idx])
-                            # apply AGC
+                                rx_ofdm_symbol = my_noise.process(rx_ofdm_symbol,
+                                                                  avg_sample_pow=my_mod.avg_symbol_power *
+                                                                                 ak_hk_vk_noise_scaler_lst[usr_idx])
+                                # apply AGC
+                                rx_ofdm_symbol = np.divide(rx_ofdm_symbol, ak_hk_vk_agc_nfft_lst[usr_idx])
+                                rx_bits_per_iter_lst = my_cnc_rx.receive(n_iters_lst=curr_ite_lst_per_usr[usr_idx], in_sig_fd=rx_ofdm_symbol)
 
-                            # enchanced CNC reception
-                            rx_ofdm_symbol = np.divide(rx_ofdm_symbol, ak_hk_vk_agc_nfft_lst[sel_usr_idx])
-                            rx_bits_per_iter_lst = my_cnc_rx.receive(n_iters_lst=curr_ite_lst, in_sig_fd=rx_ofdm_symbol)
+                                ber_idx = np.array(list(range(len(cnc_n_iter_lst))))
+                                act_ber_idx = ber_idx[ite_use_flags_per_usr[usr_idx]] + 1
 
-                            ber_idx = np.array(list(range(len(cnc_n_iter_lst))))
-                            act_ber_idx = ber_idx[ite_use_flags] + 1
-                            for idx in range(len(rx_bits_per_iter_lst)):
-                                n_bit_err = utilities.count_mismatched_bits(tx_bits[sel_usr_idx],
-                                                                            rx_bits_per_iter_lst[idx])
-                                n_err[act_ber_idx[idx]] += n_bit_err
-                                bits_sent[act_ber_idx[idx]] += my_mod.n_bits_per_ofdm_sym
-                            snap_cnt += 1
+                                for idx in range(len(rx_bits_per_iter_lst)):
+                                    n_bit_err = utilities.count_mismatched_bits(tx_bits[usr_idx],
+                                                                                rx_bits_per_iter_lst[idx])
+                                    n_err[usr_idx, act_ber_idx[idx]] += n_bit_err
+                                    bits_sent[usr_idx, act_ber_idx[idx]] += my_mod.n_bits_per_ofdm_sym
+                                snap_cnt += 1
 
                         # print("Eb/N0: %1.1f, chan_rerolls: %d" %(utilities.snr_to_ebn0(snr=snr_db_val, n_fft=n_sub_carr, n_sub_carr=n_sub_carr, constel_size=constel_size), snap_cnt))
-                        for ite_idx in range(len(bers)):
-                            bers[ite_idx] = n_err[ite_idx] / bits_sent[ite_idx]
-                        ber_per_dist.append(bers)
-                    ber_per_dist = np.column_stack(ber_per_dist)
+                        for usr_idx in range(n_users):
+
+                            for ite_idx in range(len(cnc_n_iter_lst) + 1):
+                                bers[usr_idx, ite_idx] = n_err[usr_idx, ite_idx] / bits_sent[usr_idx, ite_idx]
+                            bers_per_usr[usr_idx].append(bers[usr_idx, :])
+
+                    for usr_idx in range(n_users):
+                        bers_per_usr[usr_idx] = np.column_stack(bers_per_usr[usr_idx])
+
                     print("--- Computation time: %f ---" % (time.time() - start_time))
 
                     # %%
                     fig1, ax1 = plt.subplots(1, 1)
                     ax1.set_yscale('log')
+                    usr_marker_lst = ['o', 's', '^', '*']
 
-                    ax1.plot(ebn0_arr, ber_per_dist[0, :], label="No distortion")
-                    for idx, cnc_iter_val in enumerate(cnc_n_iter_lst):
-                        if idx == 0:
-                            ax1.plot(ebn0_arr, ber_per_dist[idx + 1, :], label="Standard RX")
-                        else:
-                            ax1.plot(ebn0_arr, ber_per_dist[idx + 1, :], label="CNC NI = %d" % (cnc_iter_val))
+                    for usr_idx in range(n_users):
+                        ax1.plot(ebn0_arr, bers_per_usr[usr_idx][0, :], label="No distortion", color=CB_color_cycle[0], marker=usr_marker_lst[usr_idx], fillstyle='none')
+                        for ite_idx, cnc_iter_val in enumerate(cnc_n_iter_lst):
+                            if ite_idx == 0:
+                                ax1.plot(ebn0_arr, bers_per_usr[usr_idx][ite_idx + 1, :], label="Standard RX", color=CB_color_cycle[ite_idx+1], marker=usr_marker_lst[usr_idx], fillstyle='none')
+                            else:
+                                ax1.plot(ebn0_arr, bers_per_usr[usr_idx][ite_idx + 1, :], label="CNC NI = %d" % cnc_iter_val, color=CB_color_cycle[ite_idx+1], marker=usr_marker_lst[usr_idx], fillstyle='none')
 
                     # fix log scaling
                     ax1.set_title("BER vs Eb/N0, %s, CNC, QAM %d, N ANT = %d, IBO = %d [dB]" % (
@@ -538,7 +587,7 @@ if __name__ == '__main__':
                     ax1.grid()
                     ax1.legend()
                     plt.tight_layout()
-                    # %%
+
                     filename_str = "mu_ber_vs_ebn0_cnc_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s_angles%s_distances%s" % (
                         my_miso_chan, n_ant_val, ibo_val_db, min(ebn0_arr), max(ebn0_arr), ebn0_arr[1] - ebn0_arr[0],
                         '_'.join([str(val) for val in cnc_n_iter_lst[1:]]), '_'.join([str(val) for val in usr_angles]),
