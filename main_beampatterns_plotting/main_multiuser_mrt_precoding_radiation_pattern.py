@@ -29,15 +29,15 @@ print("Multi antenna processing init!")
 
 set_latex_plot_style(use_tex=False, fig_width_in=7.0)
 # %%
-ibo_val_db = 3
-n_snapshots = 10
+ibo_val_db = 0
+n_snapshots = 1
 n_points = 180 * 10
 radial_distance = 300
 sel_psd_angle = 78
 
 # Multiple users data
-usr_angles = [45, 120, 150]
-usr_distances = [300, 300, 300]
+usr_angles = [45, 135]
+usr_distances = [300, 300]
 n_users = len(usr_angles)
 
 sel_ptx_idx = int(n_points / 180 * sel_psd_angle)
@@ -61,8 +61,8 @@ my_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.dee
 
 my_miso_chan = channel.MisoLosFd()
 
-n_ant_vec = [128]
-channel_type_lst = ["two_path"]
+n_ant_vec = [64]
+channel_type_lst = ["los"]
 
 for channel_type_str in channel_type_lst:
 

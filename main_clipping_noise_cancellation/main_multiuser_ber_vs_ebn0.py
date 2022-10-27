@@ -27,7 +27,8 @@ from plot_settings import set_latex_plot_style
 if __name__ == '__main__':
     set_latex_plot_style()
     # Multiple users data
-    usr_angles = [90, 150]
+    usr_angles_rel = np.array([-10, 20])
+    usr_angles = 90 + usr_angles_rel
     usr_distances = [300, 300]
     usr_pos_tup = []
     for usr_idx, usr_angle in enumerate(usr_angles):
@@ -38,8 +39,8 @@ if __name__ == '__main__':
     # usr_pos_tup = [(45, 45), (120, 120), (150, 150)]
     n_users = len(usr_pos_tup)
 
-    n_ant_arr = [16]
-    ibo_arr = [3]
+    n_ant_arr = [64]
+    ibo_arr = [0]
     ebn0_step = [1]
     cnc_n_iter_lst = [1, 2, 3, 4]  # 5, 6, 7, 8]
     # include clean run is always True
@@ -59,15 +60,15 @@ if __name__ == '__main__':
     # BER analysis
     bits_sent_max = int(1e5)
     n_err_min = int(1e5)
-    ber_reroll_pos = True
+    ber_reroll_pos = False
 
     rx_loc_x, rx_loc_y = 212.0, 212.0
     rx_loc_var = 10.0
 
     # SDR
-    meas_usr_sdr = True
+    meas_usr_sdr = False
     sdr_n_snapshots = 10
-    sdr_reroll_pos = True
+    sdr_reroll_pos = False
 
     # Beampatterns
     plot_precoding_beampatterns = True
@@ -75,16 +76,19 @@ if __name__ == '__main__':
     n_points = 180 * 1
     radial_distance = 300
     rx_points = utilities.pts_on_semicircum(r=radial_distance, n=n_points)
-    radian_vals = np.radians(np.linspace(0, 180, n_points + 1))
+    radian_vals = np.radians(np.linspace(-90, 90, n_points + 1))
 
     my_mod = modulation.OfdmQamModem(constel_size=constel_size, n_fft=n_fft, n_sub_carr=n_sub_carr, cp_len=cp_len,
-                                     n_users=n_users)
+                                     n_users=len(usr_angles_rel))
 
     my_distortion = distortion.SoftLimiter(0, my_mod.avg_sample_power)
+
     my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion))
     my_standard_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
                                              cord_x=rx_loc_x, cord_y=rx_loc_y, cord_z=1.5,
                                              center_freq=int(3.5e9), carrier_spacing=int(15e3))
+
+
 
     for n_ant_val in n_ant_arr:
         my_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(3.5e9),
@@ -100,9 +104,10 @@ if __name__ == '__main__':
         my_miso_rayleigh_chan = channel.MisoRayleighFd(tx_transceivers=my_array.array_elements,
                                                        rx_transceiver=my_standard_rx,
                                                        seed=1234)
-        chan_lst = [my_miso_two_path_chan]
+        chan_lst = [my_miso_los_chan]
 
         for my_miso_chan in chan_lst:
+
             loc_rng = np.random.default_rng(2137)
             my_cnc_rx = corrector.CncReceiver(copy.deepcopy(my_mod), copy.deepcopy(my_distortion))
 
@@ -257,13 +262,13 @@ if __name__ == '__main__':
                             # calculate SDR on symbol basis
                         desired_sig_pow_per_pt.append(np.sum(desired_sig_pow_arr))
                         distorted_sig_pow_per_pt.append(np.sum(distortion_sig_pow_arr))
-
+#%%
                     # plot beampatterns of desired and distortion components
                     fig1, ax1 = plt.subplots(1, 1, subplot_kw=dict(projection='polar'), figsize=(3.5, 3))
-                    ax1.set_theta_zero_location("E")
+                    ax1.set_theta_zero_location("N")
                     plt.tight_layout()
-                    ax1.set_thetalim(0, np.pi)
-                    ax1.set_xticks(np.pi / 180. * np.linspace(0, 180, 13, endpoint=True))
+                    ax1.set_thetalim(-np.pi/2, np.pi/2)
+                    ax1.set_xticks(np.pi / 180. * np.linspace(-90, 90, 13, endpoint=True))
                     ax1.yaxis.set_major_locator(MaxNLocator(5))
 
                     dist_lines_lst = []
@@ -273,14 +278,14 @@ if __name__ == '__main__':
 
                     # plot reference angles/directions
                     (y_min, y_max) = ax1.get_ylim()
-                    ax1.vlines(np.deg2rad(usr_angles), y_min, y_max, colors='k', linestyles='--')  # label="Users")
+                    ax1.vlines(np.deg2rad(usr_angles_rel), y_min, y_max, colors='k', linestyles='--')  # label="Users")
                     ax1.margins(0.0, 0.0)
                     ax1.set_title("Signal power at angle [dB]", pad=-15)
                     ax1.legend(title="Signal:", ncol=2, loc='lower center', borderaxespad=0)
                     ax1.grid(True)
-                    # %%
+
                     plt.savefig(
-                        "../figs/multiuser/multiuser_%s_desired_and_distortion_signal_beampattern_ibo%d_angles%s_distances%s_npoints%d_nsnap%d_nant%s.png" % (
+                        "../figs/multiuser/distortion_directions_eval/multiuser_%s_desired_and_distortion_signal_beampattern_ibo%d_angles%s_distances%s_npoints%d_nsnap%d_nant%s.png" % (
                             my_miso_chan, ibo_val_db, '_'.join([str(val) for val in usr_angles]),
                             '_'.join([str(val) for val in usr_distances]), n_points, beampattern_n_snapshots,
                             '_'.join([str(val) for val in [n_ant_val]])),

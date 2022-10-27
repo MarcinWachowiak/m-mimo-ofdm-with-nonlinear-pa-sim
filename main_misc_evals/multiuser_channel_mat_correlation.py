@@ -138,9 +138,9 @@ if __name__ == '__main__':
         ax1.grid()
         plt.tight_layout()
 
-        filename_str = "channel_corr_coeff_%s_distance%d_angle%d_nant%s" % (
+        filename_str = "channel_mat_corr_coeff_%s_distance%d_angle%d_nant%s" % (
         chan_obj, main_user_dist, main_usr_angle, '_'.join([str(val) for val in n_ant_arr]))
-        plt.savefig("../figs/multiuser/channel_correlation/%s.png" % filename_str, dpi=600, bbox_inches='tight')
+        plt.savefig("../figs/multiuser/channel_mat_correlation/%s.png" % filename_str, dpi=600, bbox_inches='tight')
         plt.show()
         plt.cla()
         plt.close()
