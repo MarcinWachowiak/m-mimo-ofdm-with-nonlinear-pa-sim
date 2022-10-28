@@ -29,7 +29,7 @@ if __name__ == '__main__':
     CB_color_cycle = ['#006BA4', '#FF800E', '#ABABAB', '#595959', '#5F9ED1', '#C85200', '#898989', '#A2C8EC', '#FFBC79',
                       '#CFCFCF']
     # Multiple users data
-    usr_angles_rel = np.array([-45, -37.5])
+    usr_angles_rel = np.array([-45, -50])
     usr_angles = 90 + usr_angles_rel
     usr_distances = [300, 300]
     usr_pos_tup = []
