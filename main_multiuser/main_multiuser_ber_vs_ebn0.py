@@ -29,8 +29,7 @@ if __name__ == '__main__':
     CB_color_cycle = ['#006BA4', '#FF800E', '#ABABAB', '#595959', '#5F9ED1', '#C85200', '#898989', '#A2C8EC', '#FFBC79',
                       '#CFCFCF']
     # Multiple users data
-    usr_angles_rel = np.array([-45, -50])
-    usr_angles = 90 + usr_angles_rel
+    usr_angles = np.array([80, 100])
     usr_distances = [300, 300]
     usr_pos_tup = []
     for usr_idx, usr_angle in enumerate(usr_angles):
@@ -41,7 +40,7 @@ if __name__ == '__main__':
     # usr_pos_tup = [(45, 45), (120, 120), (150, 150)]
     n_users = len(usr_pos_tup)
 
-    n_ant_arr = [16]
+    n_ant_arr = [64]
     ibo_arr = [0]
     ebn0_step = [1]
     cnc_n_iter_lst = [1, 2, 3, 4]  # 5, 6, 7, 8]
@@ -73,15 +72,15 @@ if __name__ == '__main__':
     sdr_reroll_pos = False
 
     # Beampatterns
-    plot_precoding_beampatterns = False
+    plot_precoding_beampatterns = True
     beampattern_n_snapshots = 1
     n_points = 180 * 1
-    radial_distance = 300
+    radial_distance = usr_distances[0]
     rx_points = utilities.pts_on_semicircum(r=radial_distance, n=n_points)
     radian_vals = np.radians(np.linspace(-90, 90, n_points + 1))
 
     my_mod = modulation.OfdmQamModem(constel_size=constel_size, n_fft=n_fft, n_sub_carr=n_sub_carr, cp_len=cp_len,
-                                     n_users=len(usr_angles_rel))
+                                     n_users=len(usr_angles))
     my_distortion = distortion.SoftLimiter(0, my_mod.avg_sample_power)
     my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion))
     my_standard_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
@@ -300,8 +299,8 @@ if __name__ == '__main__':
                     fig1, ax1 = plt.subplots(1, 1, subplot_kw=dict(projection='polar'), figsize=(3.5, 3))
                     ax1.set_theta_zero_location("N")
                     plt.tight_layout()
-                    ax1.set_thetalim(-np.pi/2, np.pi/2)
-                    ax1.set_xticks(np.pi / 180. * np.linspace(-90, 90, 13, endpoint=True))
+                    ax1.set_thetalim(0, np.pi)
+                    ax1.set_xticks(np.pi / 180. * np.linspace(0, 180, 13, endpoint=True))
                     ax1.yaxis.set_major_locator(MaxNLocator(5))
 
                     dist_lines_lst = []
@@ -311,7 +310,7 @@ if __name__ == '__main__':
 
                     # plot reference angles/directions
                     (y_min, y_max) = ax1.get_ylim()
-                    ax1.vlines(np.deg2rad(usr_angles_rel), y_min, y_max, colors='k', linestyles='--')  # label="Users")
+                    ax1.vlines(np.deg2rad(usr_angles), y_min, y_max, colors='k', linestyles='--')  # label="Users")
                     ax1.margins(0.0, 0.0)
                     ax1.set_title("Signal power at angle [dB]", pad=-15)
                     ax1.legend(title="Signal:", ncol=2, loc='lower center', borderaxespad=0)
