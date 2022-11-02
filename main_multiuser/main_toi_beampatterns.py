@@ -75,10 +75,10 @@ if __name__ == '__main__':
     n_points = 180 * 1
     radial_distance = 300
     rx_points = utilities.pts_on_semicircum(r=radial_distance, n=n_points)
-    radian_vals = np.radians(np.linspace(-90, 90, n_points + 1))
+    radian_vals = np.radians(np.linspace(180, 90, n_points + 1))
 
     my_mod = modulation.OfdmQamModem(constel_size=constel_size, n_fft=n_fft, n_sub_carr=n_sub_carr, cp_len=cp_len,
-                                     n_users=len(usr_angles_rel))
+                                     n_users=len(usr_angles))
 
     # my_distortion = distortion.SoftLimiter(0, my_mod.avg_sample_power)
     my_distortion = distortion.ThirdOrderNonLin(toi_db=ibo_arr[0], avg_samp_pow=my_mod.avg_sample_power)
@@ -330,7 +330,7 @@ if __name__ == '__main__':
                     # %%
                     # plot beampatterns of desired and distortion components
                     fig1, ax1 = plt.subplots(1, 1, subplot_kw=dict(projection='polar'), figsize=(3.5, 3))
-                    ax1.set_theta_zero_location("N")
+                    ax1.set_theta_zero_location("E")
                     plt.tight_layout()
                     ax1.set_thetalim(0, np.pi)
                     ax1.set_xticks(np.pi / 180. * np.linspace(0, 180, 13, endpoint=True))

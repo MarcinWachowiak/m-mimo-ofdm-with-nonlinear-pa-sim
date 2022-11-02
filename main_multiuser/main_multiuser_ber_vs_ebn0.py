@@ -29,7 +29,7 @@ if __name__ == '__main__':
     CB_color_cycle = ['#006BA4', '#FF800E', '#ABABAB', '#595959', '#5F9ED1', '#C85200', '#898989', '#A2C8EC', '#FFBC79',
                       '#CFCFCF']
     # Multiple users data
-    usr_angles = np.array([80, 100])
+    usr_angles = np.array([45, 107])
     usr_distances = [300, 300]
     usr_pos_tup = []
     for usr_idx, usr_angle in enumerate(usr_angles):
@@ -40,7 +40,7 @@ if __name__ == '__main__':
     # usr_pos_tup = [(45, 45), (120, 120), (150, 150)]
     n_users = len(usr_pos_tup)
 
-    n_ant_arr = [64]
+    n_ant_arr = [16]
     ibo_arr = [0]
     ebn0_step = [1]
     cnc_n_iter_lst = [1, 2, 3, 4]  # 5, 6, 7, 8]
@@ -77,7 +77,7 @@ if __name__ == '__main__':
     n_points = 180 * 1
     radial_distance = usr_distances[0]
     rx_points = utilities.pts_on_semicircum(r=radial_distance, n=n_points)
-    radian_vals = np.radians(np.linspace(-90, 90, n_points + 1))
+    radian_vals = np.radians(np.linspace(0, 180, n_points + 1))
 
     my_mod = modulation.OfdmQamModem(constel_size=constel_size, n_fft=n_fft, n_sub_carr=n_sub_carr, cp_len=cp_len,
                                      n_users=len(usr_angles))
@@ -131,6 +131,7 @@ if __name__ == '__main__':
                 my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
 
                 vk_mat = my_array.get_precoding_mat()
+                pwr_per_usr = np.sum(np.sum(np.power(np.abs(vk_mat), 2), axis=2), axis=0)
                 vk_pow_vec = np.sum(np.sum(np.power(np.abs(vk_mat), 2), axis=2), axis=1)
 
                 ak_hk_vk_noise_scaler_lst = []
@@ -297,7 +298,7 @@ if __name__ == '__main__':
 #%%
                     # plot beampatterns of desired and distortion components
                     fig1, ax1 = plt.subplots(1, 1, subplot_kw=dict(projection='polar'), figsize=(3.5, 3))
-                    ax1.set_theta_zero_location("N")
+                    ax1.set_theta_zero_location("E")
                     plt.tight_layout()
                     ax1.set_thetalim(0, np.pi)
                     ax1.set_xticks(np.pi / 180. * np.linspace(0, 180, 13, endpoint=True))

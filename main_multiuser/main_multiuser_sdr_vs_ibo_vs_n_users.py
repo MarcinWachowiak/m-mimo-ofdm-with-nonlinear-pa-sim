@@ -30,7 +30,7 @@ if __name__ == '__main__':
                       '#CFCFCF']
     # Multiple users data
 
-    ibo_arr = np.arange(0, 8.01, 1.0)
+    ibo_arr = np.arange(0, 7.01, 0.5)
     n_ant_arr = [16]
     n_users_lst = [1, 2, 2]
     radial_distance = 300
