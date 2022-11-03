@@ -72,7 +72,7 @@ class LinearArray:
                                                               return_both=return_both, skip_dist=skip_dist)
             return np.squeeze(out_sig_mat)
 
-    def set_precoding_matrix(self, channel_mat_fd=None, mr_precoding=False, zf_precoding=False):
+    def set_precoding_matrix(self, channel_mat_fd=None, mr_precoding=False, zf_precoding=False, sep_carr_per_usr=False):
         # set precoding vector based on provided channel mat coefficients
         # only the subcarriers are precoded, other normalization operations should be performed in regard to carrier pool
         tx_n_sc = self.base_transceiver.modem.n_sub_carr
@@ -104,60 +104,95 @@ class LinearArray:
 
         # multiple user precoding
         else:
-            precoding_mat_fd = np.empty((self.n_users, self.n_elements, tx_n_sc), dtype=np.complex128)
+            if not sep_carr_per_usr:
+                precoding_mat_fd = np.empty((self.n_users, self.n_elements, tx_n_sc), dtype=np.complex128)
 
-            # old normalization for simple conjugate precoding
-            # #multiple user TX power normalization factor
-            # ant_norm_mat = np.empty((self.n_users, self.n_elements))
-            # for usr_idx, usr_chan_mat_fd in enumerate(channel_mat_fd):
-            #     sc_channel_mat_fd = np.concatenate(
-            #         (usr_chan_mat_fd[:, 1:(tx_n_sc // 2) + 1], usr_chan_mat_fd[:, -tx_n_sc // 2:]), axis=1)
-            #     ant_norm_mat[usr_idx, :] = np.sum(np.power(np.abs(sc_channel_mat_fd), 2), axis=1)
-            # ant_norm_coeff_vec = 1/np.sqrt(np.sum(ant_norm_mat, axis=0))
+                # old normalization for simple conjugate precoding
+                # #multiple user TX power normalization factor
+                # ant_norm_mat = np.empty((self.n_users, self.n_elements))
+                # for usr_idx, usr_chan_mat_fd in enumerate(channel_mat_fd):
+                #     sc_channel_mat_fd = np.concatenate(
+                #         (usr_chan_mat_fd[:, 1:(tx_n_sc // 2) + 1], usr_chan_mat_fd[:, -tx_n_sc // 2:]), axis=1)
+                #     ant_norm_mat[usr_idx, :] = np.sum(np.power(np.abs(sc_channel_mat_fd), 2), axis=1)
+                # ant_norm_coeff_vec = 1/np.sqrt(np.sum(ant_norm_mat, axis=0))
 
-            # calculate the normalizing factor K
-            usrs_vects = np.empty((self.n_users, tx_n_sc))
-            for usr_idx, usr_chan_mat_fd in enumerate(channel_mat_fd):
-                sc_channel_mat_fd = np.concatenate(
-                    (usr_chan_mat_fd[:, -tx_n_sc // 2:], usr_chan_mat_fd[:, 1:(tx_n_sc // 2) + 1]), axis=1)
-                usrs_vects[usr_idx, :] = np.sum(np.power(np.abs(sc_channel_mat_fd), 2), axis=0)
-            nsc_power_normalzing_vec = np.sqrt(np.sum(usrs_vects, axis=0))
+                # calculate the normalizing factor K
+                usrs_vects = np.empty((self.n_users, tx_n_sc))
+                for usr_idx, usr_chan_mat_fd in enumerate(channel_mat_fd):
+                    sc_channel_mat_fd = np.concatenate(
+                        (usr_chan_mat_fd[:, -tx_n_sc // 2:], usr_chan_mat_fd[:, 1:(tx_n_sc // 2) + 1]), axis=1)
+                    usrs_vects[usr_idx, :] = np.sum(np.power(np.abs(sc_channel_mat_fd), 2), axis=0)
+                nsc_power_normalzing_vec = np.sqrt(np.sum(usrs_vects, axis=0))
 
-            for usr_idx, usr_chan_mat_fd in enumerate(channel_mat_fd):
-                sc_channel_mat_fd = np.concatenate(
-                    (usr_chan_mat_fd[:, -tx_n_sc // 2:], usr_chan_mat_fd[:, 1:(tx_n_sc // 2) + 1]), axis=1)
-                sc_channel_mat_fd_conjugate = np.conjugate(sc_channel_mat_fd)
+                for usr_idx, usr_chan_mat_fd in enumerate(channel_mat_fd):
+                    sc_channel_mat_fd = np.concatenate(
+                        (usr_chan_mat_fd[:, -tx_n_sc // 2:], usr_chan_mat_fd[:, 1:(tx_n_sc // 2) + 1]), axis=1)
+                    sc_channel_mat_fd_conjugate = np.conjugate(sc_channel_mat_fd)
 
-                if mr_precoding:
+                    if mr_precoding:
+                        # normalize the precoding vector in regard to number of antennas and power
+                        # equal sum of TX power MR precoding
+                        usr_precoding_mat_fd = np.divide(sc_channel_mat_fd_conjugate, nsc_power_normalzing_vec)
+                        # equal sum of RX power MR precoding
+                        # precoding_mat_fd = np.divide(sc_channel_mat_fd_conjugate, np.sum(np.power(np.abs(sc_channel_mat_fd), 2), axis=0))
+
+                    else:
+                        # take only phases into consideration
+                        # normalize channel precoding coefficients
+                        usr_precoding_mat_fd = np.exp(1j * np.angle(sc_channel_mat_fd_conjugate))
+
+                    if zf_precoding:
+                        try:
+                            usr_precoding_mat_fd = np.sqrt(
+                                self.n_elements - self.n_users) * sc_channel_mat_fd_conjugate * np.linalg.inv(
+                                np.transpose(sc_channel_mat_fd) * sc_channel_mat_fd_conjugate)
+                        except:
+                            # try pseudoinverse if the standard one fails
+                            usr_precoding_mat_fd = np.sqrt(
+                                self.n_elements - self.n_users) * sc_channel_mat_fd_conjugate * np.linalg.pinv(
+                                np.transpose(sc_channel_mat_fd) * sc_channel_mat_fd_conjugate)
+
+                    precoding_mat_fd[usr_idx, :, :] = usr_precoding_mat_fd
+
+                # apply precoding matrix to each tx node
+                for tx_idx, tx_transceiver in enumerate(self.array_elements):
+                    # select coefficients based on carrier frequencies
+                    mu_precoding_slice = precoding_mat_fd[:, tx_idx, :]
+                    tx_transceiver.modem.set_precoding(mu_precoding_slice)
+
+            else:
+                composed_chan_mat = None
+                for usr_idx, usr_chan_mat_fd in enumerate(channel_mat_fd):
+                    sc_channel_mat_fd = np.concatenate((usr_chan_mat_fd[:, -tx_n_sc // 2:], usr_chan_mat_fd[:, 1:(tx_n_sc // 2) + 1]), axis=1)
+                    nsc_split_lst = np.hsplit(sc_channel_mat_fd, len(channel_mat_fd))
+                    if composed_chan_mat is None:
+                        composed_chan_mat = nsc_split_lst[usr_idx]
+                    else:
+                        composed_chan_mat = np.concatenate((composed_chan_mat, nsc_split_lst[usr_idx]), axis=1)
+
+                composed_chan_mat_conjugate = np.conjugate(composed_chan_mat)
+                if mr_precoding is True:
                     # normalize the precoding vector in regard to number of antennas and power
                     # equal sum of TX power MR precoding
-                    usr_precoding_mat_fd = np.divide(sc_channel_mat_fd_conjugate, nsc_power_normalzing_vec)
+                    precoding_mat_fd = np.divide(composed_chan_mat_conjugate,
+                                                 np.sqrt(np.sum(np.power(np.abs(composed_chan_mat), 2), axis=0)))
                     # equal sum of RX power MR precoding
                     # precoding_mat_fd = np.divide(sc_channel_mat_fd_conjugate, np.sum(np.power(np.abs(sc_channel_mat_fd), 2), axis=0))
 
                 else:
                     # take only phases into consideration
                     # normalize channel precoding coefficients
-                    usr_precoding_mat_fd = np.exp(1j * np.angle(sc_channel_mat_fd_conjugate))
+                    precoding_mat_fd = np.exp(1j * np.angle(composed_chan_mat_conjugate))
 
-                if zf_precoding:
-                    try:
-                        usr_precoding_mat_fd = np.sqrt(
-                            self.n_elements - self.n_users) * sc_channel_mat_fd_conjugate * np.linalg.inv(
-                            np.transpose(sc_channel_mat_fd) * sc_channel_mat_fd_conjugate)
-                    except:
-                        # try pseudoinverse if the standard one fails
-                        usr_precoding_mat_fd = np.sqrt(
-                            self.n_elements - self.n_users) * sc_channel_mat_fd_conjugate * np.linalg.pinv(
-                            np.transpose(sc_channel_mat_fd) * sc_channel_mat_fd_conjugate)
+                # apply precoding vectors to each tx node from matrix
+                for idx, tx_transceiver in enumerate(self.array_elements):
+                    # select coefficients based on carrier frequencies
+                    tx_n_sc = tx_transceiver.modem.n_sub_carr
+                    precoding_vec = precoding_mat_fd[idx, :]
+                    tx_transceiver.modem.set_precoding(precoding_vec)
 
-                precoding_mat_fd[usr_idx, :, :] = usr_precoding_mat_fd
 
-            # apply precoding matrix to each tx node
-            for tx_idx, tx_transceiver in enumerate(self.array_elements):
-                # select coefficients based on carrier frequencies
-                mu_precoding_slice = precoding_mat_fd[:, tx_idx, :]
-                tx_transceiver.modem.set_precoding(mu_precoding_slice)
+
 
     def update_distortion(self, ibo_db, avg_sample_pow, alpha_val=None):
         # calculate the avg precoding gain only for the desired signal - withing the idx range of subcarriers

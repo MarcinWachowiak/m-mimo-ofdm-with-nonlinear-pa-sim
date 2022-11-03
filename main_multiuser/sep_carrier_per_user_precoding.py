@@ -39,12 +39,8 @@ if __name__ == '__main__':
     n_users = len(usr_pos_tup)
 
     n_ant_arr = [64]
-    ibo_arr = [4.5]
+    ibo_arr = [0]
     ebn0_step = [1]
-    cnc_n_iter_lst = [1, 2, 3, 4]  # 5, 6, 7, 8]
-    # include clean run is always True
-    # no distortion and standard RX always included
-    cnc_n_iter_lst = np.insert(cnc_n_iter_lst, 0, 0)
 
     # print("Distortion IBO/TOI value:", ibo_db)
     # print("Eb/n0 values: ", ebn0_arr)
@@ -52,7 +48,7 @@ if __name__ == '__main__':
 
     # modulation
     constel_size = 64
-    n_fft = 4
+    n_fft = 7
     n_sub_carr = 2
     cp_len = 1
 
@@ -66,7 +62,7 @@ if __name__ == '__main__':
 
     # SDR
     meas_usr_sdr = False
-    sdr_n_snapshots = 10
+    sdr_n_snapshots = 100
     sdr_reroll_pos = False
 
     # Beampatterns
@@ -78,11 +74,11 @@ if __name__ == '__main__':
     radian_vals = np.radians(np.linspace(0, 180, n_points + 1))
 
     my_mod = modulation.OfdmQamModem(constel_size=constel_size, n_fft=n_fft, n_sub_carr=n_sub_carr, cp_len=cp_len,
-                                     n_users=len(usr_angles))
+                                     n_users=1)
 
     # my_distortion = distortion.SoftLimiter(0, my_mod.avg_sample_power)
-    my_distortion = distortion.ThirdOrderNonLin(toi_db=ibo_arr[0], avg_samp_pow=my_mod.avg_sample_power)
-
+    # my_distortion = distortion.ThirdOrderNonLin(toi_db=ibo_arr[0], avg_samp_pow=my_mod.avg_sample_power)
+    my_distortion = distortion.SoftLimiter(ibo_db=ibo_arr[0], avg_samp_pow=my_mod.avg_sample_power)
     my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion))
     my_standard_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
                                              cord_x=rx_loc_x, cord_y=rx_loc_y, cord_z=1.5,
@@ -94,10 +90,10 @@ if __name__ == '__main__':
         # channel type
         my_miso_los_chan = channel.MisoLosFd()
         my_miso_los_chan.calc_channel_mat(tx_transceivers=my_array.array_elements, rx_transceiver=my_standard_rx,
-                                          skip_attenuation=False)
+                                          skip_attenuation=True)
         my_miso_two_path_chan = channel.MisoTwoPathFd()
         my_miso_two_path_chan.calc_channel_mat(tx_transceivers=my_array.array_elements, rx_transceiver=my_standard_rx,
-                                               skip_attenuation=False)
+                                               skip_attenuation=True)
 
         my_miso_rayleigh_chan = channel.MisoRayleighFd(tx_transceivers=my_array.array_elements,
                                                        rx_transceiver=my_standard_rx,
@@ -110,7 +106,7 @@ if __name__ == '__main__':
             my_cnc_rx = corrector.CncReceiver(copy.deepcopy(my_mod), copy.deepcopy(my_distortion))
 
             for ibo_val_db in ibo_arr:
-                estimate_alpha = True
+                estimate_alpha = False
                 # lambda estimation phase
                 if estimate_alpha:
                     my_tmp_mod = modulation.OfdmQamModem(constel_size=constel_size, n_fft=n_fft, n_sub_carr=n_sub_carr,
@@ -125,7 +121,7 @@ if __name__ == '__main__':
                     my_tmp_miso_los_chan = channel.MisoLosFd()
                     my_tmp_miso_los_chan.calc_channel_mat(tx_transceivers=my_tmp_array.array_elements,
                                                           rx_transceiver=my_standard_rx,
-                                                          skip_attenuation=False)
+                                                          skip_attenuation=True)
                     start_time = time.time()
                     bit_rng = np.random.default_rng(4321)
                     n_ofdm_symb = 1e2
@@ -161,7 +157,7 @@ if __name__ == '__main__':
                     print("Alpha coeff estimate:", alpha_estimate)
                     print("--- Computation time: %f ---" % (time.time() - start_time))
                 else:
-                    alpha_estimate = 1.0
+                    alpha_estimate = my_mod.calc_alpha(ibo_db=ibo_val_db)
                     # alpha_estimate = my_mod.calc_alpha(dist_val_arr)
 
                 my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power,
@@ -180,16 +176,18 @@ if __name__ == '__main__':
                     if isinstance(my_miso_chan, channel.MisoLosFd) or isinstance(my_miso_chan, channel.MisoTwoPathFd):
                         my_miso_chan.calc_channel_mat(tx_transceivers=my_array.array_elements,
                                                       rx_transceiver=my_standard_rx,
-                                                      skip_attenuation=False)
+                                                      skip_attenuation=True)
                     else:
                         my_miso_chan.reroll_channel_coeffs()
                     usr_chan_mat_lst.append(my_miso_chan.get_channel_mat_fd())
 
-                my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=True)
+                # compose the precoding matrix
+
+                my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=True, sep_carr_per_usr=True)
                 my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
 
                 vk_mat = my_array.get_precoding_mat()
-                vk_pow_vec = np.sum(np.sum(np.power(np.abs(vk_mat), 2), axis=2), axis=1)
+                vk_pow_vec = np.sum(np.power(np.abs(vk_mat), 2), axis=1)
 
                 if isinstance(my_distortion, distortion.ThirdOrderNonLin):
                     ak_vect = np.repeat(alpha_estimate, n_ant_val)
@@ -227,17 +225,17 @@ if __name__ == '__main__':
                                         cord_z=my_standard_rx.cord_z)
                                     my_miso_chan.calc_channel_mat(tx_transceivers=my_array.array_elements,
                                                                   rx_transceiver=my_standard_rx,
-                                                                  skip_attenuation=False)
+                                                                  skip_attenuation=True)
                                 else:
                                     my_miso_rayleigh_chan.reroll_channel_coeffs()
 
                                 usr_chan_mat_lst.append(my_miso_chan.get_channel_mat_fd())
 
-                            my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=True)
+                            my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=True, sep_carr_per_usr=True)
                             my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
 
                             vk_mat = my_array.get_precoding_mat()
-                            vk_pow_vec = np.sum(np.sum(np.power(np.abs(vk_mat), 2), axis=2), axis=1)
+                            vk_pow_vec = np.sum(np.power(np.abs(vk_mat), 2), axis=1)
 
                             ibo_vec = 10 * np.log10(
                                 10 ** (ibo_val_db / 10) * my_mod.n_sub_carr / (vk_pow_vec * n_ant_val))
@@ -287,7 +285,7 @@ if __name__ == '__main__':
                                                                                      channel.MisoTwoPathFd):
                             my_miso_chan.calc_channel_mat(tx_transceivers=my_array.array_elements,
                                                           rx_transceiver=my_standard_rx,
-                                                          skip_attenuation=False)
+                                                          skip_attenuation=True)
                         else:
                             pass
                             # if pt_idx == precoding_point_idx:
@@ -298,8 +296,7 @@ if __name__ == '__main__':
                         desired_sig_pow_arr = np.zeros(beampattern_n_snapshots)
                         distortion_sig_pow_arr = np.zeros(beampattern_n_snapshots)
                         for snap_idx in range(beampattern_n_snapshots):
-                            tx_bits = np.squeeze(
-                                bit_rng.choice((0, 1), (n_users, my_tx.modem.n_bits_per_ofdm_sym)))
+                            tx_bits = bit_rng.choice((0, 1), (my_tx.modem.n_bits_per_ofdm_sym))
                             arr_tx_sig_fd, clean_sig_mat_fd = my_array.transmit(in_bits=tx_bits,
                                                                                 out_domain_fd=True,
                                                                                 return_both=True)
@@ -312,12 +309,15 @@ if __name__ == '__main__':
                             # rx_sc_ofdm_symb_td = utilities.to_time_domain(rx_sc_ofdm_symb_fd)
 
                             clean_rx_sig_fd = my_miso_chan.propagate(in_sig_mat=clean_sig_mat_fd, sum=False)
-
                             clean_sc_ofdm_symb_fd = np.concatenate(
                                 (clean_rx_sig_fd[:, -my_mod.n_sub_carr // 2:],
                                  clean_rx_sig_fd[:, 1:(my_mod.n_sub_carr // 2) + 1]),
                                 axis=1)
-                            tmp = ak_vect * clean_sc_ofdm_symb_fd
+
+                            # clean_sc_ofdm_symb_fd = clean_rx_sig_fd
+                            # rx_sc_ofdm_symb_fd = rx_sig_fd
+
+
                             sc_ofdm_distortion_sig = np.subtract(rx_sc_ofdm_symb_fd,
                                                                  (ak_vect * clean_sc_ofdm_symb_fd))
                             desired_sig_pow_arr[snap_idx] = np.sum(
@@ -353,8 +353,8 @@ if __name__ == '__main__':
                     ax1.grid(True)
 
                     plt.savefig(
-                        "../figs/multiuser/distortion_directions_eval/multiuser_toi_%s_desired_and_distortion_signal_beampattern_ibo%d_angles%s_distances%s_npoints%d_nsnap%d_nant%s.png" % (
-                            my_miso_chan, ibo_val_db, '_'.join([str(val) for val in usr_angles]),
+                        "../figs/multiuser/distortion_directions_eval/multiuser_sep_sc_toi_nfft%d_nsc%d_%s_desired_and_distortion_signal_beampattern_ibo%d_angles%s_distances%s_npoints%d_nsnap%d_nant%s.png" % (
+                             n_fft, n_sub_carr, my_miso_chan, ibo_val_db, '_'.join([str(val) for val in usr_angles]),
                             '_'.join([str(val) for val in usr_distances]), n_points, beampattern_n_snapshots,
                             '_'.join([str(val) for val in [n_ant_val]])),
                         dpi=600, bbox_inches='tight')

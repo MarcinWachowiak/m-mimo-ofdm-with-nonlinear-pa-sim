@@ -113,7 +113,7 @@ class QamModem(Modem):
         super().__init__(constellation)
 
 
-@jit(nopython=True)
+# @jit(nopython=True)
 def _tx_ofdm_symbol(mod_symbols, n_fft: int, n_sub_carr: int, cp_length: int):
     # generate OFDM symbol block - size given by n_sub_carr size
 
@@ -125,6 +125,7 @@ def _tx_ofdm_symbol(mod_symbols, n_fft: int, n_sub_carr: int, cp_length: int):
 
     ofdm_sym_freq[-(n_sub_carr // 2):] = mod_symbols[0:n_sub_carr // 2]
     ofdm_sym_freq[1:(n_sub_carr // 2) + 1] = mod_symbols[n_sub_carr // 2:]
+    tmp = (np.fft.fftfreq(n_fft))
 
     with objmode(ofdm_sym_time='complex128[:]'):
         ofdm_sym_time = torch.fft.ifft(torch.from_numpy(ofdm_sym_freq), norm="ortho").numpy()
@@ -134,7 +135,7 @@ def _tx_ofdm_symbol(mod_symbols, n_fft: int, n_sub_carr: int, cp_length: int):
 
 
 # TODO: add input signal domain flag freq/time to skip fft
-@jit(nopython=True)
+# @jit(nopython=True)
 def _rx_ofdm_symbol(ofdm_symbol, n_fft: int, n_sub_carr: int, cp_length: int):
     # decode OFDM symbol block - size given by n_sub_carr size
     with objmode(ofdm_sym_freq='complex128[:]'):

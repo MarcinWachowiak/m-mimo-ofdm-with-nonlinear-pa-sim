@@ -29,7 +29,7 @@ if __name__ == '__main__':
     CB_color_cycle = ['#006BA4', '#FF800E', '#ABABAB', '#595959', '#5F9ED1', '#C85200', '#898989', '#A2C8EC', '#FFBC79',
                       '#CFCFCF']
     # Multiple users data
-    usr_angles = np.array([45, 107])
+    usr_angles = np.array([75, 105])
     usr_distances = [300, 300]
     usr_pos_tup = []
     for usr_idx, usr_angle in enumerate(usr_angles):
@@ -40,7 +40,7 @@ if __name__ == '__main__':
     # usr_pos_tup = [(45, 45), (120, 120), (150, 150)]
     n_users = len(usr_pos_tup)
 
-    n_ant_arr = [16]
+    n_ant_arr = [64]
     ibo_arr = [0]
     ebn0_step = [1]
     cnc_n_iter_lst = [1, 2, 3, 4]  # 5, 6, 7, 8]
@@ -54,9 +54,9 @@ if __name__ == '__main__':
 
     # modulation
     constel_size = 64
-    n_fft = 4096
-    n_sub_carr = 2048
-    cp_len = 128
+    n_fft = 3
+    n_sub_carr = 2
+    cp_len = 1
 
     # BER analysis
     bits_sent_max = int(1e5)
@@ -73,7 +73,7 @@ if __name__ == '__main__':
 
     # Beampatterns
     plot_precoding_beampatterns = True
-    beampattern_n_snapshots = 1
+    beampattern_n_snapshots = 100
     n_points = 180 * 1
     radial_distance = usr_distances[0]
     rx_points = utilities.pts_on_semicircum(r=radial_distance, n=n_points)

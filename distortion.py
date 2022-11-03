@@ -93,7 +93,7 @@ class Rapp:
         return _process_rapp(self.sat_pow, self.p_hardness, in_sig)
 
 
-@jit(nopython=True)
+# @jit(nopython=True)
 def _process_toi(cubic_dist_coeff, in_sig):
     return in_sig - cubic_dist_coeff * in_sig * np.power(np.abs(in_sig), 2)
 
