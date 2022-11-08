@@ -36,7 +36,7 @@ if __name__ == '__main__':
     radial_distance = 300
     angular_sep_margin = 20
     # SDR
-    sdr_n_snapshots = 100
+    sdr_n_snapshots = 10
     sdr_reroll_pos = False
 
     # modulation
@@ -141,6 +141,7 @@ if __name__ == '__main__':
 
 
                         tx_bits = np.squeeze(bit_rng.choice((0, 1), (usr_count, my_tx.modem.n_bits_per_ofdm_sym)))
+
                         arr_tx_sig_fd, clean_sig_mat_fd = my_array.transmit(in_bits=tx_bits, out_domain_fd=True,
                                                                             return_both=True)
                         for usr_idx, user_pos_tup in enumerate(usr_pos_tup_lst):

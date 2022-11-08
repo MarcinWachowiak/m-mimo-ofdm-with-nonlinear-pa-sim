@@ -5,7 +5,7 @@ import plot_settings
 from speedup import jit
 
 
-@jit(nopython=True)
+# @jit(nopython=True)
 def _process_soft_lim(sat_pow, in_sig):
     return np.where(np.power(np.abs(in_sig), 2) <= sat_pow, in_sig,
                     in_sig * np.sqrt(np.divide(sat_pow, np.power(np.abs(np.where(in_sig != 0, in_sig, 1)), 2))))
@@ -17,6 +17,9 @@ class SoftLimiter:
         self.ibo_db = ibo_db
         self.avg_samp_pow = avg_samp_pow
         self.sat_pow = np.power(10, ibo_db / 10) * avg_samp_pow
+
+    def __str__(self):
+        return "softlim"
 
     def set_ibo(self, ibo_db):
         self.ibo_db = ibo_db
@@ -50,7 +53,7 @@ class SoftLimiter:
         return _process_soft_lim(self.sat_pow, in_sig)
 
 
-@jit(nopython=True)
+# @jit(nopython=True)
 def _process_rapp(sat_pow, p_hardness, in_sig):
     return in_sig / (np.power(1 + np.power(np.abs(in_sig) / np.sqrt(sat_pow), 2 * p_hardness), 1 / (2 * p_hardness)))
 
@@ -62,6 +65,9 @@ class Rapp:
         self.ibo_db = ibo_db
         self.avg_samp_pow = avg_samp_pow
         self.sat_pow = np.power(10, ibo_db / 10) * avg_samp_pow
+
+    def __str__(self):
+        return "rapp"
 
     def set_hardness(self, p_hardness):
         self.p_hardness = p_hardness
@@ -102,15 +108,20 @@ def _process_toi(cubic_dist_coeff, in_sig):
 class ThirdOrderNonLin:
 
     def __init__(self, toi_db, avg_samp_pow):
+        self.avg_samp_pow = avg_samp_pow
         self.toi_db = toi_db
-        self.cubic_dist_coeff = 1 / (np.power(10, (toi_db / 10)))
+        self.cubic_dist_coeff = 1 / (np.power(10, (toi_db / 10))) / avg_samp_pow
+
+    def __str__(self):
+        return "toi"
 
     def set_toi(self, toi_db):
         self.toi_db = toi_db
-        self.cubic_dist_coeff = 1 / (np.power(10, (toi_db / 10)))
+        self.cubic_dist_coeff = 1 / (np.power(10, (toi_db / 10))) / self.avg_samp_pow
 
     def set_avg_sample_power(self, avg_samp_pow):
-        pass
+        self.avg_samp_pow = avg_samp_pow
+        self.cubic_dist_coeff = 1 / (np.power(10, (self.toi_db / 10))) / avg_samp_pow
 
     def plot_characteristics(self, in_ampl_min=-10, in_ampl_max=10, step=0.1):
         in_sig_ampl = np.arange(in_ampl_min, in_ampl_max + step, step)

@@ -29,7 +29,7 @@ if __name__ == '__main__':
     CB_color_cycle = ['#006BA4', '#FF800E', '#ABABAB', '#595959', '#5F9ED1', '#C85200', '#898989', '#A2C8EC', '#FFBC79',
                       '#CFCFCF']
     # Multiple users data
-    usr_angles = np.array([75, 105])
+    usr_angles = np.array([45, 135])
     usr_distances = [300, 300]
     usr_pos_tup = []
     for usr_idx, usr_angle in enumerate(usr_angles):
@@ -40,7 +40,7 @@ if __name__ == '__main__':
     # usr_pos_tup = [(45, 45), (120, 120), (150, 150)]
     n_users = len(usr_pos_tup)
 
-    n_ant_arr = [64]
+    n_ant_arr = [16]
     ibo_arr = [0]
     ebn0_step = [1]
     cnc_n_iter_lst = [1, 2, 3, 4]  # 5, 6, 7, 8]
@@ -54,8 +54,8 @@ if __name__ == '__main__':
 
     # modulation
     constel_size = 64
-    n_fft = 3
-    n_sub_carr = 2
+    n_fft = 16
+    n_sub_carr = 8
     cp_len = 1
 
     # BER analysis
@@ -72,7 +72,7 @@ if __name__ == '__main__':
     sdr_reroll_pos = False
 
     # Beampatterns
-    plot_precoding_beampatterns = True
+    plot_precoding_beampatterns = False
     beampattern_n_snapshots = 100
     n_points = 180 * 1
     radial_distance = usr_distances[0]

@@ -170,7 +170,7 @@ class OfdmQamModem(QamModem):
         else:
             return in_symbols
 
-    def modulate(self, input_bits, get_symbols_only=False):
+    def modulate(self, input_bits, get_symbols_only=False, separate_usrs_sig=False):
         if self.n_users == 1:
             modulated_symbols = _modulate(self._constellation, self.n_bits_per_symbol, input_bits)
             if get_symbols_only:
@@ -183,6 +183,14 @@ class OfdmQamModem(QamModem):
             for user_idx in range(self.n_users):
                 modulated_symbols[user_idx, :] = _modulate(self._constellation, self.n_bits_per_symbol,
                                                            input_bits[user_idx, :])
+            if separate_usrs_sig:
+                mu_symbols = self.precode_symbols(modulated_symbols, self.precoding_mat)
+                # return _tx_ofdm_symbol(combined_mu_symbols, self.n_fft, self.n_sub_carr, self.cp_len)
+                tx_sig_per_usr = []
+                for usr_idx in range(self.n_users):
+                    tx_sig_per_usr.append(_tx_ofdm_symbol(mu_symbols[usr_idx, :], self.n_fft, self.n_sub_carr, self.cp_len))
+                return tx_sig_per_usr
+
             if get_symbols_only:
                 return modulated_symbols
             else:
