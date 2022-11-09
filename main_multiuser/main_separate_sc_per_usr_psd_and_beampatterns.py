@@ -28,7 +28,7 @@ from plot_settings import set_latex_plot_style
 if __name__ == '__main__':
     set_latex_plot_style()
     # Multiple users data
-    usr_angles = np.array([75, 105])
+    usr_angles = np.array([90, 60])
     usr_distances = [300, 300]
     usr_pos_tup = []
     for usr_idx, usr_angle in enumerate(usr_angles):
@@ -81,14 +81,14 @@ if __name__ == '__main__':
 
     # PSD at angle
     plot_psd = True
-    sel_psd_angle = 120
+    sel_psd_angle = 141
     sel_ptx_idx = int(n_points / 180 * sel_psd_angle)
     # PSD plotting params
     psd_nfft = 1024
     n_samp_per_seg = 256
 
     my_mod = modulation.OfdmQamModem(constel_size=constel_size, n_fft=n_fft, n_sub_carr=n_sub_carr, cp_len=cp_len,
-                                     n_users=len(usr_angles))
+                                     n_users=1)
 
     my_distortion = distortion.ThirdOrderNonLin(toi_db=ibo_arr[0], avg_samp_pow=my_mod.avg_sample_power)
     # my_distortion = distortion.SoftLimiter(ibo_db=ibo_arr[0], avg_samp_pow=my_mod.avg_sample_power)
@@ -182,10 +182,6 @@ if __name__ == '__main__':
                 my_cnc_rx.update_distortion(ibo_db=ibo_val_db)
 
                 usr_chan_mat_lst = []
-
-                my_mod = modulation.OfdmQamModem(constel_size=constel_size, n_fft=n_fft, n_sub_carr=n_sub_carr,
-                                                 cp_len=cp_len,
-                                                 n_users=1)
                 for usr_idx, usr_pos_tuple_val in enumerate(usr_pos_tup):
                     usr_pos_x, usr_pos_y = usr_pos_tuple_val
                     my_standard_rx.set_position(cord_x=usr_pos_x, cord_y=usr_pos_y, cord_z=1.5)
@@ -202,7 +198,7 @@ if __name__ == '__main__':
                 my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
 
                 vk_mat = my_array.get_precoding_mat()
-                vk_pow_vec = np.sum(np.sum(np.power(np.abs(vk_mat), 2), axis=2), axis=1)
+                vk_pow_vec = np.sum(np.power(np.abs(vk_mat), 2), axis=1)
 
                 if estimate_alpha:
                     ak_vect = alpha_vec_est
@@ -317,7 +313,7 @@ if __name__ == '__main__':
                         distortion_oob_sig_pow_arr = np.zeros(beampattern_n_snapshots)
                         for snap_idx in range(beampattern_n_snapshots):
                             tx_bits = np.squeeze(
-                                bit_rng.choice((0, 1), (n_users, my_tx.modem.n_bits_per_ofdm_sym)))
+                                bit_rng.choice((0, 1), (1, my_tx.modem.n_bits_per_ofdm_sym)))
                             arr_tx_sig_fd, clean_sig_mat_fd = my_array.transmit(in_bits=tx_bits,
                                                                                 out_domain_fd=True,
                                                                                 return_both=True)
@@ -447,13 +443,12 @@ if __name__ == '__main__':
                     ax1.set_title("Signal power at angle [dB]", pad=-15)
                     ax1.legend(title="Signal:", ncol=2, loc='lower center', borderaxespad=-2)
                     ax1.grid(True)
-
-                    plt.savefig(
-                        "../figs/multiuser/distortion_directions_eval/multiuser_sep_sc_%s_%s_desired_and_distortion_signal_beampattern_ibo%d_angles%s_distances%s_npoints%d_nsnap%d_nant%s.png" % (
+                    beampattern_filename_str = "multiuser_sep_sc_%s_%s_desired_and_distortion_signal_beampattern_ibo%d_angles%s_distances%s_npoints%d_nsnap%d_nant%s" % (
                             my_distortion, my_miso_chan, ibo_val_db, '_'.join([str(val) for val in usr_angles]),
                             '_'.join([str(val) for val in usr_distances]), n_points, beampattern_n_snapshots,
-                            '_'.join([str(val) for val in [n_ant_val]])),
-                        dpi=600, bbox_inches='tight')
+                            '_'.join([str(val) for val in [n_ant_val]]))
+                    plt.savefig(
+                        "../figs/multiuser/distortion_directions_eval/%s.png" % beampattern_filename_str, dpi=600, bbox_inches='tight')
                     plt.show()
                     # plt.cla()
                     # plt.close()

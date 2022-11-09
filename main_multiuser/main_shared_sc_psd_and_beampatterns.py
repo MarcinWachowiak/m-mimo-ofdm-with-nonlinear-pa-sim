@@ -28,7 +28,7 @@ from plot_settings import set_latex_plot_style
 if __name__ == '__main__':
     set_latex_plot_style()
     # Multiple users data
-    usr_angles = np.array([75, 105])
+    usr_angles = np.array([90, 60])
     usr_distances = [300, 300]
     usr_pos_tup = []
     for usr_idx, usr_angle in enumerate(usr_angles):
@@ -81,7 +81,7 @@ if __name__ == '__main__':
 
     # PSD at angle
     plot_psd = True
-    sel_psd_angle = 120
+    sel_psd_angle = 141
     sel_ptx_idx = int(n_points / 180 * sel_psd_angle)
     # PSD plotting params
     psd_nfft = 1024
@@ -444,13 +444,11 @@ if __name__ == '__main__':
                     ax1.set_title("Signal power at angle [dB]", pad=-15)
                     ax1.legend(title="Signal:", ncol=2, loc='lower center', borderaxespad=-2)
                     ax1.grid(True)
-
-                    plt.savefig(
-                        "../figs/multiuser/distortion_directions_eval/multiuser_shared_sc_%s_%s_desired_and_distortion_signal_beampattern_ibo%d_angles%s_distances%s_npoints%d_nsnap%d_nant%s.png" % (
+                    beampattern_filename_str = "multiuser_shared_sc_%s_%s_desired_and_distortion_signal_beampattern_ibo%d_angles%s_distances%s_npoints%d_nsnap%d_nant%s" % (
                             my_distortion, my_miso_chan, ibo_val_db, '_'.join([str(val) for val in usr_angles]),
                             '_'.join([str(val) for val in usr_distances]), n_points, beampattern_n_snapshots,
-                            '_'.join([str(val) for val in [n_ant_val]])),
-                        dpi=600, bbox_inches='tight')
+                            '_'.join([str(val) for val in [n_ant_val]]))
+                    plt.savefig("../figs/multiuser/distortion_directions_eval/%s.png" %(beampattern_filename_str), dpi=600, bbox_inches='tight')
                     plt.show()
                     # plt.cla()
                     # plt.close()
