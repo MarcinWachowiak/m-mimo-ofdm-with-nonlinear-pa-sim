@@ -28,10 +28,11 @@ from plot_settings import set_latex_plot_style
 if __name__ == '__main__':
     set_latex_plot_style()
     # Multiple users data
-    usr_angles = np.array([90, 60])
+    usr_angles_deg = np.array([-15, 15])
+    usr_angles_rad = np.deg2rad(usr_angles_deg)
     usr_distances = [300, 300]
     usr_pos_tup = []
-    for usr_idx, usr_angle in enumerate(usr_angles):
+    for usr_idx, usr_angle in enumerate(usr_angles_deg+90):
         usr_pos_x = np.cos(np.deg2rad(usr_angle)) * usr_distances[usr_idx]
         usr_pos_y = np.sin(np.deg2rad(usr_angle)) * usr_distances[usr_idx]
         usr_pos_tup.append((usr_pos_x, usr_pos_y))
@@ -77,7 +78,7 @@ if __name__ == '__main__':
     n_points = 180 * 1
     radial_distance = 300
     rx_points = utilities.pts_on_semicircum(r=radial_distance, n=n_points)
-    radian_vals = np.radians(np.linspace(0, 180, n_points + 1))
+    radian_vals = np.radians(np.linspace(-90, 90, n_points + 1))
 
     # PSD at angle
     plot_psd = True
@@ -88,7 +89,7 @@ if __name__ == '__main__':
     n_samp_per_seg = 256
 
     my_mod = modulation.OfdmQamModem(constel_size=constel_size, n_fft=n_fft, n_sub_carr=n_sub_carr, cp_len=cp_len,
-                                     n_users=len(usr_angles))
+                                     n_users=len(usr_angles_deg))
 
     my_distortion = distortion.ThirdOrderNonLin(toi_db=ibo_arr[0], avg_samp_pow=my_mod.avg_sample_power)
     # my_distortion = distortion.SoftLimiter(ibo_db=ibo_arr[0], avg_samp_pow=my_mod.avg_sample_power)
@@ -421,10 +422,10 @@ if __name__ == '__main__':
                     # %%
                     # plot beampatterns of desired and distortion components
                     fig1, ax1 = plt.subplots(1, 1, subplot_kw=dict(projection='polar'), figsize=(3.5, 3))
-                    ax1.set_theta_zero_location("E")
+                    ax1.set_theta_zero_location("N")
                     plt.tight_layout()
-                    ax1.set_thetalim(0, np.pi)
-                    ax1.set_xticks(np.pi / 180. * np.linspace(0, 180, 13, endpoint=True))
+                    ax1.set_thetalim(-np.pi/2, np.pi/2)
+                    ax1.set_xticks(np.pi / 180. * np.linspace(-90, 90, 13, endpoint=True))
                     ax1.yaxis.set_major_locator(MaxNLocator(5))
 
                     dist_lines_lst = []
@@ -438,14 +439,18 @@ if __name__ == '__main__':
 
                     # plot reference angles/directions
                     (y_min, y_max) = ax1.get_ylim()
-                    ax1.vlines(np.deg2rad(usr_angles), y_min, y_max, colors='k',
+                    ax1.vlines(np.deg2rad(usr_angles_deg), y_min, y_max, colors='k',
                                linestyles='--')  # label="Users")
+
+                    dist_angles = ([(np.arcsin(2*np.sin(usr_angles_rad[0])-np.sin(usr_angles_rad[1]))), np.arcsin(2*np.sin(usr_angles_rad[1])-np.sin(usr_angles_rad[0]))])
+                    ax1.vlines(dist_angles, y_min, y_max, colors='k',
+                               linestyles=':', zorder=10)  # label="Expected distortion")
                     ax1.margins(0.0, 0.0)
                     ax1.set_title("Signal power at angle [dB]", pad=-15)
                     ax1.legend(title="Signal:", ncol=2, loc='lower center', borderaxespad=-2)
                     ax1.grid(True)
                     beampattern_filename_str = "multiuser_shared_sc_%s_%s_desired_and_distortion_signal_beampattern_ibo%d_angles%s_distances%s_npoints%d_nsnap%d_nant%s" % (
-                            my_distortion, my_miso_chan, ibo_val_db, '_'.join([str(val) for val in usr_angles]),
+                            my_distortion, my_miso_chan, ibo_val_db, '_'.join([str(val) for val in usr_angles_deg]),
                             '_'.join([str(val) for val in usr_distances]), n_points, beampattern_n_snapshots,
                             '_'.join([str(val) for val in [n_ant_val]]))
                     plt.savefig("../figs/multiuser/distortion_directions_eval/%s.png" %(beampattern_filename_str), dpi=600, bbox_inches='tight')
@@ -701,7 +706,7 @@ if __name__ == '__main__':
             #     # %%
             #     filename_str = "mu_ber_vs_ebn0_cnc_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s_angles%s_distances%s" % (
             #         my_miso_chan, n_ant_val, ibo_val_db, min(ebn0_arr), max(ebn0_arr), ebn0_arr[1] - ebn0_arr[0],
-            #         '_'.join([str(val) for val in cnc_n_iter_lst[1:]]), '_'.join([str(val) for val in usr_angles]),
+            #         '_'.join([str(val) for val in cnc_n_iter_lst[1:]]), '_'.join([str(val) for val in usr_angles_deg]),
             #     '_'.join([str(val) for val in usr_distances]) )
             #
             #     # timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
