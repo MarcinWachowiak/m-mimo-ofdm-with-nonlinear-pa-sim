@@ -82,8 +82,8 @@ if __name__ == '__main__':
 
     # PSD at angle
     plot_psd = True
-    sel_psd_angle = 141
-    sel_ptx_idx = int(n_points / 180 * sel_psd_angle)
+    sel_psd_angle = 51
+    sel_ptx_idx = int(n_points / 180 * (sel_psd_angle+90))
     # PSD plotting params
     psd_nfft = 1024
     n_samp_per_seg = 256
