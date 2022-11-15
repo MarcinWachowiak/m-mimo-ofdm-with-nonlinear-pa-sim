@@ -47,26 +47,63 @@ class Transceiver:
     # def tx_amplify(self, in_sig):
     #     return in_sig * np.sqrt(1e-3 * 10 ** (self.tx_power_dbm / 10) / self.modem.avg_sample_power)
 
-    def transmit(self, in_bits, out_domain_fd=True, skip_dist=False, return_both=False):
-        clean_symb_td = self.modem.modulate(in_bits)
+    def transmit(self, in_bits, out_domain_fd=True, skip_dist=False, return_both=False, sum_usr_signals=True):
+        clean_symb_td = self.modem.modulate(in_bits, sum_usr_signals=sum_usr_signals)
         if skip_dist or self.impairment is None:
             if out_domain_fd:
-                return utilities.to_freq_domain(clean_symb_td, remove_cp=True, cp_len=self.modem.cp_len)
+                if sum_usr_signals:
+                    return utilities.to_freq_domain(clean_symb_td, remove_cp=True, cp_len=self.modem.cp_len)
+                else:
+                    per_usr_sig = []
+                    for usr_idx in range(self.modem.n_users):
+                        per_usr_sig.append(utilities.to_freq_domain(clean_symb_td[usr_idx], remove_cp=True, cp_len=self.modem.cp_len))
+                    return per_usr_sig
             else:
-                return clean_symb_td
+                if sum_usr_signals:
+                    return clean_symb_td
+                else:
+                    per_usr_sig = []
+                    for usr_idx in range(self.modem.n_users):
+                        per_usr_sig.append(clean_symb_td[usr_idx])
+                    return per_usr_sig
+
+
         elif return_both and self.impairment is not None:
             if out_domain_fd:
-                return utilities.to_freq_domain(self.impairment.process(clean_symb_td), remove_cp=True,
-                                                cp_len=self.modem.cp_len), \
-                       utilities.to_freq_domain(clean_symb_td, remove_cp=True, cp_len=self.modem.cp_len)
+                if sum_usr_signals:
+                    return utilities.to_freq_domain(self.impairment.process(clean_symb_td), remove_cp=True, cp_len=self.modem.cp_len), utilities.to_freq_domain(clean_symb_td, remove_cp=True, cp_len=self.modem.cp_len)
+                else:
+                    per_usr_sig = []
+                    for usr_idx in range(self.modem.n_users):
+                        per_usr_sig.append([utilities.to_freq_domain(self.impairment.process(clean_symb_td[usr_idx]), remove_cp=True, cp_len=self.modem.cp_len), utilities.to_freq_domain(clean_symb_td[usr_idx], remove_cp=True, cp_len=self.modem.cp_len)])
+                    return per_usr_sig
             else:
-                return self.impairment.process(clean_symb_td), clean_symb_td
+                if sum_usr_signals:
+                    return self.impairment.process(clean_symb_td), clean_symb_td
+                else:
+                    per_usr_sig = []
+                    for usr_idx in range(self.modem.n_users):
+                        per_usr_sig.append([self.impairment.process(clean_symb_td[usr_idx]), clean_symb_td[usr_idx]])
+                    return per_usr_sig
         elif self.impairment is not None:
             if out_domain_fd:
-                return utilities.to_freq_domain(self.impairment.process(clean_symb_td), remove_cp=True,
-                                                cp_len=self.modem.cp_len)
+                if sum_usr_signals:
+                    return utilities.to_freq_domain(self.impairment.process(clean_symb_td), remove_cp=True,
+                                                    cp_len=self.modem.cp_len)
+                else:
+                    per_usr_sig = []
+                    for usr_idx in range(self.modem.n_users):
+                        per_usr_sig.append(utilities.to_freq_domain(self.impairment.process(clean_symb_td[usr_idx]), remove_cp=True,
+                                                    cp_len=self.modem.cp_len))
+                    return per_usr_sig
             else:
-                return self.impairment.process(clean_symb_td)
+                if sum_usr_signals:
+                    return self.impairment.process(clean_symb_td)
+                else:
+                    per_usr_sig = []
+                    for usr_idx in range(self.modem.n_users):
+                        per_usr_sig.append(self.impairment.process(clean_symb_td[usr_idx]))
+                    return per_usr_sig
 
     def receive(self, in_symb):
         return self.modem.demodulate(in_symb)

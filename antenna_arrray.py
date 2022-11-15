@@ -43,34 +43,68 @@ class LinearArray:
             else:
                 tx.set_tx_power_dbm(tx_power_dbm)
 
-    def transmit(self, in_bits, out_domain_fd=True, return_both=False, skip_dist=False):
+    def transmit(self, in_bits, out_domain_fd=True, return_both=False, skip_dist=False, sum_usr_signals=True):
+        if sum_usr_signals is False and self.n_users == 1:
+            sum_usr_signals = True
+
         if out_domain_fd:
-            out_sig_mat = np.empty([self.n_elements, self.base_transceiver.modem.n_fft],
+            if sum_usr_signals:
+                out_sig_mat = np.empty([self.n_elements, self.base_transceiver.modem.n_fft],
                                    dtype=np.complex128)
-        else:
-            out_sig_mat = np.empty(
-                [self.n_elements, self.base_transceiver.modem.n_fft + self.base_transceiver.modem.cp_len],
-                dtype=np.complex128)
-        if return_both:
-            if out_domain_fd:
-                clean_sig_mat = np.empty([self.n_elements, self.base_transceiver.modem.n_fft], dtype=np.complex128)
             else:
-                clean_sig_mat = np.empty(
+                out_sig_mat = np.empty([self.n_users, self.n_elements, self.base_transceiver.modem.n_fft],
+                                       dtype=np.complex128)
+        else:
+            if sum_usr_signals:
+                out_sig_mat = np.empty(
                     [self.n_elements, self.base_transceiver.modem.n_fft + self.base_transceiver.modem.cp_len],
                     dtype=np.complex128)
+            else:
+                out_sig_mat = np.empty(
+                    [self.n_users, self.n_elements, self.base_transceiver.modem.n_fft + self.base_transceiver.modem.cp_len],
+                    dtype=np.complex128)
 
-            for idx, tx_transceiver in enumerate(self.array_elements):
-                out_sig_mat[idx, :], clean_sig_mat[idx, :] = tx_transceiver.transmit(in_bits,
-                                                                                     out_domain_fd=out_domain_fd,
-                                                                                     return_both=True,
-                                                                                     skip_dist=skip_dist)
+        if return_both:
+            if out_domain_fd:
+                if sum_usr_signals:
+                    clean_sig_mat = np.empty([self.n_elements, self.base_transceiver.modem.n_fft], dtype=np.complex128)
+                else:
+                    clean_sig_mat = np.empty([self.n_users, self.n_elements, self.base_transceiver.modem.n_fft], dtype=np.complex128)
+            else:
+                if sum_usr_signals:
+                    clean_sig_mat = np.empty(
+                        [self.n_elements, self.base_transceiver.modem.n_fft + self.base_transceiver.modem.cp_len],
+                        dtype=np.complex128)
+                else:
+                    clean_sig_mat = np.empty([self.n_users, self.n_elements, self.base_transceiver.modem.n_fft + self.base_transceiver.modem.cp_len],
+                        dtype=np.complex128)
 
-            return np.squeeze(out_sig_mat), np.squeeze(clean_sig_mat)
+            if sum_usr_signals:
+                for idx, tx_transceiver in enumerate(self.array_elements):
+                    out_sig_mat[idx, :], clean_sig_mat[idx, :] = tx_transceiver.transmit(in_bits,
+                                                                                         out_domain_fd=out_domain_fd,
+                                                                                         return_both=return_both,
+                                                                                         skip_dist=skip_dist,
+                                                                                         sum_usr_signals=sum_usr_signals)
+                return np.squeeze(out_sig_mat), np.squeeze(clean_sig_mat)
+            else:
+                for tx_idx, tx_transceiver in enumerate(self.array_elements):
+                    usr_signal_lst = tx_transceiver.transmit(in_bits, out_domain_fd=out_domain_fd, return_both=return_both, skip_dist=skip_dist, sum_usr_signals=sum_usr_signals)
+                    for usr_idx in range(self.n_users):
+                        out_sig_mat[usr_idx, tx_idx, :], clean_sig_mat[usr_idx, tx_idx, :] = usr_signal_lst[usr_idx]
+                return out_sig_mat, clean_sig_mat
         else:
-            for idx, tx_transceiver in enumerate(self.array_elements):
-                out_sig_mat[idx, :] = tx_transceiver.transmit(in_bits, out_domain_fd=out_domain_fd,
-                                                              return_both=return_both, skip_dist=skip_dist)
-            return np.squeeze(out_sig_mat)
+            if sum_usr_signals:
+                for idx, tx_transceiver in enumerate(self.array_elements):
+                    out_sig_mat[idx, :] = tx_transceiver.transmit(in_bits, out_domain_fd=out_domain_fd, return_both=return_both, skip_dist=skip_dist, sum_usr_signals=sum_usr_signals)
+                return np.squeeze(out_sig_mat)
+            else:
+                for tx_idx, tx_transceiver in enumerate(self.array_elements):
+                    usr_signal_lst = tx_transceiver.transmit(in_bits, out_domain_fd=out_domain_fd, return_both=return_both,
+                                                             skip_dist=skip_dist, sum_usr_signals=sum_usr_signals)
+                    for usr_idx in range(self.n_users):
+                        out_sig_mat[usr_idx, tx_idx, :] = usr_signal_lst[usr_idx]
+                return out_sig_mat
 
     def set_precoding_matrix(self, channel_mat_fd=None, mr_precoding=False, zf_precoding=False, sep_carr_per_usr=False):
         # set precoding vector based on provided channel mat coefficients

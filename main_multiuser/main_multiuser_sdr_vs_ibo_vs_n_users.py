@@ -12,6 +12,7 @@ import time
 from datetime import datetime
 
 import matplotlib.pyplot as plt
+import matplotlib.lines as mlines
 import numpy as np
 from matplotlib.ticker import MaxNLocator
 
@@ -30,13 +31,13 @@ if __name__ == '__main__':
                       '#CFCFCF']
     # Multiple users data
 
-    ibo_arr = np.arange(0, 7.01, 0.5)
-    n_ant_arr = [16]
-    n_users_lst = [1, 2, 2]
+    ibo_arr = np.arange(0, 7.01, 0.25)
+    n_ant_arr = [32]
+    n_users_lst = [1, 2, 3]
     radial_distance = 300
-    angular_sep_margin = 20
+    angular_margin = 10
     # SDR
-    sdr_n_snapshots = 10
+    sdr_n_snapshots = 100
     sdr_reroll_pos = False
 
     # modulation
@@ -82,23 +83,22 @@ if __name__ == '__main__':
                     sdr_per_snap = np.zeros((usr_count, sdr_n_snapshots))
                     for snap_idx in range(sdr_n_snapshots):
                         # generate usr positions
-                        first_usr_ang = loc_rng.uniform(low=angular_sep_margin, high=180-angular_sep_margin)
-                        usr_angles = [first_usr_ang]
-                        if usr_count > 1:
-                            if usr_count == 2 and scenario_idx == 1:
-                                # worst case TOI distortion symmetrically beamformed towards each user
-                                first_usr_ang = loc_rng.uniform(low=angular_sep_margin / 2,
-                                                                high=90 - angular_sep_margin / 2)
-                                second_usr_ang = 180 - first_usr_ang
-                                usr_angles = [first_usr_ang, second_usr_ang]
-                            else:
-                                # favourable case TOI distortion not beamformed to user angles
-                                second_usr_ang = loc_rng.uniform(low=angular_sep_margin, high=180 - angular_sep_margin)
-                                while np.abs(second_usr_ang - first_usr_ang) < angular_sep_margin:
-                                    # reroll
-                                    second_usr_ang = loc_rng.uniform(low=angular_sep_margin,
-                                                                     high=180 - angular_sep_margin)
-                                usr_angles.append(second_usr_ang)
+                        if usr_count == 1:
+                            first_usr_ang = loc_rng.uniform(low=angular_margin, high=180 - angular_margin)
+                            usr_angles = [first_usr_ang]
+                        else:
+                            # favourable case TOI distortion not beamformed to user angles
+                            usr_ang_spacing = (180.0 - 2*angular_margin) / usr_count
+                            if usr_ang_spacing <= 180.0 / n_ant_val * 2:
+                                raise Warning("User angular separation is too small - increase antenna count or reduce the number of users!")
+
+                            usr_angles = []
+                            for usr_idx in range(usr_count):
+                                if usr_idx == 0 :
+                                    new_usr_ang = loc_rng.uniform(low=angular_margin, high=angular_margin + usr_ang_spacing)
+                                else:
+                                    new_usr_ang = loc_rng.uniform(low=usr_angles[-1]+usr_ang_spacing, high=angular_margin+usr_ang_spacing*(usr_idx+1))
+                                usr_angles.append(new_usr_ang)
 
                         usr_pos_tup_lst = []
                         for usr_idx, usr_angle in enumerate(usr_angles):
@@ -143,7 +143,10 @@ if __name__ == '__main__':
                         tx_bits = np.squeeze(bit_rng.choice((0, 1), (usr_count, my_tx.modem.n_bits_per_ofdm_sym)))
 
                         arr_tx_sig_fd, clean_sig_mat_fd = my_array.transmit(in_bits=tx_bits, out_domain_fd=True,
-                                                                            return_both=True)
+                                                                            return_both=True, sum_usr_signals=True)
+                        if usr_count > 1:
+                            per_usr_clean_sig_fd_lst = my_array.transmit(in_bits=tx_bits, out_domain_fd=True, return_both=False, skip_dist=True, sum_usr_signals=False)
+
                         for usr_idx, user_pos_tup in enumerate(usr_pos_tup_lst):
                             rx_sig_fd = np.multiply(arr_tx_sig_fd, usr_chan_mat_lst[usr_idx])
                             clean_rx_sig_fd = np.multiply(clean_sig_mat_fd, usr_chan_mat_lst[usr_idx])
@@ -157,37 +160,63 @@ if __name__ == '__main__':
 
                             sc_ofdm_distortion_sig = np.subtract(rx_sc_ofdm_symb_fd, (ak_vect * clean_sc_ofdm_symb_fd))
 
-                            sdr_per_snap[usr_idx, snap_idx] = np.sum(np.power(np.abs(np.sum(ak_vect * clean_sc_ofdm_symb_fd, axis=0)), 2)) / np.sum(
+                            if usr_count == 1:
+                                desired_usr_rx_signal_sc = clean_sc_ofdm_symb_fd
+                            else:
+                                desired_usr_rx_signal_fb = np.multiply(per_usr_clean_sig_fd_lst[usr_idx], usr_chan_mat_lst[usr_idx])
+                                desired_usr_rx_signal_sc = np.concatenate((desired_usr_rx_signal_fb[:,-my_mod.n_sub_carr // 2:], desired_usr_rx_signal_fb[:,1:(my_mod.n_sub_carr // 2) + 1]), axis=1)
+
+                            sdr_per_snap[usr_idx, snap_idx] = np.sum(np.power(np.abs(np.sum(ak_vect * desired_usr_rx_signal_sc, axis=0)), 2)) / np.sum(
                                 np.power(np.abs(np.sum(sc_ofdm_distortion_sig, axis=0)), 2))
 
                     sdr_per_usr = utilities.to_db(np.average(sdr_per_snap, axis=1))
                     sdr_per_ibo.append(sdr_per_usr)
                 sdr_per_scenario.append(sdr_per_ibo)
 
-#%%
-sdr_per_scen_res = []
-for sdr_lst in sdr_per_scenario:
-    sdr_per_scen_res.append(np.transpose(np.vstack(sdr_lst)))
+    sdr_per_scen_res = []
+    for sdr_lst in sdr_per_scenario:
+        sdr_per_scen_res.append(np.transpose(np.vstack(sdr_lst)))
 
-#%%
-fig1, ax1 = plt.subplots(1, 1)
-ax1.plot(ibo_arr, sdr_per_scen_res[0][0], label="Single user", linestyle='-', color=CB_color_cycle[0])
-ax1.plot(ibo_arr, sdr_per_scen_res[1][0], label="Two users (WC1)", linestyle='-', color=CB_color_cycle[1])
-ax1.plot(ibo_arr, sdr_per_scen_res[1][1], label="Two users (WC2)", linestyle='--', color=CB_color_cycle[1])
-ax1.plot(ibo_arr, sdr_per_scen_res[2][0], label="Two users (FC1)", linestyle='-', color=CB_color_cycle[2])
-ax1.plot(ibo_arr, sdr_per_scen_res[2][1], label="Two users (FC2)", linestyle='--', color=CB_color_cycle[2])
+    #%%
+    usr_marker_lst = ['o', 's', '^', '*', 'v', '<', '>']
+    fig1, ax1 = plt.subplots(1, 1)
+    legend_handles = []
+    for n_usrs_scen_idx, n_users_scen in enumerate(n_users_lst):
+        for usr_idx in range(n_users_scen):
+            ax1.plot(ibo_arr, sdr_per_scen_res[n_usrs_scen_idx][usr_idx], linestyle='-', color=CB_color_cycle[n_usrs_scen_idx], marker=usr_marker_lst[usr_idx], fillstyle='none')
+        legend_handles.append(mlines.Line2D([0], [0], linestyle='-', color=CB_color_cycle[n_usrs_scen_idx], label=n_users_scen))
 
-ax1.set_title("Multiuser SDR vs IBO")
-ax1.set_xlabel("IBO [dB]")
-ax1.set_ylabel("SDR [dB]")
-ax1.legend()
-ax1.grid()
+    ax1.set_title("Multiuser SDR vs IBO")
+    ax1.set_xlabel("IBO [dB]")
+    ax1.set_ylabel("SDR [dB]")
+    ax1.legend(handles=legend_handles, title="N users:")
+    ax1.grid()
 
-plt.tight_layout()
-plt.savefig("../figs/multiuser/multiuser_sdr_vs_ibo_ibo%dto%d_%dnant_nsnap%d.png" % (
-    min(ibo_arr), max(ibo_arr), n_ant_arr[0], sdr_n_snapshots),
-            dpi=600, bbox_inches='tight')
+    plt.tight_layout()
+    plt.savefig("../figs/multiuser/sdr_vs_ibo_vs_nusr/multiuser_sdr_per_usr_vs_ibo_ibo%dto%d_%dnant_nsnap%d_nusrs%s.png" % (
+        min(ibo_arr), max(ibo_arr), n_ant_arr[0], sdr_n_snapshots,'_'.join([str(val) for val in n_users_lst]) ),
+                dpi=600, bbox_inches='tight')
 
-plt.show()
+    plt.show()
 
-print("Finished processing!")
+    #%%
+    # average per user SDR
+    fig1, ax1 = plt.subplots(1, 1)
+    legend_handles = []
+    for n_usrs_scen_idx, n_users_scen in enumerate(n_users_lst):
+        ax1.plot(ibo_arr, np.average(sdr_per_scen_res[n_usrs_scen_idx], axis=0), linestyle='-', color=CB_color_cycle[n_usrs_scen_idx], label= n_users_scen)
+
+    ax1.set_title("Multiuser SDR vs IBO")
+    ax1.set_xlabel("IBO [dB]")
+    ax1.set_ylabel("SDR [dB]")
+    ax1.legend(title="N users:")
+    ax1.grid()
+
+    plt.tight_layout()
+    plt.savefig("../figs/multiuser/sdr_vs_ibo_vs_nusr/multiuser_sdr_averaged_vs_ibo_ibo%dto%d_%dnant_nsnap%d_nusrs%s.png" % (
+        min(ibo_arr), max(ibo_arr), n_ant_arr[0], sdr_n_snapshots, '_'.join([str(val) for val in n_users_lst])),
+                dpi=600, bbox_inches='tight')
+
+    plt.show()
+
+    print("Finished processing!")
