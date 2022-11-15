@@ -33,7 +33,7 @@ if __name__ == '__main__':
 
     ibo_arr = np.arange(0, 7.01, 0.25)
     n_ant_arr = [32]
-    n_users_lst = [1, 2, 3]
+    n_users_lst = [1, 2, 3, 4, 5]
     radial_distance = 300
     angular_margin = 10
     # SDR

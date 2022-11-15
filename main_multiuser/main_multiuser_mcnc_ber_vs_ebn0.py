@@ -29,10 +29,10 @@ if __name__ == '__main__':
     CB_color_cycle = ['#006BA4', '#FF800E', '#ABABAB', '#595959', '#5F9ED1', '#C85200', '#898989', '#A2C8EC', '#FFBC79',
                       '#CFCFCF']
     # Multiple users data
-    usr_angles = np.array([45, 135])
+    usr_angles = np.array([-30, 60])
     usr_distances = [300, 300]
     usr_pos_tup = []
-    for usr_idx, usr_angle in enumerate(usr_angles):
+    for usr_idx, usr_angle in enumerate(usr_angles + 90):
         usr_pos_x = np.cos(np.deg2rad(usr_angle)) * usr_distances[usr_idx]
         usr_pos_y = np.sin(np.deg2rad(usr_angle)) * usr_distances[usr_idx]
         usr_pos_tup.append((usr_pos_x, usr_pos_y))
@@ -41,21 +41,21 @@ if __name__ == '__main__':
     n_users = len(usr_pos_tup)
 
     n_ant_arr = [16]
-    ibo_arr = [0]
+    ibo_arr = [4]
     ebn0_step = [1]
-    cnc_n_iter_lst = [1, 2, 3, 4]  # 5, 6, 7, 8]
+    mcnc_n_iter_lst = [1, 2, 3, 4]  # 5, 6, 7, 8]
     # include clean run is always True
     # no distortion and standard RX always included
-    cnc_n_iter_lst = np.insert(cnc_n_iter_lst, 0, 0)
+    mcnc_n_iter_lst = np.insert(mcnc_n_iter_lst, 0, 0)
 
     # print("Distortion IBO/TOI value:", ibo_db)
     # print("Eb/n0 values: ", ebn0_arr)
-    # print("CNC iterations: ", cnc_n_iter_lst)
+    # print("mmcnc iterations: ", mcnc_n_iter_lst)
 
     # modulation
     constel_size = 64
-    n_fft = 16
-    n_sub_carr = 8
+    n_fft = 4096
+    n_sub_carr = 2048
     cp_len = 1
 
     # BER analysis
@@ -77,7 +77,7 @@ if __name__ == '__main__':
     n_points = 180 * 1
     radial_distance = usr_distances[0]
     rx_points = utilities.pts_on_semicircum(r=radial_distance, n=n_points)
-    radian_vals = np.radians(np.linspace(0, 180, n_points + 1))
+    radian_vals = np.radians(np.linspace(-90, 90, n_points + 1))
 
     my_mod = modulation.OfdmQamModem(constel_size=constel_size, n_fft=n_fft, n_sub_carr=n_sub_carr, cp_len=cp_len,
                                      n_users=len(usr_angles))
@@ -106,13 +106,10 @@ if __name__ == '__main__':
         for my_miso_chan in chan_lst:
 
             loc_rng = np.random.default_rng(2137)
-            my_cnc_rx = corrector.CncReceiver(copy.deepcopy(my_mod), copy.deepcopy(my_distortion))
 
             for ibo_val_db in ibo_arr:
-                my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
-                my_cnc_rx.update_distortion(ibo_db=ibo_val_db)
-
                 usr_chan_mat_lst = []
+                my_mcnc_rx_lst = []
                 for usr_idx, usr_pos_tuple_val in enumerate(usr_pos_tup):
                     usr_pos_x, usr_pos_y = usr_pos_tuple_val
                     my_standard_rx.set_position(cord_x=usr_pos_x, cord_y=usr_pos_y, cord_z=1.5)
@@ -123,16 +120,19 @@ if __name__ == '__main__':
                                                       skip_attenuation=False)
                     else:
                         my_miso_chan.reroll_channel_coeffs()
-
                     usr_chan_mat_lst.append(my_miso_chan.get_channel_mat_fd())
+
+                    my_mcnc_array = copy.deepcopy(my_array)
+                    my_mcnc_array.update_n_users(n_users=1)
+                    my_mcnc_array.set_precoding_matrix(channel_mat_fd=my_miso_chan.get_channel_mat_fd(), mr_precoding=True)
+                    my_mcnc_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
+                    my_mcnc_rx = corrector.McncReceiver(copy.deepcopy(my_mcnc_array), copy.deepcopy(my_miso_chan))
+                    my_mcnc_rx_lst.append(my_mcnc_rx)
 
                 # set precoding and calculate AGC
                 my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=True)
                 my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
-
-                vk_mat = my_array.get_precoding_mat()
-                pwr_per_usr = np.sum(np.sum(np.power(np.abs(vk_mat), 2), axis=2), axis=0)
-                vk_pow_vec = np.sum(np.sum(np.power(np.abs(vk_mat), 2), axis=2), axis=1)
+                # array parameters automatically updated in the MCNC rx due to shared object - not copied
 
                 ak_hk_vk_noise_scaler_lst = []
                 hk_vk_noise_scaler_lst = []
@@ -156,8 +156,7 @@ if __name__ == '__main__':
                     hk_vk_agc_nfft[1:(n_sub_carr // 2) + 1] = hk_vk_agc_avg_vec[n_sub_carr // 2:]
                     hk_vk_agc_nfft_lst.append(hk_vk_agc_nfft)
 
-                    ibo_vec = 10 * np.log10(
-                        10 ** (ibo_val_db / 10) * my_mod.n_sub_carr / (vk_pow_vec * n_ant_val))
+                    ibo_vec = 10 * np.log10(10 ** (ibo_val_db / 10) * my_mod.n_sub_carr / (vk_pow_vec * n_ant_val))
                     ak_vect = my_mod.calc_alpha(ibo_db=ibo_vec)
                     ak_vect = np.expand_dims(ak_vect, axis=1)
 
@@ -187,7 +186,7 @@ if __name__ == '__main__':
                             usr_chan_mat_lst = []
                             for usr_idx, user_pos_tup in enumerate(usr_pos_tup):
                                 usr_pos_x, usr_pos_y = user_pos_tup
-                                # for direct visibility channel and CNC algorithm channel impact must be averaged
+                                # for direct visibility channel and mcnc algorithm channel impact must be averaged
                                 if isinstance(my_miso_chan, channel.MisoLosFd) or isinstance(my_miso_chan,
                                                                                              channel.MisoTwoPathFd):
                                     # reroll location
@@ -298,10 +297,10 @@ if __name__ == '__main__':
 #%%
                     # plot beampatterns of desired and distortion components
                     fig1, ax1 = plt.subplots(1, 1, subplot_kw=dict(projection='polar'), figsize=(3.5, 3))
-                    ax1.set_theta_zero_location("E")
+                    ax1.set_theta_zero_location("N")
                     plt.tight_layout()
-                    ax1.set_thetalim(0, np.pi)
-                    ax1.set_xticks(np.pi / 180. * np.linspace(0, 180, 13, endpoint=True))
+                    ax1.set_thetalim(-np.pi/2, np.pi/2)
+                    ax1.set_xticks(np.pi / 180. * np.linspace(-90, 90, 13, endpoint=True))
                     ax1.yaxis.set_major_locator(MaxNLocator(5))
 
                     dist_lines_lst = []
@@ -341,18 +340,20 @@ if __name__ == '__main__':
                     for snr_idx, snr_db_val in enumerate(snr_arr):
                         my_noise.snr_db = snr_db_val
 
-                        bers = np.zeros((n_users, len(cnc_n_iter_lst) + 1))
-                        n_err = np.zeros((n_users, len(cnc_n_iter_lst) + 1))
-                        bits_sent = np.zeros((n_users, len(cnc_n_iter_lst) + 1))
+                        bers = np.zeros((n_users, len(mcnc_n_iter_lst) + 1))
+                        n_err = np.zeros((n_users, len(mcnc_n_iter_lst) + 1))
+                        bits_sent = np.zeros((n_users, len(mcnc_n_iter_lst) + 1))
+
                         # clean RX run
                         snap_cnt = 0
                         while True:
                             # for each frame reroll position and recalculate AGC
                             if ber_reroll_pos:
                                 usr_chan_mat_lst = []
+                                my_mcnc_rx_lst = []
                                 for usr_idx, user_pos_tup in enumerate(usr_pos_tup):
                                     usr_pos_x, usr_pos_y = user_pos_tup
-                                    # for direct visibility channel and CNC algorithm channel impact must be averaged
+                                    # for direct visibility channel and mcnc algorithm channel impact must be averaged
                                     if isinstance(my_miso_chan, channel.MisoLosFd) or isinstance(my_miso_chan,
                                                                                                  channel.MisoTwoPathFd):
                                         # reroll location
@@ -367,11 +368,21 @@ if __name__ == '__main__':
                                                                       skip_attenuation=False)
                                     else:
                                         my_miso_rayleigh_chan.reroll_channel_coeffs()
-
                                     usr_chan_mat_lst.append(my_miso_chan.get_channel_mat_fd())
+
+                                    my_mcnc_array = copy.deepcopy(my_array)
+                                    my_mcnc_array.update_n_users(n_users=1)
+                                    my_mcnc_array.set_precoding_matrix(channel_mat_fd=my_miso_chan.get_channel_mat_fd(),
+                                                                       mr_precoding=True)
+                                    my_mcnc_array.update_distortion(ibo_db=ibo_val_db,
+                                                                    avg_sample_pow=my_mod.avg_sample_power)
+                                    my_mcnc_rx = corrector.McncReceiver(copy.deepcopy(my_mcnc_array),
+                                                                        copy.deepcopy(my_miso_chan))
+                                    my_mcnc_rx_lst.append(my_mcnc_rx)
 
                                 my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=True)
                                 my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
+
 
                                 vk_mat = my_array.get_precoding_mat()
                                 vk_pow_vec = np.sum(np.sum(np.power(np.abs(vk_mat), 2), axis=2), axis=1)
@@ -440,6 +451,40 @@ if __name__ == '__main__':
                             snap_cnt += 1
                         # print("Eb/N0: %1.1f, chan_rerolls: %d" %(utilities.snr_to_ebn0(snr=snr_db_val, n_fft=n_sub_carr, n_sub_carr=n_sub_carr, constel_size=constel_size), snap_cnt))
 
+                        # estimate_alpha = True
+                        # # lambda estimation phase
+                        # if estimate_alpha:
+                        #     print("Alpha estimation init!")
+                        #     start_time = time.time()
+                        #     bit_rng = np.random.default_rng(4321)
+                        #     n_ofdm_symb = 1e2
+                        #     ofdm_symb_idx = 0
+                        #     alpha_val_vec = []
+                        #
+                        #     while ofdm_symb_idx < n_ofdm_symb:
+                        #         tx_bits = np.squeeze(bit_rng.choice((0, 1), (n_users, my_tx.modem.n_bits_per_ofdm_sym)))
+                        #         tx_ofdm_symbol_fd, clean_ofdm_symbol_fd = my_array.transmit(tx_bits, out_domain_fd=True,
+                        #                                                                     return_both=True)
+                        #         clean_nsc_ofdm_symb_fd = np.concatenate(
+                        #             (clean_ofdm_symbol_fd[:, -my_mod.n_sub_carr // 2:],
+                        #              clean_ofdm_symbol_fd[:, 1:(my_mod.n_sub_carr // 2) + 1]), axis=1)
+                        #         rx_nsc_ofdm_symb_fd = np.concatenate(
+                        #             (tx_ofdm_symbol_fd[:, -my_mod.n_sub_carr // 2:],
+                        #              tx_ofdm_symbol_fd[:, 1:(my_mod.n_sub_carr // 2) + 1]), axis=1)
+                        #
+                        #         alpha_numerator_vec = np.multiply(rx_nsc_ofdm_symb_fd,
+                        #                                           np.conjugate(clean_nsc_ofdm_symb_fd))
+                        #         alpha_denominator_vec = np.multiply(clean_nsc_ofdm_symb_fd,
+                        #                                             np.conjugate(clean_nsc_ofdm_symb_fd))
+                        #
+                        #         ofdm_symb_idx += 1
+                        #         alpha_val_vec.append(np.abs(np.average(alpha_numerator_vec / alpha_denominator_vec, axis=1)))
+                        #
+                        #     # calculate alpha average
+                        #     alpha_vec_est = np.average(alpha_val_vec, axis=0)
+                        #     print("Alpha coeff estimate:", alpha_vec_est)
+                        #     print("--- Computation time: %f ---" % (time.time() - start_time))
+
                         # distorted RX run
                         snap_cnt = 0
                         while True:
@@ -451,41 +496,39 @@ if __name__ == '__main__':
                             curr_ite_lst_per_usr = []
                             for usr_idx in range(n_users):
                                 if ite_use_flags_per_usr[usr_idx].any() == True:
-                                    curr_ite_lst = cnc_n_iter_lst[ite_use_flags_per_usr[usr_idx]]
+                                    curr_ite_lst = mcnc_n_iter_lst[ite_use_flags_per_usr[usr_idx]]
                                     curr_ite_lst_per_usr.append(curr_ite_lst)
                                 else:
                                     curr_ite_lst_per_usr.append([])
 
-                            # check if there is any cnc iteration to run
+                            # check if there is any mcnc iteration to run
                             if not all(len(curr_ite_lst) for curr_ite_lst in curr_ite_lst_per_usr):
                                 break
 
-                            # for direct visibility channel and CNC algorithm channel impact must be averaged
+                            # for direct visibility channel and mcnc algorithm channel impact must be averaged
                             snap_cnt += 1
                             if ber_reroll_pos:
                                 usr_chan_mat_lst = []
-                                for usr_idx, user_pos_tup in enumerate(usr_pos_tup):
-                                    usr_pos_x, usr_pos_y = user_pos_tup
-                                    # for direct visibility channel and CNC algorithm channel impact must be averaged
+                                my_mcnc_rx_lst = []
+                                for usr_idx, usr_pos_tuple_val in enumerate(usr_pos_tup):
+                                    usr_pos_x, usr_pos_y = usr_pos_tuple_val
+                                    my_standard_rx.set_position(cord_x=usr_pos_x, cord_y=usr_pos_y, cord_z=1.5)
+
                                     if isinstance(my_miso_chan, channel.MisoLosFd) or isinstance(my_miso_chan,
                                                                                                  channel.MisoTwoPathFd):
-                                        # reroll location
-                                        my_standard_rx.set_position(
-                                            cord_x=usr_pos_x + loc_rng.uniform(low=-rx_loc_var / 2.0,
-                                                                               high=rx_loc_var / 2.0),
-                                            cord_y=usr_pos_y + loc_rng.uniform(low=-rx_loc_var / 2.0,
-                                                                               high=rx_loc_var / 2.0),
-                                            cord_z=my_standard_rx.cord_z)
                                         my_miso_chan.calc_channel_mat(tx_transceivers=my_array.array_elements,
                                                                       rx_transceiver=my_standard_rx,
                                                                       skip_attenuation=False)
                                     else:
-                                        my_miso_rayleigh_chan.reroll_channel_coeffs()
+                                        my_miso_chan.reroll_channel_coeffs()
 
                                     usr_chan_mat_lst.append(my_miso_chan.get_channel_mat_fd())
-
+                                    my_mcnc_rx = corrector.McncReceiver(my_array, copy.deepcopy(my_miso_chan), usr_idx=usr_idx)
+                                    my_mcnc_rx_lst.append(my_mcnc_rx)
+                                # set precoding and calculate AGC
                                 my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=True)
                                 my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
+                                # array parameters automatically updated in the MCNC rx due to shared object - not copied
 
                                 vk_mat = my_array.get_precoding_mat()
                                 vk_pow_vec = np.sum(np.sum(np.power(np.abs(vk_mat), 2), axis=2), axis=1)
@@ -528,23 +571,22 @@ if __name__ == '__main__':
                                     ak_hk_vk_agc_nfft_lst.append(ak_hk_vk_agc_nfft)
 
                             tx_bits = np.squeeze(bit_rng.choice((0, 1), (n_users, my_tx.modem.n_bits_per_ofdm_sym)))
-                            tx_ofdm_symbol = my_array.transmit(tx_bits, out_domain_fd=True, skip_dist=False)
+                            tx_ofdm_symbol, clean_ofdm_symbol = my_array.transmit(tx_bits, out_domain_fd=True, return_both=True, skip_dist=False)
 
                             for usr_idx in range(n_users):
                                 if not any(curr_ite_lst_per_usr[usr_idx]):
                                     continue
                                 # rx_ofdm_symbol = my_miso_chan.propagate(in_sig_mat=tx_ofdm_symbol)
-                                rx_ofdm_symbol = np.sum(np.multiply(tx_ofdm_symbol, usr_chan_mat_lst[usr_idx]),
-                                                        axis=0)
+                                rx_ofdm_symbol = np.sum(np.multiply(tx_ofdm_symbol, usr_chan_mat_lst[usr_idx]), axis=0)
 
-                                rx_ofdm_symbol = my_noise.process(rx_ofdm_symbol,
-                                                                  avg_sample_pow=my_mod.avg_symbol_power *
-                                                                                 ak_hk_vk_noise_scaler_lst[usr_idx])
+                                rx_ofdm_symbol = my_noise.process(rx_ofdm_symbol, avg_sample_pow=my_mod.avg_symbol_power\
+                                                                                    * ak_hk_vk_noise_scaler_lst[usr_idx])
+
                                 # apply AGC
                                 rx_ofdm_symbol = np.divide(rx_ofdm_symbol, ak_hk_vk_agc_nfft_lst[usr_idx])
-                                rx_bits_per_iter_lst = my_cnc_rx.receive(n_iters_lst=curr_ite_lst_per_usr[usr_idx], in_sig_fd=rx_ofdm_symbol)
+                                rx_bits_per_iter_lst = my_mcnc_rx_lst[usr_idx].receive(n_iters_lst=curr_ite_lst_per_usr[usr_idx], in_sig_fd=rx_ofdm_symbol)
 
-                                ber_idx = np.array(list(range(len(cnc_n_iter_lst))))
+                                ber_idx = np.array(list(range(len(mcnc_n_iter_lst))))
                                 act_ber_idx = ber_idx[ite_use_flags_per_usr[usr_idx]] + 1
 
                                 for idx in range(len(rx_bits_per_iter_lst)):
@@ -557,7 +599,7 @@ if __name__ == '__main__':
                         # print("Eb/N0: %1.1f, chan_rerolls: %d" %(utilities.snr_to_ebn0(snr=snr_db_val, n_fft=n_sub_carr, n_sub_carr=n_sub_carr, constel_size=constel_size), snap_cnt))
                         for usr_idx in range(n_users):
 
-                            for ite_idx in range(len(cnc_n_iter_lst) + 1):
+                            for ite_idx in range(len(mcnc_n_iter_lst) + 1):
                                 bers[usr_idx, ite_idx] = n_err[usr_idx, ite_idx] / bits_sent[usr_idx, ite_idx]
                             bers_per_usr[usr_idx].append(bers[usr_idx, :])
 
@@ -573,14 +615,14 @@ if __name__ == '__main__':
 
                     for usr_idx in range(n_users):
                         ax1.plot(ebn0_arr, bers_per_usr[usr_idx][0, :], label="No distortion", color=CB_color_cycle[0], marker=usr_marker_lst[usr_idx], fillstyle='none')
-                        for ite_idx, cnc_iter_val in enumerate(cnc_n_iter_lst):
+                        for ite_idx, mcnc_iter_val in enumerate(mcnc_n_iter_lst):
                             if ite_idx == 0:
                                 ax1.plot(ebn0_arr, bers_per_usr[usr_idx][ite_idx + 1, :], label="Standard RX", color=CB_color_cycle[ite_idx+1], marker=usr_marker_lst[usr_idx], fillstyle='none')
                             else:
-                                ax1.plot(ebn0_arr, bers_per_usr[usr_idx][ite_idx + 1, :], label="CNC NI = %d" % cnc_iter_val, color=CB_color_cycle[ite_idx+1], marker=usr_marker_lst[usr_idx], fillstyle='none')
+                                ax1.plot(ebn0_arr, bers_per_usr[usr_idx][ite_idx + 1, :], label="MCNC NI = %d" % mcnc_iter_val, color=CB_color_cycle[ite_idx+1], marker=usr_marker_lst[usr_idx], fillstyle='none')
 
                     # fix log scaling
-                    ax1.set_title("BER vs Eb/N0, %s, CNC, QAM %d, N ANT = %d, IBO = %d [dB]" % (
+                    ax1.set_title("BER vs Eb/N0, %s, MCNC, QAM %d, N ANT = %d, IBO = %d [dB]" % (
                         my_miso_chan, my_mod.constellation_size, n_ant_val, ibo_val_db))
                     ax1.set_xlabel("Eb/N0 [dB]")
                     ax1.set_ylabel("BER")
@@ -588,17 +630,17 @@ if __name__ == '__main__':
                     ax1.legend()
                     plt.tight_layout()
 
-                    filename_str = "mu_ber_vs_ebn0_cnc_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s_angles%s_distances%s" % (
+                    filename_str = "mu_ber_vs_ebn0_mcnc_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s_angles%s_distances%s" % (
                         my_miso_chan, n_ant_val, ibo_val_db, min(ebn0_arr), max(ebn0_arr), ebn0_arr[1] - ebn0_arr[0],
-                        '_'.join([str(val) for val in cnc_n_iter_lst[1:]]), '_'.join([str(val) for val in usr_angles]),
+                        '_'.join([str(val) for val in mcnc_n_iter_lst[1:]]), '_'.join([str(val) for val in usr_angles]),
                     '_'.join([str(val) for val in usr_distances]) )
 
                     # timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
                     # filename_str += "_" + timestamp
                     plt.savefig("../figs/multiuser/%s.png" % filename_str, dpi=600, bbox_inches='tight')
                     plt.show()
-                    plt.cla()
-                    plt.close()
+                    # plt.cla()
+                    # plt.close()
 
                     # # %%
                     # data_lst = []

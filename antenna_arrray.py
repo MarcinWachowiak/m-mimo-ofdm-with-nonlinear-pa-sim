@@ -296,3 +296,8 @@ class LinearArray:
                 precoding_matrix[idx, :, :] = array_tx.modem.precoding_mat
 
         return precoding_matrix
+
+    def update_n_users(self, n_users):
+        self.n_users = n_users
+        for idx, array_tx in enumerate(self.array_elements):
+            array_tx.modem.n_users = n_users
