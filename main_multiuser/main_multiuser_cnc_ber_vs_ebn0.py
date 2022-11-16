@@ -41,7 +41,7 @@ if __name__ == '__main__':
     n_users = len(usr_pos_tup)
 
     n_ant_arr = [16]
-    ibo_arr = [4]
+    ibo_arr = [0]
     ebn0_step = [1]
     cnc_n_iter_lst = [1, 2, 3, 4]  # 5, 6, 7, 8]
     # include clean run is always True
@@ -106,7 +106,9 @@ if __name__ == '__main__':
         for my_miso_chan in chan_lst:
 
             loc_rng = np.random.default_rng(2137)
-            my_cnc_rx = corrector.CncReceiver(copy.deepcopy(my_mod), copy.deepcopy(my_distortion))
+            my_cnc_mod = copy.deepcopy(my_mod)
+            my_cnc_mod.n_users = 1
+            my_cnc_rx = corrector.CncMuReceiver(copy.deepcopy(my_cnc_mod), copy.deepcopy(my_distortion))
 
             for ibo_val_db in ibo_arr:
                 usr_chan_mat_lst = []
@@ -568,7 +570,8 @@ if __name__ == '__main__':
 
                                 # apply AGC
                                 rx_ofdm_symbol = np.divide(rx_ofdm_symbol, ak_hk_vk_agc_nfft_lst[usr_idx])
-                                rx_bits_per_iter_lst = my_cnc_rx.receive(n_iters_lst=curr_ite_lst_per_usr[usr_idx], in_sig_fd=rx_ofdm_symbol)
+                                other_usr_symbols = my_cnc_mod.modulate(tx_bits[1-usr_idx, :], get_symbols_only=True)
+                                rx_bits_per_iter_lst = my_cnc_rx.receive(n_iters_lst=curr_ite_lst_per_usr[usr_idx], in_sig_fd=rx_ofdm_symbol, other_usr_symbols=other_usr_symbols)
 
                                 ber_idx = np.array(list(range(len(cnc_n_iter_lst))))
                                 act_ber_idx = ber_idx[ite_use_flags_per_usr[usr_idx]] + 1
@@ -614,7 +617,7 @@ if __name__ == '__main__':
                     ax1.legend()
                     plt.tight_layout()
 
-                    filename_str = "mu_ber_vs_ebn0_cnc_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s_angles%s_distances%s" % (
+                    filename_str = "ber_vs_ebn0_mu_cnc_prot_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s_angles%s_distances%s" % (
                         my_miso_chan, n_ant_val, ibo_val_db, min(ebn0_arr), max(ebn0_arr), ebn0_arr[1] - ebn0_arr[0],
                         '_'.join([str(val) for val in cnc_n_iter_lst[1:]]), '_'.join([str(val) for val in usr_angles]),
                     '_'.join([str(val) for val in usr_distances]) )

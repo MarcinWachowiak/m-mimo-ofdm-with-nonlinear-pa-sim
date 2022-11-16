@@ -41,7 +41,7 @@ if __name__ == '__main__':
     n_users = len(usr_pos_tup)
 
     n_ant_arr = [16]
-    ibo_arr = [4]
+    ibo_arr = [0]
     ebn0_step = [1]
     mcnc_n_iter_lst = [1, 2, 3, 4]  # 5, 6, 7, 8]
     # include clean run is always True
@@ -122,11 +122,7 @@ if __name__ == '__main__':
                         my_miso_chan.reroll_channel_coeffs()
                     usr_chan_mat_lst.append(my_miso_chan.get_channel_mat_fd())
 
-                    my_mcnc_array = copy.deepcopy(my_array)
-                    my_mcnc_array.update_n_users(n_users=1)
-                    my_mcnc_array.set_precoding_matrix(channel_mat_fd=my_miso_chan.get_channel_mat_fd(), mr_precoding=True)
-                    my_mcnc_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
-                    my_mcnc_rx = corrector.McncReceiver(copy.deepcopy(my_mcnc_array), copy.deepcopy(my_miso_chan))
+                    my_mcnc_rx = corrector.McncMuReceiver(my_array, copy.deepcopy(my_miso_chan), usr_idx=usr_idx)
                     my_mcnc_rx_lst.append(my_mcnc_rx)
 
                 # set precoding and calculate AGC
@@ -370,14 +366,8 @@ if __name__ == '__main__':
                                         my_miso_rayleigh_chan.reroll_channel_coeffs()
                                     usr_chan_mat_lst.append(my_miso_chan.get_channel_mat_fd())
 
-                                    my_mcnc_array = copy.deepcopy(my_array)
-                                    my_mcnc_array.update_n_users(n_users=1)
-                                    my_mcnc_array.set_precoding_matrix(channel_mat_fd=my_miso_chan.get_channel_mat_fd(),
-                                                                       mr_precoding=True)
-                                    my_mcnc_array.update_distortion(ibo_db=ibo_val_db,
-                                                                    avg_sample_pow=my_mod.avg_sample_power)
-                                    my_mcnc_rx = corrector.McncReceiver(copy.deepcopy(my_mcnc_array),
-                                                                        copy.deepcopy(my_miso_chan))
+                                    my_mcnc_rx = corrector.McncMuReceiver(my_array, copy.deepcopy(my_miso_chan),
+                                                                          usr_idx=usr_idx)
                                     my_mcnc_rx_lst.append(my_mcnc_rx)
 
                                 my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=True)
@@ -523,8 +513,9 @@ if __name__ == '__main__':
                                         my_miso_chan.reroll_channel_coeffs()
 
                                     usr_chan_mat_lst.append(my_miso_chan.get_channel_mat_fd())
-                                    my_mcnc_rx = corrector.McncReceiver(my_array, copy.deepcopy(my_miso_chan), usr_idx=usr_idx)
+                                    my_mcnc_rx = corrector.McncMuReceiver(my_array, copy.deepcopy(my_miso_chan), usr_idx=usr_idx)
                                     my_mcnc_rx_lst.append(my_mcnc_rx)
+
                                 # set precoding and calculate AGC
                                 my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=True)
                                 my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
@@ -584,7 +575,7 @@ if __name__ == '__main__':
 
                                 # apply AGC
                                 rx_ofdm_symbol = np.divide(rx_ofdm_symbol, ak_hk_vk_agc_nfft_lst[usr_idx])
-                                rx_bits_per_iter_lst = my_mcnc_rx_lst[usr_idx].receive(n_iters_lst=curr_ite_lst_per_usr[usr_idx], in_sig_fd=rx_ofdm_symbol)
+                                rx_bits_per_iter_lst = my_mcnc_rx_lst[usr_idx].receive(n_iters_lst=curr_ite_lst_per_usr[usr_idx], in_sig_fd=rx_ofdm_symbol, other_usr_bits=tx_bits[1-usr_idx])
 
                                 ber_idx = np.array(list(range(len(mcnc_n_iter_lst))))
                                 act_ber_idx = ber_idx[ite_use_flags_per_usr[usr_idx]] + 1
@@ -630,7 +621,7 @@ if __name__ == '__main__':
                     ax1.legend()
                     plt.tight_layout()
 
-                    filename_str = "mu_ber_vs_ebn0_mcnc_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s_angles%s_distances%s" % (
+                    filename_str = "ber_vs_ebn0_mu_mcnc_prot_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s_angles%s_distances%s" % (
                         my_miso_chan, n_ant_val, ibo_val_db, min(ebn0_arr), max(ebn0_arr), ebn0_arr[1] - ebn0_arr[0],
                         '_'.join([str(val) for val in mcnc_n_iter_lst[1:]]), '_'.join([str(val) for val in usr_angles]),
                     '_'.join([str(val) for val in usr_distances]) )
