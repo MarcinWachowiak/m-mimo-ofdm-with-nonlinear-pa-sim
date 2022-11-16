@@ -10,10 +10,12 @@ m_alpha, m_beta = np.meshgrid(alpha, beta)
 dist_alpha = np.zeros((n_samples, n_samples))
 dist_beta = np.zeros((n_samples, n_samples))
 
+arcsin_arg_periodize = lambda val_a: val_a - 2.0 if val_a > 1.0 else (val_a + 2.0 if val_a < -1.0 else val_a)
+
 for alpha_idx, alpha_val in enumerate(alpha):
     for beta_idx, beta_val in enumerate(beta):
-        dist_alpha[alpha_idx, beta_idx] = np.rad2deg(np.arcsin(2*np.sin(np.deg2rad(alpha_val)) - np.sin(np.deg2rad(beta_val))))
-        dist_beta[alpha_idx, beta_idx] = np.rad2deg(np.arcsin(2*np.sin(np.deg2rad(beta_val)) - np.sin(np.deg2rad(alpha_val))))
+        dist_alpha[alpha_idx, beta_idx] = np.rad2deg(np.arcsin(arcsin_arg_periodize(2*np.sin(np.deg2rad(alpha_val)) - np.sin(np.deg2rad(beta_val)))))
+        dist_beta[alpha_idx, beta_idx] = np.rad2deg(np.arcsin(arcsin_arg_periodize(2*np.sin(np.deg2rad(beta_val)) - np.sin(np.deg2rad(alpha_val)))))
 
 # # replace NaN
 # dist_alpha = np.nan_to_num(dist_alpha, nan=-100)

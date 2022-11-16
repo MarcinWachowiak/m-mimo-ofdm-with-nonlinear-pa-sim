@@ -1,5 +1,6 @@
 # antenna array evaluation
 # %%
+import itertools
 import os
 import sys
 
@@ -32,7 +33,7 @@ if __name__ == '__main__':
     usr_angles_rad = np.deg2rad(usr_angles_deg)
     usr_distances = [300, 300]
     usr_pos_tup = []
-    for usr_idx, usr_angle in enumerate(usr_angles_deg+90):
+    for usr_idx, usr_angle in enumerate(usr_angles_deg + 90):
         usr_pos_x = np.cos(np.deg2rad(usr_angle)) * usr_distances[usr_idx]
         usr_pos_y = np.sin(np.deg2rad(usr_angle)) * usr_distances[usr_idx]
         usr_pos_tup.append((usr_pos_x, usr_pos_y))
@@ -71,7 +72,6 @@ if __name__ == '__main__':
     sdr_n_snapshots = 10
     sdr_reroll_pos = False
 
-
     # Beampatterns
     plot_precoding_beampatterns = True
     beampattern_n_snapshots = 100
@@ -81,9 +81,9 @@ if __name__ == '__main__':
     radian_vals = np.radians(np.linspace(-90, 90, n_points + 1))
 
     # PSD at angle
-    plot_psd = True
+    plot_psd = False
     sel_psd_angle = -51
-    sel_ptx_idx = int(n_points / 180 * (sel_psd_angle+90))
+    sel_ptx_idx = int(n_points / 180 * (sel_psd_angle + 90))
     # PSD plotting params
     psd_nfft = 1024
     n_samp_per_seg = 256
@@ -158,7 +158,7 @@ if __name__ == '__main__':
                     # ax1.grid()
                     # plt.show()
 
-                    #%%
+                    # %%
                     start_time = time.time()
                     bit_rng = np.random.default_rng(4321)
                     n_ofdm_symb = 1e3
@@ -178,9 +178,11 @@ if __name__ == '__main__':
                         rx_sig_clean_fd = my_tmp_miso_los_chan.propagate(in_sig_mat=clean_ofdm_symbol_fd, sum=False)
 
                         clean_nsc_ofdm_symb_fd = np.concatenate((rx_sig_clean_fd[:, -my_mod.n_sub_carr // 2:],
-                                                                 rx_sig_clean_fd[:, 1:(my_mod.n_sub_carr // 2) + 1]), axis=1)
+                                                                 rx_sig_clean_fd[:, 1:(my_mod.n_sub_carr // 2) + 1]),
+                                                                axis=1)
                         rx_nsc_ofdm_symb_fd = np.concatenate(
-                            (rx_sig_fd[:, -my_mod.n_sub_carr // 2:], rx_sig_fd[:, 1:(my_mod.n_sub_carr // 2) + 1]), axis=1)
+                            (rx_sig_fd[:, -my_mod.n_sub_carr // 2:], rx_sig_fd[:, 1:(my_mod.n_sub_carr // 2) + 1]),
+                            axis=1)
 
                         alpha_numerator_vec = np.multiply(rx_nsc_ofdm_symb_fd, np.conjugate(clean_nsc_ofdm_symb_fd))
                         alpha_denominator_vec = np.multiply(clean_nsc_ofdm_symb_fd,
@@ -352,7 +354,8 @@ if __name__ == '__main__':
                                 axis=1)
 
                             sc_oob_ofdm_distortion_sig = np.concatenate(
-                                (np.expand_dims(distortion_sig_fd[:, 0], axis=1), distortion_sig_fd[:, (my_mod.n_sub_carr // 2) + 1: -my_mod.n_sub_carr // 2]),
+                                (np.expand_dims(distortion_sig_fd[:, 0], axis=1),
+                                 distortion_sig_fd[:, (my_mod.n_sub_carr // 2) + 1: -my_mod.n_sub_carr // 2]),
                                 axis=1)
 
                             desired_sig_pow_arr[snap_idx] = np.sum(
@@ -374,7 +377,6 @@ if __name__ == '__main__':
                         desired_sig_pow_per_pt.append(np.sum(desired_sig_pow_arr))
                         distorted_sig_inband_pow_per_pt.append(np.sum(distortion_inband_sig_pow_arr))
                         distorted_sig_oob_pow_per_pt.append(np.sum(distortion_oob_sig_pow_arr))
-
 
                     rx_sig_at_sel_point_des_arr = np.concatenate(rx_sig_at_sel_point_des).ravel()
                     rx_sig_at_sel_point_dist_arr = np.concatenate(rx_sig_at_sel_point_dist).ravel()
@@ -405,7 +407,8 @@ if __name__ == '__main__':
                                                                                   return_onesided=False)
 
                     psd_sel_filename_str = "multiuser_sep_sc_psd_%s_%s_chan_ibo%d_npoints%d_nsnap%d_angle%d_nant%d" % (
-                        my_distortion, my_miso_chan, ibo_val_db, n_points, beampattern_n_snapshots, sel_psd_angle, n_ant_val)
+                        my_distortion, my_miso_chan, ibo_val_db, n_points, beampattern_n_snapshots, sel_psd_angle,
+                        n_ant_val)
 
                     # data_lst_sel = []
                     # tmp_lst_sel = [rx_des_at_sel_point_freq_arr, rx_des_at_sel_point_psd, rx_dist_at_sel_point_freq_arr,
@@ -413,15 +416,17 @@ if __name__ == '__main__':
                     # for arr1 in tmp_lst_sel:
                     #     data_lst_sel.append(arr1)
                     # utilities.save_to_csv(data_lst=data_lst_sel, filename=psd_sel_filename_str)
-#%%
+                    # %%
                     fig5, ax5 = plt.subplots(1, 1)
                     sorted_des_rx_at_sel_freq_arr, sorted_des_psd_at_sel_arr = zip(
                         *sorted(zip(rx_des_at_sel_point_freq_arr, rx_des_at_sel_point_psd)))
-                    ax5.plot(np.array(sorted_des_rx_at_sel_freq_arr), utilities.to_db(np.array(sorted_des_psd_at_sel_arr)),
+                    ax5.plot(np.array(sorted_des_rx_at_sel_freq_arr),
+                             utilities.to_db(np.array(sorted_des_psd_at_sel_arr)),
                              label="Desired")
                     sorted_dist_rx_at_sel_freq_arr, sorted_dist_psd_at_sel_arr = zip(
                         *sorted(zip(rx_dist_at_sel_point_freq_arr, rx_dist_at_sel_point_psd)))
-                    ax5.plot(np.array(sorted_dist_rx_at_sel_freq_arr), utilities.to_db(np.array(sorted_dist_psd_at_sel_arr)),
+                    ax5.plot(np.array(sorted_dist_rx_at_sel_freq_arr),
+                             utilities.to_db(np.array(sorted_dist_psd_at_sel_arr)),
                              label="Distorted")
 
                     ax5.set_title("Power spectral density at angle %d$\degree$" % sel_psd_angle)
@@ -435,13 +440,12 @@ if __name__ == '__main__':
                     # plt.cla()
                     # plt.close()
 
-
                     # %%
                     # plot beampatterns of desired and distortion components
                     fig1, ax1 = plt.subplots(1, 1, subplot_kw=dict(projection='polar'), figsize=(3.5, 3))
                     ax1.set_theta_zero_location("N")
                     plt.tight_layout()
-                    ax1.set_thetalim(-np.pi/2, np.pi/2)
+                    ax1.set_thetalim(-np.pi / 2, np.pi / 2)
                     ax1.set_xticks(np.pi / 180. * np.linspace(-90, 90, 13, endpoint=True))
                     ax1.yaxis.set_major_locator(MaxNLocator(5))
 
@@ -456,21 +460,36 @@ if __name__ == '__main__':
 
                     # plot reference angles/directions
                     (y_min, y_max) = ax1.get_ylim()
-                    ax1.vlines(np.deg2rad(usr_angles_deg), y_min, y_max, colors='k', linestyles='--', zorder=10)  # label="Users")
+                    ax1.vlines(np.deg2rad(usr_angles_deg), y_min, y_max, colors='k', linestyles='--',
+                               zorder=10)  # label="Users")
 
-                    dist_angles = ([(np.arcsin(2*np.sin(usr_angles_rad[0])-np.sin(usr_angles_rad[1]))), np.arcsin(2*np.sin(usr_angles_rad[1])-np.sin(usr_angles_rad[0]))])
-                    ax1.vlines(dist_angles, y_min, y_max, colors='k', linestyles=':', zorder=10)  # label="Expected distortion")
+                    dist_angles = []
+                    arcsin_arg_periodize = lambda val_a: val_a - 2.0 if val_a > 1.0 else (
+                        val_a + 2.0 if val_a < -1.0 else val_a)
+                    for usr_a_idx, usr_b_idx in itertools.combinations(range(n_users), 2):
+                        val_a = 2 * np.sin(usr_angles_rad[usr_a_idx]) - np.sin(usr_angles_rad[usr_b_idx])
+                        val_b = 2 * np.sin(usr_angles_rad[usr_b_idx]) - np.sin(usr_angles_rad[usr_a_idx])
+
+                        arcsin_a = arcsin_arg_periodize(val_a)
+                        arcsin_b = arcsin_arg_periodize(val_b)
+
+                        dist_angles.append(np.arcsin(arcsin_a))
+                        dist_angles.append(np.arcsin(arcsin_b))
+
+                    ax1.vlines(dist_angles, y_min, y_max, colors='k', linestyles=':',
+                               zorder=10)  # label="Expected distortion")
 
                     ax1.margins(0.0, 0.0)
                     ax1.set_title("Signal power at angle [dB]", pad=-15)
                     ax1.legend(title="Signal:", ncol=2, loc='lower center', borderaxespad=-2)
                     ax1.grid(True)
                     beampattern_filename_str = "multiuser_sep_sc_%s_%s_desired_and_distortion_signal_beampattern_ibo%d_angles%s_distances%s_npoints%d_nsnap%d_nant%s" % (
-                            my_distortion, my_miso_chan, ibo_val_db, '_'.join([str(val) for val in usr_angles_deg]),
-                            '_'.join([str(val) for val in usr_distances]), n_points, beampattern_n_snapshots,
-                            '_'.join([str(val) for val in [n_ant_val]]))
+                        my_distortion, my_miso_chan, ibo_val_db, '_'.join([str(val) for val in usr_angles_deg]),
+                        '_'.join([str(val) for val in usr_distances]), n_points, beampattern_n_snapshots,
+                        '_'.join([str(val) for val in [n_ant_val]]))
                     plt.savefig(
-                        "../figs/multiuser/distortion_directions_eval/%s.png" % beampattern_filename_str, dpi=600, bbox_inches='tight')
+                        "../figs/multiuser/distortion_directions_eval/%s.png" % beampattern_filename_str, dpi=600,
+                        bbox_inches='tight')
                     plt.show()
                     # plt.cla()
                     # plt.close()
