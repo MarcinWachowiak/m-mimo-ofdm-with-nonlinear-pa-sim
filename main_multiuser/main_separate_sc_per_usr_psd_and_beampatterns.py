@@ -10,7 +10,6 @@ sys.path.append(os.getcwd())
 
 import copy
 import time
-from datetime import datetime
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -21,7 +20,6 @@ import antenna_arrray
 import channel
 import distortion
 import modulation
-import noise
 import transceiver
 import utilities
 from plot_settings import set_latex_plot_style
@@ -365,7 +363,7 @@ if __name__ == '__main__':
                             distortion_oob_sig_pow_arr[snap_idx] = np.sum(
                                 np.power(np.abs(np.sum(sc_oob_ofdm_distortion_sig, axis=0)), 2))
 
-                            if pt_idx == sel_ptx_idx:
+                            if plot_psd and pt_idx == sel_ptx_idx:
                                 # for PSD plotting take into consideration full BW not only SC
                                 desired_sig = np.sum(ak_vect * clean_rx_sig_fd, axis=0)
                                 distortion_sig = np.sum(np.subtract(rx_sig_fd, (ak_vect * clean_rx_sig_fd)), axis=0)
@@ -378,67 +376,60 @@ if __name__ == '__main__':
                         distorted_sig_inband_pow_per_pt.append(np.sum(distortion_inband_sig_pow_arr))
                         distorted_sig_oob_pow_per_pt.append(np.sum(distortion_oob_sig_pow_arr))
 
-                    rx_sig_at_sel_point_des_arr = np.concatenate(rx_sig_at_sel_point_des).ravel()
-                    rx_sig_at_sel_point_dist_arr = np.concatenate(rx_sig_at_sel_point_dist).ravel()
-                    rx_sig_at_sel_point_cln_arr = np.concatenate(rx_sig_at_sel_point_cln).ravel()
+                    if plot_psd:
+                        rx_sig_at_sel_point_des_arr = np.concatenate(rx_sig_at_sel_point_des).ravel()
+                        rx_sig_at_sel_point_dist_arr = np.concatenate(rx_sig_at_sel_point_dist).ravel()
+                        rx_sig_at_sel_point_cln_arr = np.concatenate(rx_sig_at_sel_point_cln).ravel()
 
-                    # interleaving_ratio = 4
-                    # interleaved_rx_sig_at_sel_point_des_arr = np.zeros(((1+interleaving_ratio) * rx_sig_at_sel_point_des_arr.size), dtype=rx_sig_at_sel_point_des_arr.dtype)
-                    # interleaved_rx_sig_at_sel_point_des_arr[0::(1+interleaving_ratio)] = rx_sig_at_sel_point_des_arr
-                    #
-                    # interleaved_rx_sig_at_sel_point_dist_arr = np.zeros(((1+interleaving_ratio) * rx_sig_at_sel_point_dist_arr.size), dtype=rx_sig_at_sel_point_dist_arr.dtype)
-                    # interleaved_rx_sig_at_sel_point_dist_arr[0::(1+interleaving_ratio)] = rx_sig_at_sel_point_dist_arr
-                    #
-                    # interleaved_rx_sig_at_sel_point_cln_arr = np.zeros(((1+interleaving_ratio) * rx_sig_at_sel_point_cln_arr.size), dtype=rx_sig_at_sel_point_cln_arr.dtype)
-                    # interleaved_rx_sig_at_sel_point_cln_arr[0::(1+interleaving_ratio)] = rx_sig_at_sel_point_cln_arr
+                        rx_des_at_sel_point_freq_arr, rx_des_at_sel_point_psd = welch(rx_sig_at_sel_point_des_arr,
+                                                                                      fs=psd_nfft,
+                                                                                      nfft=psd_nfft,
+                                                                                      nperseg=n_samp_per_seg,
+                                                                                      return_onesided=False)
+                        rx_dist_at_sel_point_freq_arr, rx_dist_at_sel_point_psd = welch(rx_sig_at_sel_point_dist_arr,
+                                                                                        fs=psd_nfft,
+                                                                                        nfft=psd_nfft,
+                                                                                        nperseg=n_samp_per_seg,
+                                                                                        return_onesided=False)
+                        rx_cln_at_sel_point_freq_arr, rx_cln_at_sel_point_psd = welch(rx_sig_at_sel_point_cln_arr,
+                                                                                      fs=psd_nfft,
+                                                                                      nfft=psd_nfft,
+                                                                                      nperseg=n_samp_per_seg,
+                                                                                      return_onesided=False)
 
-                    rx_des_at_sel_point_freq_arr, rx_des_at_sel_point_psd = welch(rx_sig_at_sel_point_des_arr,
-                                                                                  fs=psd_nfft,
-                                                                                  nfft=psd_nfft, nperseg=n_samp_per_seg,
-                                                                                  return_onesided=False)
-                    rx_dist_at_sel_point_freq_arr, rx_dist_at_sel_point_psd = welch(rx_sig_at_sel_point_dist_arr,
-                                                                                    fs=psd_nfft,
-                                                                                    nfft=psd_nfft,
-                                                                                    nperseg=n_samp_per_seg,
-                                                                                    return_onesided=False)
-                    rx_cln_at_sel_point_freq_arr, rx_cln_at_sel_point_psd = welch(rx_sig_at_sel_point_cln_arr,
-                                                                                  fs=psd_nfft,
-                                                                                  nfft=psd_nfft, nperseg=n_samp_per_seg,
-                                                                                  return_onesided=False)
+                        psd_sel_filename_str = "multiuser_sep_sc_psd_%s_%s_chan_ibo%d_npoints%d_nsnap%d_angle%d_nant%d" % (
+                            my_distortion, my_miso_chan, ibo_val_db, n_points, beampattern_n_snapshots, sel_psd_angle,
+                            n_ant_val)
 
-                    psd_sel_filename_str = "multiuser_sep_sc_psd_%s_%s_chan_ibo%d_npoints%d_nsnap%d_angle%d_nant%d" % (
-                        my_distortion, my_miso_chan, ibo_val_db, n_points, beampattern_n_snapshots, sel_psd_angle,
-                        n_ant_val)
+                        # data_lst_sel = []
+                        # tmp_lst_sel = [rx_des_at_sel_point_freq_arr, rx_des_at_sel_point_psd, rx_dist_at_sel_point_freq_arr,
+                        #                rx_dist_at_sel_point_psd, rx_cln_at_sel_point_freq_arr, rx_cln_at_sel_point_psd]
+                        # for arr1 in tmp_lst_sel:
+                        #     data_lst_sel.append(arr1)
+                        # utilities.save_to_csv(data_lst=data_lst_sel, filename=psd_sel_filename_str)
+                        # %%
+                        fig5, ax5 = plt.subplots(1, 1)
+                        sorted_des_rx_at_sel_freq_arr, sorted_des_psd_at_sel_arr = zip(
+                            *sorted(zip(rx_des_at_sel_point_freq_arr, rx_des_at_sel_point_psd)))
+                        ax5.plot(np.array(sorted_des_rx_at_sel_freq_arr),
+                                 utilities.to_db(np.array(sorted_des_psd_at_sel_arr)),
+                                 label="Desired")
+                        sorted_dist_rx_at_sel_freq_arr, sorted_dist_psd_at_sel_arr = zip(
+                            *sorted(zip(rx_dist_at_sel_point_freq_arr, rx_dist_at_sel_point_psd)))
+                        ax5.plot(np.array(sorted_dist_rx_at_sel_freq_arr),
+                                 utilities.to_db(np.array(sorted_dist_psd_at_sel_arr)),
+                                 label="Distorted")
 
-                    # data_lst_sel = []
-                    # tmp_lst_sel = [rx_des_at_sel_point_freq_arr, rx_des_at_sel_point_psd, rx_dist_at_sel_point_freq_arr,
-                    #                rx_dist_at_sel_point_psd, rx_cln_at_sel_point_freq_arr, rx_cln_at_sel_point_psd]
-                    # for arr1 in tmp_lst_sel:
-                    #     data_lst_sel.append(arr1)
-                    # utilities.save_to_csv(data_lst=data_lst_sel, filename=psd_sel_filename_str)
-                    # %%
-                    fig5, ax5 = plt.subplots(1, 1)
-                    sorted_des_rx_at_sel_freq_arr, sorted_des_psd_at_sel_arr = zip(
-                        *sorted(zip(rx_des_at_sel_point_freq_arr, rx_des_at_sel_point_psd)))
-                    ax5.plot(np.array(sorted_des_rx_at_sel_freq_arr),
-                             utilities.to_db(np.array(sorted_des_psd_at_sel_arr)),
-                             label="Desired")
-                    sorted_dist_rx_at_sel_freq_arr, sorted_dist_psd_at_sel_arr = zip(
-                        *sorted(zip(rx_dist_at_sel_point_freq_arr, rx_dist_at_sel_point_psd)))
-                    ax5.plot(np.array(sorted_dist_rx_at_sel_freq_arr),
-                             utilities.to_db(np.array(sorted_dist_psd_at_sel_arr)),
-                             label="Distorted")
-
-                    ax5.set_title("Power spectral density at angle %d$\degree$" % sel_psd_angle)
-                    ax5.set_xlabel("Subcarrier index [-]")
-                    ax5.set_ylabel("Power [dB]")
-                    ax5.legend(title="IBO = %d [dB]" % ibo_val_db)
-                    ax5.grid()
-                    plt.tight_layout()
-                    plt.savefig("../figs/multiuser/psd/%s.png" % psd_sel_filename_str, dpi=600, bbox_inches='tight')
-                    plt.show()
-                    # plt.cla()
-                    # plt.close()
+                        ax5.set_title("Power spectral density at angle %d$\degree$" % sel_psd_angle)
+                        ax5.set_xlabel("Subcarrier index [-]")
+                        ax5.set_ylabel("Power [dB]")
+                        ax5.legend(title="IBO = %d [dB]" % ibo_val_db)
+                        ax5.grid()
+                        plt.tight_layout()
+                        plt.savefig("../figs/multiuser/psd/%s.png" % psd_sel_filename_str, dpi=600, bbox_inches='tight')
+                        plt.show()
+                        # plt.cla()
+                        # plt.close()
 
                     # %%
                     # plot beampatterns of desired and distortion components
@@ -483,8 +474,9 @@ if __name__ == '__main__':
                     ax1.set_title("Signal power at angle [dB]", pad=-15)
                     ax1.legend(title="Signal:", ncol=2, loc='lower center', borderaxespad=-2)
                     ax1.grid(True)
-                    beampattern_filename_str = "multiuser_sep_sc_%s_%s_desired_and_distortion_signal_beampattern_ibo%d_angles%s_distances%s_npoints%d_nsnap%d_nant%s" % (
-                        my_distortion, my_miso_chan, ibo_val_db, '_'.join([str(val) for val in usr_angles_deg]),
+                    beampattern_filename_str = "multiuser_separate_sc_beampatterns_%s_%s_nfft%d_nsc%d_ibo%d_angles%s_distances%s_npoints%d_nsnap%d_nant%s" % (
+                        my_distortion, my_miso_chan, n_fft, n_sub_carr, ibo_val_db,
+                        '_'.join([str(val) for val in usr_angles_deg]),
                         '_'.join([str(val) for val in usr_distances]), n_points, beampattern_n_snapshots,
                         '_'.join([str(val) for val in [n_ant_val]]))
                     plt.savefig(

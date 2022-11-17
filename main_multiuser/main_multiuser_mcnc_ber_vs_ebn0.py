@@ -239,8 +239,8 @@ if __name__ == '__main__':
                     # %%
                     for usr_idx, point_tup in enumerate(usr_pos_tup):
                         print("%d, \t\t  %1.1f, \t %1.1f, \t %1.1f, \t %1.2f" % (
-                        usr_idx, point_tup[0], point_tup[1], np.sqrt(point_tup[0] ** 2 + point_tup[1] ** 2),
-                        sdr_per_usr[usr_idx]))
+                            usr_idx, point_tup[0], point_tup[1], np.sqrt(point_tup[0] ** 2 + point_tup[1] ** 2),
+                            sdr_per_usr[usr_idx]))
 
                 if plot_precoding_beampatterns:
                     bit_rng = np.random.default_rng(4321)
@@ -290,12 +290,12 @@ if __name__ == '__main__':
                             # calculate SDR on symbol basis
                         desired_sig_pow_per_pt.append(np.sum(desired_sig_pow_arr))
                         distorted_sig_pow_per_pt.append(np.sum(distortion_sig_pow_arr))
-#%%
+                    # %%
                     # plot beampatterns of desired and distortion components
                     fig1, ax1 = plt.subplots(1, 1, subplot_kw=dict(projection='polar'), figsize=(3.5, 3))
                     ax1.set_theta_zero_location("N")
                     plt.tight_layout()
-                    ax1.set_thetalim(-np.pi/2, np.pi/2)
+                    ax1.set_thetalim(-np.pi / 2, np.pi / 2)
                     ax1.set_xticks(np.pi / 180. * np.linspace(-90, 90, 13, endpoint=True))
                     ax1.yaxis.set_major_locator(MaxNLocator(5))
 
@@ -373,7 +373,6 @@ if __name__ == '__main__':
                                 my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=True)
                                 my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
 
-
                                 vk_mat = my_array.get_precoding_mat()
                                 vk_pow_vec = np.sum(np.sum(np.power(np.abs(vk_mat), 2), axis=2), axis=1)
 
@@ -385,7 +384,8 @@ if __name__ == '__main__':
                                 for usr_idx, usr_pos in enumerate(usr_pos_tup):
                                     chan_mat_at_point = usr_chan_mat_lst[usr_idx]
                                     hk_mat = np.concatenate((chan_mat_at_point[:, -my_mod.n_sub_carr // 2:],
-                                                             chan_mat_at_point[:, 1:(my_mod.n_sub_carr // 2) + 1]), axis=1)
+                                                             chan_mat_at_point[:, 1:(my_mod.n_sub_carr // 2) + 1]),
+                                                            axis=1)
                                     vk_mat = my_array.get_precoding_mat()
                                     vk_pow_vec = np.sum(np.sum(np.power(np.abs(vk_mat), 2), axis=2), axis=1)
 
@@ -426,7 +426,9 @@ if __name__ == '__main__':
 
                                     clean_rx_ofdm_symbol = my_noise.process(clean_rx_ofdm_symbol,
                                                                             avg_sample_pow=my_mod.avg_symbol_power *
-                                                                                           hk_vk_noise_scaler_lst[usr_idx], disp_data=False)
+                                                                                           hk_vk_noise_scaler_lst[
+                                                                                               usr_idx],
+                                                                            disp_data=False)
                                     clean_rx_ofdm_symbol = np.divide(clean_rx_ofdm_symbol, hk_vk_agc_nfft_lst[usr_idx])
                                     clean_rx_ofdm_symbol = utilities.to_time_domain(clean_rx_ofdm_symbol)
                                     clean_rx_ofdm_symbol = np.concatenate(
@@ -480,7 +482,8 @@ if __name__ == '__main__':
                         while True:
                             ite_use_flags_per_usr = []
                             for usr_idx in range(n_users):
-                                ite_use_flags = np.logical_and((n_err[usr_idx, 1:] < n_err_min), (bits_sent[usr_idx, 1:] < bits_sent_max))
+                                ite_use_flags = np.logical_and((n_err[usr_idx, 1:] < n_err_min),
+                                                               (bits_sent[usr_idx, 1:] < bits_sent_max))
                                 ite_use_flags_per_usr.append(ite_use_flags)
 
                             curr_ite_lst_per_usr = []
@@ -513,7 +516,8 @@ if __name__ == '__main__':
                                         my_miso_chan.reroll_channel_coeffs()
 
                                     usr_chan_mat_lst.append(my_miso_chan.get_channel_mat_fd())
-                                    my_mcnc_rx = corrector.McncMuReceiver(my_array, copy.deepcopy(my_miso_chan), usr_idx=usr_idx)
+                                    my_mcnc_rx = corrector.McncMuReceiver(my_array, copy.deepcopy(my_miso_chan),
+                                                                          usr_idx=usr_idx)
                                     my_mcnc_rx_lst.append(my_mcnc_rx)
 
                                 # set precoding and calculate AGC
@@ -532,7 +536,8 @@ if __name__ == '__main__':
                                 for usr_idx, usr_pos in enumerate(usr_pos_tup):
                                     chan_mat_at_point = usr_chan_mat_lst[usr_idx]
                                     hk_mat = np.concatenate((chan_mat_at_point[:, -my_mod.n_sub_carr // 2:],
-                                                             chan_mat_at_point[:, 1:(my_mod.n_sub_carr // 2) + 1]), axis=1)
+                                                             chan_mat_at_point[:, 1:(my_mod.n_sub_carr // 2) + 1]),
+                                                            axis=1)
                                     vk_mat = my_array.get_precoding_mat()
                                     vk_pow_vec = np.sum(np.sum(np.power(np.abs(vk_mat), 2), axis=2), axis=1)
 
@@ -562,7 +567,8 @@ if __name__ == '__main__':
                                     ak_hk_vk_agc_nfft_lst.append(ak_hk_vk_agc_nfft)
 
                             tx_bits = np.squeeze(bit_rng.choice((0, 1), (n_users, my_tx.modem.n_bits_per_ofdm_sym)))
-                            tx_ofdm_symbol, clean_ofdm_symbol = my_array.transmit(tx_bits, out_domain_fd=True, return_both=True, skip_dist=False)
+                            tx_ofdm_symbol, clean_ofdm_symbol = my_array.transmit(tx_bits, out_domain_fd=True,
+                                                                                  return_both=True, skip_dist=False)
 
                             for usr_idx in range(n_users):
                                 if not any(curr_ite_lst_per_usr[usr_idx]):
@@ -570,12 +576,16 @@ if __name__ == '__main__':
                                 # rx_ofdm_symbol = my_miso_chan.propagate(in_sig_mat=tx_ofdm_symbol)
                                 rx_ofdm_symbol = np.sum(np.multiply(tx_ofdm_symbol, usr_chan_mat_lst[usr_idx]), axis=0)
 
-                                rx_ofdm_symbol = my_noise.process(rx_ofdm_symbol, avg_sample_pow=my_mod.avg_symbol_power\
-                                                                                    * ak_hk_vk_noise_scaler_lst[usr_idx])
+                                rx_ofdm_symbol = my_noise.process(rx_ofdm_symbol, avg_sample_pow=my_mod.avg_symbol_power \
+                                                                                                 *
+                                                                                                 ak_hk_vk_noise_scaler_lst[
+                                                                                                     usr_idx])
 
                                 # apply AGC
                                 rx_ofdm_symbol = np.divide(rx_ofdm_symbol, ak_hk_vk_agc_nfft_lst[usr_idx])
-                                rx_bits_per_iter_lst = my_mcnc_rx_lst[usr_idx].receive(n_iters_lst=curr_ite_lst_per_usr[usr_idx], in_sig_fd=rx_ofdm_symbol, other_usr_bits=tx_bits[1-usr_idx])
+                                rx_bits_per_iter_lst = my_mcnc_rx_lst[usr_idx].receive(
+                                    n_iters_lst=curr_ite_lst_per_usr[usr_idx], in_sig_fd=rx_ofdm_symbol,
+                                    other_usr_bits=tx_bits[1 - usr_idx])
 
                                 ber_idx = np.array(list(range(len(mcnc_n_iter_lst))))
                                 act_ber_idx = ber_idx[ite_use_flags_per_usr[usr_idx]] + 1
@@ -605,12 +615,17 @@ if __name__ == '__main__':
                     usr_marker_lst = ['o', 's', '^', '*']
 
                     for usr_idx in range(n_users):
-                        ax1.plot(ebn0_arr, bers_per_usr[usr_idx][0, :], label="No distortion", color=CB_color_cycle[0], marker=usr_marker_lst[usr_idx], fillstyle='none')
+                        ax1.plot(ebn0_arr, bers_per_usr[usr_idx][0, :], label="No distortion", color=CB_color_cycle[0],
+                                 marker=usr_marker_lst[usr_idx], fillstyle='none')
                         for ite_idx, mcnc_iter_val in enumerate(mcnc_n_iter_lst):
                             if ite_idx == 0:
-                                ax1.plot(ebn0_arr, bers_per_usr[usr_idx][ite_idx + 1, :], label="Standard RX", color=CB_color_cycle[ite_idx+1], marker=usr_marker_lst[usr_idx], fillstyle='none')
+                                ax1.plot(ebn0_arr, bers_per_usr[usr_idx][ite_idx + 1, :], label="Standard RX",
+                                         color=CB_color_cycle[ite_idx + 1], marker=usr_marker_lst[usr_idx],
+                                         fillstyle='none')
                             else:
-                                ax1.plot(ebn0_arr, bers_per_usr[usr_idx][ite_idx + 1, :], label="MCNC NI = %d" % mcnc_iter_val, color=CB_color_cycle[ite_idx+1], marker=usr_marker_lst[usr_idx], fillstyle='none')
+                                ax1.plot(ebn0_arr, bers_per_usr[usr_idx][ite_idx + 1, :],
+                                         label="MCNC NI = %d" % mcnc_iter_val, color=CB_color_cycle[ite_idx + 1],
+                                         marker=usr_marker_lst[usr_idx], fillstyle='none')
 
                     # fix log scaling
                     ax1.set_title("BER vs Eb/N0, %s, MCNC, QAM %d, N ANT = %d, IBO = %d [dB]" % (
@@ -624,7 +639,7 @@ if __name__ == '__main__':
                     filename_str = "ber_vs_ebn0_mu_mcnc_prot_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s_angles%s_distances%s" % (
                         my_miso_chan, n_ant_val, ibo_val_db, min(ebn0_arr), max(ebn0_arr), ebn0_arr[1] - ebn0_arr[0],
                         '_'.join([str(val) for val in mcnc_n_iter_lst[1:]]), '_'.join([str(val) for val in usr_angles]),
-                    '_'.join([str(val) for val in usr_distances]) )
+                        '_'.join([str(val) for val in usr_distances]))
 
                     # timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
                     # filename_str += "_" + timestamp

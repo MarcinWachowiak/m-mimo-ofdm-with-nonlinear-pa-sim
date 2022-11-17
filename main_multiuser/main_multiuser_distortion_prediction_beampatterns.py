@@ -27,9 +27,9 @@ from plot_settings import set_latex_plot_style
 if __name__ == '__main__':
     set_latex_plot_style()
     # Multiple users data
-    usr_angles_deg = np.array([-60, -90])
+    usr_angles_deg = np.array([30, 45, -20])
     usr_angles_rad = np.deg2rad(usr_angles_deg)
-    usr_distances = [300, 300]
+    usr_distances = [300, 300, 300]
     usr_pos_tup = []
     for usr_idx, usr_angle in enumerate(usr_angles_deg + 90):
         usr_pos_x = np.cos(np.deg2rad(usr_angle)) * usr_distances[usr_idx]
@@ -54,7 +54,7 @@ if __name__ == '__main__':
     # modulation
     constel_size = 64
     n_fft = 128
-    n_sub_carr = 2
+    n_sub_carr = 64
     cp_len = 1
 
     # BER analysis
@@ -439,15 +439,22 @@ if __name__ == '__main__':
                     dist_angles = []
                     arcsin_arg_periodize = lambda val_a: val_a - 2.0 if val_a > 1.0 else (
                         val_a + 2.0 if val_a < -1.0 else val_a)
-                    for usr_a_idx, usr_b_idx in itertools.combinations(range(n_users), 2):
-                        val_a = 2 * np.sin(usr_angles_rad[usr_a_idx]) - np.sin(usr_angles_rad[usr_b_idx])
-                        val_b = 2 * np.sin(usr_angles_rad[usr_b_idx]) - np.sin(usr_angles_rad[usr_a_idx])
 
-                        arcsin_a = arcsin_arg_periodize(val_a)
-                        arcsin_b = arcsin_arg_periodize(val_b)
+                    print(len(list(itertools.product(range(n_users), repeat=3))))
+                    for usr_ang_idx_1, usr_ang_idx_2, usr_ang_idx_3 in itertools.product(range(n_users), repeat=3):
+                        phase_val = np.sin(usr_angles_rad[usr_ang_idx_1]) + np.sin(
+                            usr_angles_rad[usr_ang_idx_2]) - np.sin(usr_angles_rad[usr_ang_idx_3])
+                        arcsin_val = arcsin_arg_periodize(phase_val)
+                        dist_angles.append(np.arcsin(arcsin_val))
 
-                        dist_angles.append(np.arcsin(arcsin_a))
-                        dist_angles.append(np.arcsin(arcsin_b))
+
+                    # generate usr angle idx tuples to calculate the distortion angle
+                    def dist_get_usr_angle_idx():
+                        for idx_1 in range(n_users):
+                            for idx_2 in range(n_users):
+                                for idx_3 in range(n_users):
+                                    pass
+
 
                     ax1.vlines(dist_angles, y_min, y_max, colors='k', linestyles=':',
                                zorder=10)  # label="Expected distortion")

@@ -29,7 +29,7 @@ if __name__ == '__main__':
     main_usr_pos_x = np.cos(np.deg2rad(main_usr_angle)) * main_user_dist
     main_usr_pos_y = np.sin(np.deg2rad(main_usr_angle)) * main_user_dist
 
-    n_ant_arr = [2, 4, 8, 16, 32, 64, 128] # 256]
+    n_ant_arr = [2, 4, 8, 16, 32, 64, 128]  # 256]
 
     # modulation
     constel_size = 64
@@ -108,7 +108,8 @@ if __name__ == '__main__':
                 #     (tmp_channel_mat[:, -n_sub_carr // 2:], tmp_channel_mat[:, 1:(n_sub_carr // 2) + 1]), axis=1)
                 # correlate
                 nomin = np.trace(np.abs(np.matmul(np.transpose(main_usr_channel_mat), np.conjugate(tmp_channel_mat))))
-                denomin = np.sqrt(np.sum(np.power(np.abs(main_usr_channel_mat), 2)) * np.sum(np.power(np.abs(tmp_channel_mat), 2)))
+                denomin = np.sqrt(
+                    np.sum(np.power(np.abs(main_usr_channel_mat), 2)) * np.sum(np.power(np.abs(tmp_channel_mat), 2)))
                 corr_coeff = nomin / denomin
                 corr_vect[idx] = corr_coeff
 
@@ -138,7 +139,7 @@ if __name__ == '__main__':
         plt.tight_layout()
 
         filename_str = "channel_mat_corr_coeff_%s_distance%d_angle%d_nant%s" % (
-        chan_obj, main_user_dist, main_usr_angle, '_'.join([str(val) for val in n_ant_arr]))
+            chan_obj, main_user_dist, main_usr_angle, '_'.join([str(val) for val in n_ant_arr]))
         plt.savefig("../figs/multiuser/channel_mat_correlation/%s.png" % filename_str, dpi=600, bbox_inches='tight')
         plt.show()
         plt.cla()

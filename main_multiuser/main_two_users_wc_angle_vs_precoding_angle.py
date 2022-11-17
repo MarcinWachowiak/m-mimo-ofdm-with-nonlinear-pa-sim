@@ -32,7 +32,7 @@ if __name__ == '__main__':
     main_usr_pos_x = np.cos(np.deg2rad(main_usr_angle)) * main_user_dist
     main_usr_pos_y = np.sin(np.deg2rad(main_usr_angle)) * main_user_dist
 
-    n_ant_arr = [16] # 256]
+    n_ant_arr = [16]  # 256]
     ibo_val_db = 0
     # modulation
     constel_size = 64
@@ -94,7 +94,7 @@ if __name__ == '__main__':
             # main_usr_channel_mat = my_array.get_precoding_mat()
             # sweep channels and correlate
             corr_vect = np.zeros(n_points + 1)
-            sdr_vec = np.zeros((n_users, n_points+1))
+            sdr_vec = np.zeros((n_users, n_points + 1))
             for point_idx, rx_point in enumerate(rx_points):
                 usr_pos_x, usr_pos_y = rx_point
                 my_standard_rx.set_position(cord_x=usr_pos_x, cord_y=usr_pos_y, cord_z=1.5)
@@ -181,16 +181,16 @@ if __name__ == '__main__':
         ax2 = ax1.twinx()
 
         for ant_idx, n_ant_val in enumerate(n_ant_arr):
-            ax1.plot(np.rad2deg(radian_vals), corr_per_n_ant[ant_idx][chan_idx], label=n_ant_val, linestyle='--', color=CB_color_cycle[-1])
+            ax1.plot(np.rad2deg(radian_vals), corr_per_n_ant[ant_idx][chan_idx], label=n_ant_val, linestyle='--',
+                     color=CB_color_cycle[-1])
         ax1.legend(title="K antennas:", loc="center left")
         ax1.set_ylabel("Correlation coefficient")
 
         for ant_idx, n_ant_val in enumerate(n_ant_arr):
-             ax2.plot(np.rad2deg(radian_vals), sdr_per_n_ant[ant_idx][chan_idx][0, :], label="Main", linestyle='-')
-             ax2.plot(np.rad2deg(radian_vals), sdr_per_n_ant[ant_idx][chan_idx][1, :], label="Secondary", linestyle='-')
+            ax2.plot(np.rad2deg(radian_vals), sdr_per_n_ant[ant_idx][chan_idx][0, :], label="Main", linestyle='-')
+            ax2.plot(np.rad2deg(radian_vals), sdr_per_n_ant[ant_idx][chan_idx][1, :], label="Secondary", linestyle='-')
         ax2.set_ylabel("SDR [dB]")
         ax2.legend(title="User:", loc="center right")
-
 
         # plot ref user
         (y_min, y_max) = ax1.get_ylim()
@@ -203,11 +203,10 @@ if __name__ == '__main__':
 
         ax1.grid()
 
-
         plt.tight_layout()
 
         filename_str = "sdr_and_channel_mat_corr_coeff_%s_distance%d_angle%d_nant%s" % (
-        chan_obj, main_user_dist, main_usr_angle, '_'.join([str(val) for val in n_ant_arr]))
+            chan_obj, main_user_dist, main_usr_angle, '_'.join([str(val) for val in n_ant_arr]))
         plt.savefig("../figs/multiuser/%s.png" % filename_str, dpi=600, bbox_inches='tight')
         plt.show()
         # plt.cla()

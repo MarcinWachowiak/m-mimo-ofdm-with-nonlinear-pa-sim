@@ -208,10 +208,10 @@ if __name__ == '__main__':
                     np.matmul(main_usr_clean_beampattern, np.transpose(test_usr_clean_beampattern_lst[corr_pt_idx]))) \
                                              / np.sqrt(np.sum(np.power(np.abs(main_usr_clean_beampattern), 2)) * np.sum(
                     np.power(np.abs(test_usr_clean_beampattern_lst[corr_pt_idx]), 2)))
-                # corr_vect_full[corr_pt_idx] = np.abs(
-                #     np.matmul(main_usr_full_beampattern, np.transpose(test_usr_full_beampattern_lst[corr_pt_idx]))) \
-                #                               / np.sqrt(np.sum(np.power(np.abs(main_usr_full_beampattern), 2)) * np.sum(
-                #     np.power(np.abs(test_usr_full_beampattern_lst[corr_pt_idx]), 2)))
+                # corr_vect_full[corr_pt_idx] = np.abs( np.matmul(main_usr_full_beampattern, np.transpose(
+                # test_usr_full_beampattern_lst[corr_pt_idx]))) \ / np.sqrt(np.sum(np.power(np.abs(
+                # main_usr_full_beampattern), 2)) * np.sum( np.power(np.abs(test_usr_full_beampattern_lst[
+                # corr_pt_idx]), 2)))
 
             corr_per_chan_cln.append(corr_vect_cln)
             # corr_per_chan_full.append(corr_vect_full)
@@ -234,7 +234,7 @@ if __name__ == '__main__':
         ax1.vlines(main_usr_angle, y_min, y_max, colors='k', linestyles='--', label='Precoding angle',
                    zorder=5)  # label="Users")
         # fix log scaling
-        ax1.set_title("Spatial correlation coefficient vs angle and K antennas, %s" % (chan_obj))
+        ax1.set_title("Spatial correlation coefficient vs angle and K antennas, %s" % chan_obj)
         ax1.set_xlabel("Angle [°]")
         ax1.set_ylabel("Correlation coefficient")
         ax1.legend(title="K antennas:")
