@@ -27,9 +27,9 @@ from plot_settings import set_latex_plot_style
 if __name__ == '__main__':
     set_latex_plot_style()
     # Multiple users data
-    usr_angles_deg = np.array([30, 45, -20])
+    usr_angles_deg = np.array([0, 60])
     usr_angles_rad = np.deg2rad(usr_angles_deg)
-    usr_distances = [300, 300, 300]
+    usr_distances = [300, 300]
     usr_pos_tup = []
     for usr_idx, usr_angle in enumerate(usr_angles_deg + 90):
         usr_pos_x = np.cos(np.deg2rad(usr_angle)) * usr_distances[usr_idx]
@@ -39,7 +39,7 @@ if __name__ == '__main__':
     # usr_pos_tup = [(45, 45), (120, 120), (150, 150)]
     n_users = len(usr_pos_tup)
 
-    n_ant_arr = [64]
+    n_ant_arr = [16]
     ibo_arr = [10]
     ebn0_step = [1]
     cnc_n_iter_lst = [1, 2, 3, 4]  # 5, 6, 7, 8]
@@ -57,11 +57,6 @@ if __name__ == '__main__':
     n_sub_carr = 64
     cp_len = 1
 
-    # BER analysis
-    bits_sent_max = int(1e5)
-    n_err_min = int(1e5)
-    ber_reroll_pos = False
-
     rx_loc_x, rx_loc_y = 212.0, 212.0
     rx_loc_var = 10.0
 
@@ -72,7 +67,7 @@ if __name__ == '__main__':
 
     # Beampatterns
     plot_precoding_beampatterns = True
-    beampattern_n_snapshots = 100
+    beampattern_n_snapshots = 10
     n_points = 180 * 1
     radial_distance = 300
     rx_points = utilities.pts_on_semicircum(r=radial_distance, n=n_points)
@@ -146,7 +141,7 @@ if __name__ == '__main__':
                     alpha_val_vec = []
 
                     my_tmp_array.set_precoding_matrix(channel_mat_fd=my_tmp_miso_los_chan.get_channel_mat_fd(),
-                                                      mr_precoding=True)
+                                                      zf_precoding=True)
                     my_tmp_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_tmp_mod.avg_sample_power)
 
                     while ofdm_symb_idx < n_ofdm_symb:
@@ -196,7 +191,7 @@ if __name__ == '__main__':
                         my_miso_chan.reroll_channel_coeffs()
                     usr_chan_mat_lst.append(my_miso_chan.get_channel_mat_fd())
 
-                my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=True)
+                my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, zf_precoding=True)
                 my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
 
                 vk_mat = my_array.get_precoding_mat()
@@ -247,7 +242,7 @@ if __name__ == '__main__':
 
                                 usr_chan_mat_lst.append(my_miso_chan.get_channel_mat_fd())
 
-                            my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=True)
+                            my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, zf_precoding=True)
                             my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
 
                             vk_mat = my_array.get_precoding_mat()
@@ -292,10 +287,12 @@ if __name__ == '__main__':
                 if plot_precoding_beampatterns:
                     bit_rng = np.random.default_rng(4321)
                     desired_sig_pow_per_pt = []
+                    desired_sig_pow_per_usr_per_pt = [[] for _ in range(n_users)]
                     distorted_sig_inband_pow_per_pt = []
                     distorted_sig_oob_pow_per_pt = []
                     for pt_idx, point in enumerate(rx_points):
                         (x_cord, y_cord) = point
+
                         my_standard_rx.set_position(cord_x=x_cord, cord_y=y_cord, cord_z=1.5)
                         # update channel matrix constant for a given point
                         if isinstance(my_miso_chan, channel.MisoLosFd) or isinstance(my_miso_chan,
@@ -311,21 +308,34 @@ if __name__ == '__main__':
                             #     my_miso_chan.reroll_channel_coeffs()
 
                         desired_sig_pow_arr = np.zeros(beampattern_n_snapshots)
+                        desired_sig_per_usr_pow_arr = np.zeros((n_users, beampattern_n_snapshots))
                         distortion_inband_sig_pow_arr = np.zeros(beampattern_n_snapshots)
                         distortion_oob_sig_pow_arr = np.zeros(beampattern_n_snapshots)
                         for snap_idx in range(beampattern_n_snapshots):
                             tx_bits = np.squeeze(bit_rng.choice((0, 1), (n_users, my_tx.modem.n_bits_per_ofdm_sym)))
-                            arr_tx_sig_fd, clean_sig_mat_fd = my_array.transmit(in_bits=tx_bits,
-                                                                                out_domain_fd=True,
-                                                                                return_both=True)
+
+                            arr_tx_sig_fd = my_array.transmit(in_bits=tx_bits, out_domain_fd=True, return_both=False, sum_usr_signals=True)
+                            per_usr_clean_sig_fd_lst = my_array.transmit(in_bits=tx_bits, out_domain_fd=True, return_both=False, skip_dist=True, sum_usr_signals=False)
 
                             rx_sig_fd = my_miso_chan.propagate(in_sig_mat=arr_tx_sig_fd, sum=False)
-                            clean_rx_sig_fd = my_miso_chan.propagate(in_sig_mat=clean_sig_mat_fd, sum=False)
-                            distortion_sig_fd = np.subtract(rx_sig_fd, (ak_vect * clean_rx_sig_fd))
+
+                            per_usr_clean_rx_sig_fd_lst = []
+
+                            combined_clean_sig_mat_fd = None
+                            for usr_idx in range(n_users):
+                                per_usr_clean_sig_fd = my_miso_chan.propagate(in_sig_mat=per_usr_clean_sig_fd_lst[usr_idx], sum=False)
+                                per_usr_clean_rx_sig_fd_lst.append(per_usr_clean_sig_fd)
+
+                                if combined_clean_sig_mat_fd is None:
+                                    combined_clean_sig_mat_fd = copy.deepcopy(per_usr_clean_sig_fd)
+                                else:
+                                    combined_clean_sig_mat_fd += per_usr_clean_sig_fd
+
+                            distortion_sig_fd = np.subtract(rx_sig_fd, (ak_vect * combined_clean_sig_mat_fd))
 
                             clean_sc_ofdm_symb_fd = np.concatenate(
-                                (clean_rx_sig_fd[:, -my_mod.n_sub_carr // 2:],
-                                 clean_rx_sig_fd[:, 1:(my_mod.n_sub_carr // 2) + 1]),
+                                (combined_clean_sig_mat_fd[:, -my_mod.n_sub_carr // 2:],
+                                 combined_clean_sig_mat_fd[:, 1:(my_mod.n_sub_carr // 2) + 1]),
                                 axis=1)
 
                             sc_inband_ofdm_distortion_sig = np.concatenate(
@@ -338,6 +348,13 @@ if __name__ == '__main__':
                                  distortion_sig_fd[:, (my_mod.n_sub_carr // 2) + 1: -my_mod.n_sub_carr // 2]),
                                 axis=1)
 
+                            for usr_idx in range(n_users):
+                                clean_sc_per_usr = np.concatenate(
+                                    (per_usr_clean_rx_sig_fd_lst[usr_idx][:, -my_mod.n_sub_carr // 2:],
+                                     per_usr_clean_rx_sig_fd_lst[usr_idx][:, 1:(my_mod.n_sub_carr // 2) + 1]),
+                                    axis=1)
+                                desired_sig_per_usr_pow_arr[usr_idx, snap_idx] = np.sum(np.power(np.abs(np.sum(ak_vect * clean_sc_per_usr, axis=0)), 2))
+
                             desired_sig_pow_arr[snap_idx] = np.sum(
                                 np.power(np.abs(np.sum(ak_vect * clean_sc_ofdm_symb_fd, axis=0)), 2))
                             distortion_inband_sig_pow_arr[snap_idx] = np.sum(
@@ -347,13 +364,16 @@ if __name__ == '__main__':
 
                             if plot_psd and pt_idx == sel_ptx_idx:
                                 # for PSD plotting take into consideration full BW not only SC
-                                desired_sig = np.sum(ak_vect * clean_rx_sig_fd, axis=0)
-                                distortion_sig = np.sum(np.subtract(rx_sig_fd, (ak_vect * clean_rx_sig_fd)), axis=0)
-                                rx_sig_at_sel_point_cln.append(utilities.to_time_domain(clean_rx_sig_fd))
+                                desired_sig = np.sum(ak_vect * combined_clean_sig_mat_fd, axis=0)
+                                distortion_sig = np.sum(np.subtract(rx_sig_fd, (ak_vect * combined_clean_sig_mat_fd)), axis=0)
+                                rx_sig_at_sel_point_cln.append(utilities.to_time_domain(combined_clean_sig_mat_fd))
                                 rx_sig_at_sel_point_des.append(utilities.to_time_domain(desired_sig))
                                 rx_sig_at_sel_point_dist.append(utilities.to_time_domain(distortion_sig))
 
-                            # calculate SDR on symbol basis
+                        # calculate SDR on symbol basis
+                        desired_sig_pow_per_usr_arr = np.sum(desired_sig_per_usr_pow_arr, axis=1)
+                        for usr_idx in range(n_users):
+                            desired_sig_pow_per_usr_per_pt[usr_idx].append(desired_sig_pow_per_usr_arr[usr_idx])
                         desired_sig_pow_per_pt.append(np.sum(desired_sig_pow_arr))
                         distorted_sig_inband_pow_per_pt.append(np.sum(distortion_inband_sig_pow_arr))
                         distorted_sig_oob_pow_per_pt.append(np.sum(distortion_oob_sig_pow_arr))
@@ -379,7 +399,7 @@ if __name__ == '__main__':
                                                                                       nperseg=n_samp_per_seg,
                                                                                       return_onesided=False)
 
-                        psd_sel_filename_str = "multiuser_shared_sc_psd_%s_%s_chan_ibo%d_npoints%d_nsnap%d_angle%d_nant%d" % (
+                        psd_sel_filename_str = "multiuser_shared_sc_zf_psd_%s_%s_chan_ibo%d_npoints%d_nsnap%d_angle%d_nant%d" % (
                             my_distortion, my_miso_chan, ibo_val_db, n_points, beampattern_n_snapshots, sel_psd_angle,
                             n_ant_val)
 
@@ -423,17 +443,22 @@ if __name__ == '__main__':
                     ax1.yaxis.set_major_locator(MaxNLocator(5))
 
                     dist_lines_lst = []
-
-                    ax1.plot(radian_vals, utilities.to_db(desired_sig_pow_per_pt), label="Desired",
-                             linewidth=1.5)
+                    for usr_idx in range(n_users):
+                        ax1.plot(radian_vals, utilities.to_db(desired_sig_pow_per_usr_per_pt[usr_idx]), label="Desired usr: %d" % usr_idx,
+                                 linewidth=1.0)
+                    # ax1.plot(radian_vals, utilities.to_db(desired_sig_pow_per_pt), label="Desired combined",
+                    #          linewidth=1.0)
                     ax1.plot(radian_vals, utilities.to_db(distorted_sig_inband_pow_per_pt), label="Distorted IB",
-                             linewidth=1.5)
+                             linewidth=1.0)
                     ax1.plot(radian_vals, utilities.to_db(distorted_sig_oob_pow_per_pt), label="Distorted OOB",
-                             linewidth=1.5)
+                             linewidth=1.0)
 
                     # plot reference angles/directions
                     (y_min, y_max) = ax1.get_ylim()
-                    ax1.vlines(np.deg2rad(usr_angles_deg), y_min, y_max, colors='k', linestyles='--',
+                    # ax1.set_ylim([-100.0, y_max])
+                    # (y_min, y_max) = ax1.get_ylim()
+
+                    ax1.vlines(np.deg2rad(usr_angles_deg), y_min, y_max, colors='k', linewidth=1.0, linestyles='--',
                                zorder=10)  # label="Users")
 
                     dist_angles = []
@@ -448,21 +473,21 @@ if __name__ == '__main__':
                         dist_angles.append(np.arcsin(arcsin_val))
 
 
-                    # generate usr angle idx tuples to calculate the distortion angle
-                    def dist_get_usr_angle_idx():
-                        for idx_1 in range(n_users):
-                            for idx_2 in range(n_users):
-                                for idx_3 in range(n_users):
-                                    pass
+                    # # generate usr angle idx tuples to calculate the distortion angle
+                    # def dist_get_usr_angle_idx():
+                    #     for idx_1 in range(n_users):
+                    #         for idx_2 in range(n_users):
+                    #             for idx_3 in range(n_users):
+                    #                 pass
 
 
-                    ax1.vlines(dist_angles, y_min, y_max, colors='k', linestyles=':',
+                    ax1.vlines(dist_angles, y_min, y_max, colors='k', linewidth=1.0, linestyles=':',
                                zorder=10)  # label="Expected distortion")
                     ax1.margins(0.0, 0.0)
                     ax1.set_title("Signal power at angle [dB]", pad=-15)
                     ax1.legend(title="Signal:", ncol=2, loc='lower center', borderaxespad=-2)
                     ax1.grid(True)
-                    beampattern_filename_str = "multiuser_shared_sc_beampatterns_%s_%s_nfft%d_nsc%d_ibo%d_angles%s_distances%s_npoints%d_nsnap%d_nant%s" % (
+                    beampattern_filename_str = "multiuser_shared_sc_zf_beampatterns_%s_%s_nfft%d_nsc%d_ibo%d_angles%s_distances%s_npoints%d_nsnap%d_nant%s" % (
                         my_distortion, my_miso_chan, n_fft, n_sub_carr, ibo_val_db,
                         '_'.join([str(val) for val in usr_angles_deg]),
                         '_'.join([str(val) for val in usr_distances]), n_points, beampattern_n_snapshots,
@@ -472,272 +497,3 @@ if __name__ == '__main__':
                     plt.show()
                     # plt.cla()
                     # plt.close()
-
-            #
-            # # BER measurement
-            # for ebn0_step_val in ebn0_step:
-            #     ebn0_arr = np.arange(5, 31, ebn0_step_val)
-            #
-            #     my_noise = noise.Awgn(snr_db=10, seed=1234)
-            #     bit_rng = np.random.default_rng(4321)
-            #     snr_arr = utilities.ebn0_to_snr(ebn0_arr, my_mod.n_sub_carr, my_mod.n_sub_carr, my_mod.constel_size)
-            #
-            #     ber_per_dist = []
-            #     start_time = time.time()
-            #     print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-            #     for snr_idx, snr_db_val in enumerate(snr_arr):
-            #         my_noise.snr_db = snr_db_val
-            #
-            #         bers = np.zeros([len(cnc_n_iter_lst) + 1])
-            #         n_err = np.zeros([len(cnc_n_iter_lst) + 1])
-            #         bits_sent = np.zeros([len(cnc_n_iter_lst) + 1])
-            #         # clean RX run
-            #         snap_cnt = 0
-            #         while True:
-            #             # for direct visibility channel and CNC algorithm channel impact must be averaged
-            #             if ber_reroll_pos:
-            #                 usr_chan_mat_lst = []
-            #                 for usr_idx, user_pos_tup in enumerate(usr_pos_tup):
-            #                     usr_pos_x, usr_pos_y = user_pos_tup
-            #                     # for direct visibility channel and CNC algorithm channel impact must be averaged
-            #                     if isinstance(my_miso_chan, channel.MisoLosFd) or isinstance(my_miso_chan,
-            #                                                                                  channel.MisoTwoPathFd):
-            #                         # reroll location
-            #                         my_standard_rx.set_position(
-            #                             cord_x=usr_pos_x + loc_rng.uniform(low=-rx_loc_var / 2.0,
-            #                                                                high=rx_loc_var / 2.0),
-            #                             cord_y=usr_pos_y + loc_rng.uniform(low=-rx_loc_var / 2.0,
-            #                                                                high=rx_loc_var / 2.0),
-            #                             cord_z=my_standard_rx.cord_z)
-            #                         my_miso_chan.calc_channel_mat(tx_transceivers=my_array.array_elements,
-            #                                                       rx_transceiver=my_standard_rx,
-            #                                                       skip_attenuation=False)
-            #                     else:
-            #                         my_miso_rayleigh_chan.reroll_channel_coeffs()
-            #
-            #                     usr_chan_mat_lst.append(my_miso_chan.get_channel_mat_fd())
-            #
-            #             my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=True)
-            #             my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
-            #
-            #             vk_mat = my_array.get_precoding_mat()
-            #             vk_pow_vec = np.sum(np.sum(np.power(np.abs(vk_mat), 2), axis=2), axis=1)
-            #
-            #             ak_hk_vk_noise_scaler_lst = []
-            #             hk_vk_noise_scaler_lst = []
-            #             hk_vk_agc_nfft_lst = []
-            #             ak_hk_vk_agc_nfft_lst = []
-            #
-            #             for usr_idx, usr_pos in enumerate(usr_pos_tup):
-            #                 chan_mat_at_point = usr_chan_mat_lst[usr_idx]
-            #                 hk_mat = np.concatenate((chan_mat_at_point[:, -my_mod.n_sub_carr // 2:],
-            #                                          chan_mat_at_point[:, 1:(my_mod.n_sub_carr // 2) + 1]), axis=1)
-            #                 vk_mat = my_array.get_precoding_mat()
-            #                 vk_pow_vec = np.sum(np.sum(np.power(np.abs(vk_mat), 2), axis=2), axis=1)
-            #
-            #                 hk_vk_agc = np.multiply(hk_mat, vk_mat[:, usr_idx, :])
-            #                 hk_vk_agc_avg_vec = np.sum(hk_vk_agc, axis=0)
-            #                 hk_vk_noise_scaler = np.mean(np.power(np.abs(hk_vk_agc_avg_vec), 2))
-            #                 hk_vk_noise_scaler_lst.append(hk_vk_noise_scaler)
-            #
-            #                 hk_vk_agc_nfft = np.ones(my_mod.n_fft, dtype=np.complex128)
-            #                 hk_vk_agc_nfft[-(n_sub_carr // 2):] = hk_vk_agc_avg_vec[0:n_sub_carr // 2]
-            #                 hk_vk_agc_nfft[1:(n_sub_carr // 2) + 1] = hk_vk_agc_avg_vec[n_sub_carr // 2:]
-            #                 hk_vk_agc_nfft_lst.append(hk_vk_agc_nfft)
-            #
-            #                 ibo_vec = 10 * np.log10(
-            #                     10 ** (ibo_val_db / 10) * my_mod.n_sub_carr / (vk_pow_vec * n_ant_val))
-            #                 ak_vect = my_mod.calc_alpha(ibo_db=ibo_vec)
-            #                 ak_vect = np.expand_dims(ak_vect, axis=1)
-            #
-            #                 ak_hk_vk_agc = ak_vect * hk_vk_agc
-            #                 ak_hk_vk_agc_avg_vec = np.sum(ak_hk_vk_agc, axis=0)
-            #                 ak_hk_vk_noise_scaler = np.mean(np.power(np.abs(ak_hk_vk_agc_avg_vec), 2))
-            #                 ak_hk_vk_noise_scaler_lst.append(ak_hk_vk_noise_scaler)
-            #
-            #                 ak_hk_vk_agc_nfft = np.ones(my_mod.n_fft, dtype=np.complex128)
-            #                 ak_hk_vk_agc_nfft[-(n_sub_carr // 2):] = ak_hk_vk_agc_avg_vec[0:n_sub_carr // 2]
-            #                 ak_hk_vk_agc_nfft[1:(n_sub_carr // 2) + 1] = ak_hk_vk_agc_avg_vec[n_sub_carr // 2:]
-            #                 ak_hk_vk_agc_nfft_lst.append(ak_hk_vk_agc_nfft)
-            #
-            #             # analyze single user receiver performance in multi-user MRT
-            #             sel_usr_idx = 0
-            #             if np.logical_and((n_err[0] < n_err_min), (bits_sent[0] < bits_sent_max)):
-            #                 tx_bits = np.squeeze(bit_rng.choice((0, 1), (n_users, my_tx.modem.n_bits_per_ofdm_sym)))
-            #                 clean_ofdm_symbol = my_array.transmit(tx_bits, out_domain_fd=True, return_both=False,
-            #                                                       skip_dist=True)
-            #
-            #                 # clean_rx_ofdm_symbol = my_miso_chan.propagate(in_sig_mat=clean_ofdm_symbol)
-            #                 clean_rx_ofdm_symbol = np.sum(
-            #                     np.multiply(clean_ofdm_symbol, usr_chan_mat_lst[sel_usr_idx]), axis=0)
-            #
-            #                 clean_rx_ofdm_symbol = my_noise.process(clean_rx_ofdm_symbol,
-            #                                                         avg_sample_pow=my_mod.avg_symbol_power *
-            #                                                                        hk_vk_noise_scaler_lst[
-            #                                                                            sel_usr_idx],
-            #                                                         disp_data=False)
-            #                 clean_rx_ofdm_symbol = np.divide(clean_rx_ofdm_symbol, hk_vk_agc_nfft_lst[sel_usr_idx])
-            #                 clean_rx_ofdm_symbol = utilities.to_time_domain(clean_rx_ofdm_symbol)
-            #                 clean_rx_ofdm_symbol = np.concatenate(
-            #                     (clean_rx_ofdm_symbol[-my_mod.cp_len:], clean_rx_ofdm_symbol))
-            #                 rx_bits = my_standard_rx.receive(clean_rx_ofdm_symbol)
-            #
-            #                 n_bit_err = utilities.count_mismatched_bits(tx_bits[sel_usr_idx], rx_bits)
-            #                 n_err[0] += n_bit_err
-            #                 bits_sent[0] += my_mod.n_bits_per_ofdm_sym
-            #             else:
-            #                 break
-            #             snap_cnt += 1
-            #         # print("Eb/N0: %1.1f, chan_rerolls: %d" %(utilities.snr_to_ebn0(snr=snr_db_val, n_fft=n_sub_carr, n_sub_carr=n_sub_carr, constel_size=constel_size), snap_cnt))
-            #
-            #         # distorted RX run
-            #         snap_cnt = 0
-            #         while True:
-            #             ite_use_flags = np.logical_and((n_err[1:] < n_err_min), (bits_sent[1:] < bits_sent_max))
-            #
-            #             if ite_use_flags.any() == True:
-            #                 curr_ite_lst = cnc_n_iter_lst[ite_use_flags]
-            #             else:
-            #                 break
-            #
-            #             # for direct visibility channel and CNC algorithm channel impact must be averaged
-            #             snap_cnt += 1
-            #             if ber_reroll_pos:
-            #                 usr_chan_mat_lst = []
-            #                 for usr_idx, user_pos_tup in enumerate(usr_pos_tup):
-            #                     usr_pos_x, usr_pos_y = user_pos_tup
-            #                     # for direct visibility channel and CNC algorithm channel impact must be averaged
-            #                     if isinstance(my_miso_chan, channel.MisoLosFd) or isinstance(my_miso_chan,
-            #                                                                                  channel.MisoTwoPathFd):
-            #                         # reroll location
-            #                         my_standard_rx.set_position(
-            #                             cord_x=usr_pos_x + loc_rng.uniform(low=-rx_loc_var / 2.0,
-            #                                                                high=rx_loc_var / 2.0),
-            #                             cord_y=usr_pos_y + loc_rng.uniform(low=-rx_loc_var / 2.0,
-            #                                                                high=rx_loc_var / 2.0),
-            #                             cord_z=my_standard_rx.cord_z)
-            #                         my_miso_chan.calc_channel_mat(tx_transceivers=my_array.array_elements,
-            #                                                       rx_transceiver=my_standard_rx,
-            #                                                       skip_attenuation=False)
-            #                     else:
-            #                         my_miso_rayleigh_chan.reroll_channel_coeffs()
-            #
-            #                     usr_chan_mat_lst.append(my_miso_chan.get_channel_mat_fd())
-            #
-            #             my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=True)
-            #             my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
-            #
-            #             vk_mat = my_array.get_precoding_mat()
-            #             vk_pow_vec = np.sum(np.sum(np.power(np.abs(vk_mat), 2), axis=2), axis=1)
-            #
-            #             ak_hk_vk_noise_scaler_lst = []
-            #             hk_vk_noise_scaler_lst = []
-            #             hk_vk_agc_nfft_lst = []
-            #             ak_hk_vk_agc_nfft_lst = []
-            #
-            #             for usr_idx, usr_pos in enumerate(usr_pos_tup):
-            #                 chan_mat_at_point = usr_chan_mat_lst[usr_idx]
-            #                 hk_mat = np.concatenate((chan_mat_at_point[:, -my_mod.n_sub_carr // 2:],
-            #                                          chan_mat_at_point[:, 1:(my_mod.n_sub_carr // 2) + 1]), axis=1)
-            #                 vk_mat = my_array.get_precoding_mat()
-            #                 vk_pow_vec = np.sum(np.sum(np.power(np.abs(vk_mat), 2), axis=2), axis=1)
-            #
-            #                 hk_vk_agc = np.multiply(hk_mat, vk_mat[:, usr_idx, :])
-            #                 hk_vk_agc_avg_vec = np.sum(hk_vk_agc, axis=0)
-            #                 hk_vk_noise_scaler = np.mean(np.power(np.abs(hk_vk_agc_avg_vec), 2))
-            #                 hk_vk_noise_scaler_lst.append(hk_vk_noise_scaler)
-            #
-            #                 hk_vk_agc_nfft = np.ones(my_mod.n_fft, dtype=np.complex128)
-            #                 hk_vk_agc_nfft[-(n_sub_carr // 2):] = hk_vk_agc_avg_vec[0:n_sub_carr // 2]
-            #                 hk_vk_agc_nfft[1:(n_sub_carr // 2) + 1] = hk_vk_agc_avg_vec[n_sub_carr // 2:]
-            #                 hk_vk_agc_nfft_lst.append(hk_vk_agc_nfft)
-            #
-            #                 ibo_vec = 10 * np.log10(
-            #                     10 ** (ibo_val_db / 10) * my_mod.n_sub_carr / (vk_pow_vec * n_ant_val))
-            #                 ak_vect = my_mod.calc_alpha(ibo_db=ibo_vec)
-            #                 ak_vect = np.expand_dims(ak_vect, axis=1)
-            #
-            #                 ak_hk_vk_agc = ak_vect * hk_vk_agc
-            #                 ak_hk_vk_agc_avg_vec = np.sum(ak_hk_vk_agc, axis=0)
-            #                 ak_hk_vk_noise_scaler = np.mean(np.power(np.abs(ak_hk_vk_agc_avg_vec), 2))
-            #                 ak_hk_vk_noise_scaler_lst.append(ak_hk_vk_noise_scaler)
-            #
-            #                 ak_hk_vk_agc_nfft = np.ones(my_mod.n_fft, dtype=np.complex128)
-            #                 ak_hk_vk_agc_nfft[-(n_sub_carr // 2):] = ak_hk_vk_agc_avg_vec[0:n_sub_carr // 2]
-            #                 ak_hk_vk_agc_nfft[1:(n_sub_carr // 2) + 1] = ak_hk_vk_agc_avg_vec[n_sub_carr // 2:]
-            #                 ak_hk_vk_agc_nfft_lst.append(ak_hk_vk_agc_nfft)
-            #
-            #             tx_bits = np.squeeze(bit_rng.choice((0, 1), (n_users, my_tx.modem.n_bits_per_ofdm_sym)))
-            #             tx_ofdm_symbol = my_array.transmit(tx_bits, out_domain_fd=True, skip_dist=False)
-            #
-            #             # rx_ofdm_symbol = my_miso_chan.propagate(in_sig_mat=tx_ofdm_symbol)
-            #             rx_ofdm_symbol = np.sum(np.multiply(tx_ofdm_symbol, usr_chan_mat_lst[sel_usr_idx]),
-            #                                     axis=0)
-            #
-            #             rx_ofdm_symbol = my_noise.process(rx_ofdm_symbol,
-            #                                               avg_sample_pow=my_mod.avg_symbol_power *
-            #                                                              ak_hk_vk_noise_scaler_lst[sel_usr_idx])
-            #             # apply AGC
-            #
-            #             # enchanced CNC reception
-            #             rx_ofdm_symbol = np.divide(rx_ofdm_symbol, ak_hk_vk_agc_nfft_lst[sel_usr_idx])
-            #             rx_bits_per_iter_lst = my_cnc_rx.receive(n_iters_lst=curr_ite_lst, in_sig_fd=rx_ofdm_symbol)
-            #
-            #             ber_idx = np.array(list(range(len(cnc_n_iter_lst))))
-            #             act_ber_idx = ber_idx[ite_use_flags] + 1
-            #             for idx in range(len(rx_bits_per_iter_lst)):
-            #                 n_bit_err = utilities.count_mismatched_bits(tx_bits[sel_usr_idx],
-            #                                                             rx_bits_per_iter_lst[idx])
-            #                 n_err[act_ber_idx[idx]] += n_bit_err
-            #                 bits_sent[act_ber_idx[idx]] += my_mod.n_bits_per_ofdm_sym
-            #             snap_cnt += 1
-            #
-            #         # print("Eb/N0: %1.1f, chan_rerolls: %d" %(utilities.snr_to_ebn0(snr=snr_db_val, n_fft=n_sub_carr, n_sub_carr=n_sub_carr, constel_size=constel_size), snap_cnt))
-            #         for ite_idx in range(len(bers)):
-            #             bers[ite_idx] = n_err[ite_idx] / bits_sent[ite_idx]
-            #         ber_per_dist.append(bers)
-            #     ber_per_dist = np.column_stack(ber_per_dist)
-            #     print("--- Computation time: %f ---" % (time.time() - start_time))
-            #
-            #     # %%
-            #     fig1, ax1 = plt.subplots(1, 1)
-            #     ax1.set_yscale('log')
-            #
-            #     ax1.plot(ebn0_arr, ber_per_dist[0, :], label="No distortion")
-            #     for idx, cnc_iter_val in enumerate(cnc_n_iter_lst):
-            #         if idx == 0:
-            #             ax1.plot(ebn0_arr, ber_per_dist[idx + 1, :], label="Standard RX")
-            #         else:
-            #             ax1.plot(ebn0_arr, ber_per_dist[idx + 1, :], label="CNC NI = %d" % (cnc_iter_val))
-            #
-            #     # fix log scaling
-            #     ax1.set_title("BER vs Eb/N0, %s, CNC, QAM %d, N ANT = %d, IBO = %d [dB]" % (
-            #         my_miso_chan, my_mod.constellation_size, n_ant_val, ibo_val_db))
-            #     ax1.set_xlabel("Eb/N0 [dB]")
-            #     ax1.set_ylabel("BER")
-            #     ax1.grid()
-            #     ax1.legend()
-            #     plt.tight_layout()
-            #     # %%
-            #     filename_str = "mu_ber_vs_ebn0_cnc_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s_angles%s_distances%s" % (
-            #         my_miso_chan, n_ant_val, ibo_val_db, min(ebn0_arr), max(ebn0_arr), ebn0_arr[1] - ebn0_arr[0],
-            #         '_'.join([str(val) for val in cnc_n_iter_lst[1:]]), '_'.join([str(val) for val in usr_angles_deg]),
-            #     '_'.join([str(val) for val in usr_distances]) )
-            #
-            #     # timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-            #     # filename_str += "_" + timestamp
-            #     plt.savefig("../figs/multiuser/%s.png" % filename_str, dpi=600, bbox_inches='tight')
-            #     plt.show()
-            #     plt.cla()
-            #     plt.close()
-
-            # # %%
-            # data_lst = []
-            # data_lst.append(ebn0_arr)
-            # for arr1 in ber_per_dist:
-            #     data_lst.append(arr1)
-            # utilities.save_to_csv(data_lst=data_lst, filename=filename_str)
-
-            # read_data = utilities.read_from_csv(filename=filename_str)
-
-print("Finished processing!")

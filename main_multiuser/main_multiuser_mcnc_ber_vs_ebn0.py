@@ -54,8 +54,8 @@ if __name__ == '__main__':
 
     # modulation
     constel_size = 64
-    n_fft = 4096
-    n_sub_carr = 2048
+    n_fft = 128
+    n_sub_carr = 64
     cp_len = 1
 
     # BER analysis
@@ -72,8 +72,8 @@ if __name__ == '__main__':
     sdr_reroll_pos = False
 
     # Beampatterns
-    plot_precoding_beampatterns = False
-    beampattern_n_snapshots = 100
+    plot_precoding_beampatterns = True
+    beampattern_n_snapshots = 10
     n_points = 180 * 1
     radial_distance = usr_distances[0]
     rx_points = utilities.pts_on_semicircum(r=radial_distance, n=n_points)
@@ -126,7 +126,7 @@ if __name__ == '__main__':
                     my_mcnc_rx_lst.append(my_mcnc_rx)
 
                 # set precoding and calculate AGC
-                my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=True)
+                my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, zf_precoding=True)
                 my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
                 # array parameters automatically updated in the MCNC rx due to shared object - not copied
 
@@ -200,7 +200,7 @@ if __name__ == '__main__':
 
                                 usr_chan_mat_lst.append(my_miso_chan.get_channel_mat_fd())
 
-                            my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=True)
+                            my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, zf_precoding=True)
                             my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
 
                             vk_mat = my_array.get_precoding_mat()
@@ -313,7 +313,7 @@ if __name__ == '__main__':
                     ax1.grid(True)
 
                     plt.savefig(
-                        "../figs/multiuser/distortion_directions_eval/multiuser_%s_desired_and_distortion_signal_beampattern_ibo%d_angles%s_distances%s_npoints%d_nsnap%d_nant%s.png" % (
+                        "../figs/multiuser/distortion_directions_eval/zf_multiuser_%s_desired_and_distortion_signal_beampattern_ibo%d_angles%s_distances%s_npoints%d_nsnap%d_nant%s.png" % (
                             my_miso_chan, ibo_val_db, '_'.join([str(val) for val in usr_angles]),
                             '_'.join([str(val) for val in usr_distances]), n_points, beampattern_n_snapshots,
                             '_'.join([str(val) for val in [n_ant_val]])),
@@ -370,7 +370,7 @@ if __name__ == '__main__':
                                                                           usr_idx=usr_idx)
                                     my_mcnc_rx_lst.append(my_mcnc_rx)
 
-                                my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=True)
+                                my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, zf_precoding=True)
                                 my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
 
                                 vk_mat = my_array.get_precoding_mat()
@@ -521,7 +521,7 @@ if __name__ == '__main__':
                                     my_mcnc_rx_lst.append(my_mcnc_rx)
 
                                 # set precoding and calculate AGC
-                                my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=True)
+                                my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, zf_precoding=True)
                                 my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
                                 # array parameters automatically updated in the MCNC rx due to shared object - not copied
 
@@ -636,7 +636,7 @@ if __name__ == '__main__':
                     ax1.legend()
                     plt.tight_layout()
 
-                    filename_str = "ber_vs_ebn0_mu_mcnc_prot_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s_angles%s_distances%s" % (
+                    filename_str = "zf_ber_vs_ebn0_mu_mcnc_prot_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s_angles%s_distances%s" % (
                         my_miso_chan, n_ant_val, ibo_val_db, min(ebn0_arr), max(ebn0_arr), ebn0_arr[1] - ebn0_arr[0],
                         '_'.join([str(val) for val in mcnc_n_iter_lst[1:]]), '_'.join([str(val) for val in usr_angles]),
                         '_'.join([str(val) for val in usr_distances]))

@@ -464,14 +464,12 @@ if __name__ == '__main__':
 
     # plot reference angles/directions
     (y_min, y_max) = ax1.get_ylim()
-    ax1.vlines(np.deg2rad(usr_angles_deg), y_min, y_max, colors='k', linestyles='--',
-               zorder=10)  # label="Users")
+    ax1.vlines(np.deg2rad(usr_angles_deg), y_min, y_max, colors='k', linewidth=1.0, linestyles='--', zorder=10)  # label="Users")
 
     dist_angles = []
     arcsin_arg_periodize = lambda val_a: val_a - 2.0 if val_a > 1.0 else (
         val_a + 2.0 if val_a < -1.0 else val_a)
 
-    print(len(list(itertools.product(range(n_users), repeat=3))))
     for usr_ang_idx_1, usr_ang_idx_2, usr_ang_idx_3 in itertools.product(range(n_users), repeat=3):
         phase_val = np.sin(usr_angles_rad[usr_ang_idx_1]) + np.sin(usr_angles_rad[usr_ang_idx_2]) - np.sin(
             usr_angles_rad[usr_ang_idx_3])
@@ -486,8 +484,7 @@ if __name__ == '__main__':
     #             for idx_3 in range(n_users):
     #                 if not idx
 
-    ax1.vlines(dist_angles, y_min, y_max, colors='k', linestyles=':',
-               zorder=10)  # label="Expected distortion")
+    ax1.vlines(dist_angles, y_min, y_max, colors='k', linewidth=1.0, linestyles=':', zorder=10)  # label="Expected distortion")
     ax1.margins(0.0, 0.0)
     ax1.set_title("Signal power at angle [dB]", pad=-15)
     ax1.legend(title="Signal:", ncol=2, loc='lower center', borderaxespad=-2)

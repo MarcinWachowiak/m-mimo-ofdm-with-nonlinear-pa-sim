@@ -150,7 +150,7 @@ class LinearArray:
                 #     ant_norm_mat[usr_idx, :] = np.sum(np.power(np.abs(sc_channel_mat_fd), 2), axis=1)
                 # ant_norm_coeff_vec = 1/np.sqrt(np.sum(ant_norm_mat, axis=0))
 
-                # calculate the normalizing factor K
+                # calculate the normalizing factor
                 usrs_vects = np.empty((self.n_users, tx_n_sc))
                 for usr_idx, usr_chan_mat_fd in enumerate(channel_mat_fd):
                     sc_channel_mat_fd = np.concatenate(
@@ -158,35 +158,62 @@ class LinearArray:
                     usrs_vects[usr_idx, :] = np.sum(np.power(np.abs(sc_channel_mat_fd), 2), axis=0)
                 nsc_power_normalzing_vec = np.sqrt(np.sum(usrs_vects, axis=0))
 
-                for usr_idx, usr_chan_mat_fd in enumerate(channel_mat_fd):
-                    sc_channel_mat_fd = np.concatenate(
-                        (usr_chan_mat_fd[:, -tx_n_sc // 2:], usr_chan_mat_fd[:, 1:(tx_n_sc // 2) + 1]), axis=1)
-                    sc_channel_mat_fd_conjugate = np.conjugate(sc_channel_mat_fd)
+                if mr_precoding:
+                    for usr_idx, usr_chan_mat_fd in enumerate(channel_mat_fd):
+                        sc_channel_mat_fd = np.concatenate(
+                            (usr_chan_mat_fd[:, -tx_n_sc // 2:], usr_chan_mat_fd[:, 1:(tx_n_sc // 2) + 1]), axis=1)
+                        sc_channel_mat_fd_conjugate = np.conjugate(sc_channel_mat_fd)
 
-                    if mr_precoding:
                         # normalize the precoding vector in regard to number of antennas and power
                         # equal sum of TX power MR precoding
                         usr_precoding_mat_fd = np.divide(sc_channel_mat_fd_conjugate, nsc_power_normalzing_vec)
                         # equal sum of RX power MR precoding
                         # precoding_mat_fd = np.divide(sc_channel_mat_fd_conjugate, np.sum(np.power(np.abs(sc_channel_mat_fd), 2), axis=0))
+                        precoding_mat_fd[usr_idx, :, :] = usr_precoding_mat_fd
 
-                    else:
-                        # take only phases into consideration
+                elif zf_precoding:
+                    per_usr_sc_chan_mat_fd = []
+                    for usr_idx, usr_chan_mat_fd in enumerate(channel_mat_fd):
+                        sc_channel_mat_fd = np.concatenate((usr_chan_mat_fd[:, -tx_n_sc // 2:], usr_chan_mat_fd[:, 1:(tx_n_sc // 2) + 1]), axis=1)
+                        per_usr_sc_chan_mat_fd.append(sc_channel_mat_fd)
+
+                    mu_chan_mat_per_sc = []
+                    for sc_idx in range(tx_n_sc):
+                        mu_chan_mat_at_sc = []
+                        for usr_idx in range(self.n_users):
+                            mu_chan_mat_at_sc.append(per_usr_sc_chan_mat_fd[usr_idx][:, sc_idx])
+                        mu_chan_mat_per_sc.append(np.vstack(mu_chan_mat_at_sc))
+
+                    try:
+                        for sc_idx in range(tx_n_sc):
+                            tmp_mat = np.transpose(mu_chan_mat_per_sc[sc_idx])
+                            usr_precoding_mat_fd = np.sqrt(self.n_elements - self.n_users) * np.matmul(np.conjugate(tmp_mat), np.linalg.inv(
+                                np.matmul(np.transpose(tmp_mat), np.conjugate(tmp_mat))))
+                            precoding_mat_fd[:, :, sc_idx] = np.transpose(usr_precoding_mat_fd)
+                    except:
+                        pass
+                        # try pseudoinverse if the standard one fails
+                        for sc_idx in range(tx_n_sc):
+                            tmp_mat = np.transpose(mu_chan_mat_per_sc[sc_idx])
+                            usr_precoding_mat_fd = np.sqrt(self.n_elements - self.n_users) * np.matmul(np.conjugate(tmp_mat), np.linalg.pinv(
+                                np.matmul(np.transpose(tmp_mat), np.conjugate(tmp_mat))))
+                            precoding_mat_fd[:, :, sc_idx] = np.transpose(usr_precoding_mat_fd)
+
+                    # normalize the ZF precoding to have unit power at each subcarrier
+                    for sc_idx in range(tx_n_sc):
+                        pow_norm_factor = np.sqrt(np.sum(np.sum(np.power(np.abs(precoding_mat_fd[:, :, sc_idx]), 2), axis=0)))
+                        precoding_mat_fd[:, :, sc_idx] = np.divide(precoding_mat_fd[:, :, sc_idx], pow_norm_factor)
+
+                else:
+                    # take only phases into consideration
+                    for usr_idx, usr_chan_mat_fd in enumerate(channel_mat_fd):
+                        sc_channel_mat_fd = np.concatenate(
+                            (usr_chan_mat_fd[:, -tx_n_sc // 2:], usr_chan_mat_fd[:, 1:(tx_n_sc // 2) + 1]), axis=1)
+                        sc_channel_mat_fd_conjugate = np.conjugate(sc_channel_mat_fd)
                         # normalize channel precoding coefficients
                         usr_precoding_mat_fd = np.exp(1j * np.angle(sc_channel_mat_fd_conjugate))
+                        precoding_mat_fd[usr_idx, :, :] = usr_precoding_mat_fd
 
-                    if zf_precoding:
-                        try:
-                            usr_precoding_mat_fd = np.sqrt(
-                                self.n_elements - self.n_users) * sc_channel_mat_fd_conjugate * np.linalg.inv(
-                                np.transpose(sc_channel_mat_fd) * sc_channel_mat_fd_conjugate)
-                        except:
-                            # try pseudoinverse if the standard one fails
-                            usr_precoding_mat_fd = np.sqrt(
-                                self.n_elements - self.n_users) * sc_channel_mat_fd_conjugate * np.linalg.pinv(
-                                np.transpose(sc_channel_mat_fd) * sc_channel_mat_fd_conjugate)
-
-                    precoding_mat_fd[usr_idx, :, :] = usr_precoding_mat_fd
 
                 # apply precoding matrix to each tx node
                 for tx_idx, tx_transceiver in enumerate(self.array_elements):
