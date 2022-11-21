@@ -133,7 +133,6 @@ def _tx_ofdm_symbol(mod_symbols, n_fft: int, n_sub_carr: int, cp_length: int):
     return np.concatenate((ofdm_sym_time[-cp_length:], ofdm_sym_time))
 
 
-# TODO: add input signal domain flag freq/time to skip fft
 # @jit(nopython=True)
 def _rx_ofdm_symbol(ofdm_symbol, n_fft: int, n_sub_carr: int, cp_length: int):
     # decode OFDM symbol block - size given by n_sub_carr size

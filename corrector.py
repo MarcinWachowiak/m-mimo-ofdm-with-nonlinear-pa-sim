@@ -257,8 +257,14 @@ class McncMuReceiver():
                                  chan_mat_at_point[:,
                                  1:(self.antenna_array.array_elements[0].modem.n_sub_carr // 2) + 1]), axis=1)
         vk_mat = self.antenna_array.get_precoding_mat()
-        vk_pow_vec = np.sum(np.sum(np.power(np.abs(vk_mat), 2), axis=2), axis=1)
-        hk_vk_agc = np.multiply(hk_mat, vk_mat[:, self.usr_idx, :])
+
+        if self.antenna_array.n_users == 1:
+            vk_pow_vec = np.sum(np.power(np.abs(vk_mat), 2), axis=1)
+            hk_vk_agc = np.multiply(hk_mat, vk_mat)
+
+        else:
+            vk_pow_vec = np.sum(np.sum(np.power(np.abs(vk_mat), 2), axis=2), axis=1)
+            hk_vk_agc = np.multiply(hk_mat, vk_mat[:, self.usr_idx, :])
 
         if isinstance(self.antenna_array.array_elements[0].impairment, distortion.ThirdOrderNonLin):
             ak_vect = np.repeat(alpha_estimate, len(self.antenna_array.array_elements))

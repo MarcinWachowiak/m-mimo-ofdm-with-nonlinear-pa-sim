@@ -41,7 +41,7 @@ if __name__ == '__main__':
     n_users = len(usr_pos_tup)
 
     n_ant_arr = [16]
-    ibo_arr = [0]
+    ibo_arr = [3]
     ebn0_step = [1]
     cnc_n_iter_lst = [1, 2, 3, 4]  # 5, 6, 7, 8]
     # include clean run is always True

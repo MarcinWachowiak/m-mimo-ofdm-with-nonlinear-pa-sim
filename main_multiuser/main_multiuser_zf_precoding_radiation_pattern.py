@@ -39,7 +39,7 @@ if __name__ == '__main__':
     # usr_pos_tup = [(45, 45), (120, 120), (150, 150)]
     n_users = len(usr_pos_tup)
 
-    n_ant_arr = [16]
+    n_ant_arr = [64]
     ibo_arr = [10]
     ebn0_step = [1]
     cnc_n_iter_lst = [1, 2, 3, 4]  # 5, 6, 7, 8]
@@ -455,8 +455,8 @@ if __name__ == '__main__':
 
                     # plot reference angles/directions
                     (y_min, y_max) = ax1.get_ylim()
-                    # ax1.set_ylim([-100.0, y_max])
-                    # (y_min, y_max) = ax1.get_ylim()
+                    ax1.set_ylim([-100.0, y_max])
+                    (y_min, y_max) = ax1.get_ylim()
 
                     ax1.vlines(np.deg2rad(usr_angles_deg), y_min, y_max, colors='k', linewidth=1.0, linestyles='--',
                                zorder=10)  # label="Users")
