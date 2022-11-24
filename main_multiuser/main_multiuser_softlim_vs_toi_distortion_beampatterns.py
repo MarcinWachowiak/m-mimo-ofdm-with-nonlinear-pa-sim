@@ -493,7 +493,7 @@ if __name__ == '__main__':
         my_miso_chan, n_fft, n_sub_carr, ibo_val_db, '_'.join([str(val) for val in usr_angles_deg]),
         '_'.join([str(val) for val in usr_distances]), n_points, beampattern_n_snapshots,
         '_'.join([str(val) for val in [n_ant_val]]))
-    plt.savefig("../figs/multiuser/distortion_directions_eval/%s.png" % (beampattern_filename_str),
+    plt.savefig("../figs/multiuser/distortion_directions_eval/%s.pdf" % (beampattern_filename_str),
                 dpi=600, bbox_inches='tight')
     plt.show()
     # plt.cla()
