@@ -27,9 +27,9 @@ from plot_settings import set_latex_plot_style
 if __name__ == '__main__':
     set_latex_plot_style()
     # Multiple users data
-    usr_angles_deg = np.array([0, 60])
+    usr_angles_deg = np.array([45, 30, -20])
     usr_angles_rad = np.deg2rad(usr_angles_deg)
-    usr_distances = [300, 300]
+    usr_distances = [300, 300, 300]
     usr_pos_tup = []
     for usr_idx, usr_angle in enumerate(usr_angles_deg + 90):
         usr_pos_x = np.cos(np.deg2rad(usr_angle)) * usr_distances[usr_idx]

@@ -30,7 +30,7 @@ if __name__ == '__main__':
                       '#CFCFCF']
     # Multiple users data
     usr_angles = np.array([-30, 60])
-    usr_distances = [300, 300]
+    usr_distances = [100, 300]
     usr_pos_tup = []
     for usr_idx, usr_angle in enumerate(usr_angles + 90):
         usr_pos_x = np.cos(np.deg2rad(usr_angle)) * usr_distances[usr_idx]
@@ -43,7 +43,7 @@ if __name__ == '__main__':
     n_ant_arr = [16]
     ibo_arr = [0]
     ebn0_step = [1]
-    mcnc_n_iter_lst = [1, 2, 3, 4, 5, 6, 7, 8]
+    mcnc_n_iter_lst = [1, 2, 3, 4]  # 5, 6, 7, 8]
     # include clean run is always True
     # no distortion and standard RX always included
     mcnc_n_iter_lst = np.insert(mcnc_n_iter_lst, 0, 0)
@@ -54,13 +54,13 @@ if __name__ == '__main__':
 
     # modulation
     constel_size = 64
-    n_fft = 128
-    n_sub_carr = 64
+    n_fft = 4096
+    n_sub_carr = 2048
     cp_len = 1
 
     # BER analysis
     bits_sent_max = int(1e5)
-    n_err_min = int(1e5)
+    n_err_min = int(1e4)
     ber_reroll_pos = False
 
     rx_loc_x, rx_loc_y = 212.0, 212.0
@@ -122,13 +122,53 @@ if __name__ == '__main__':
                         my_miso_chan.reroll_channel_coeffs()
                     usr_chan_mat_lst.append(my_miso_chan.get_channel_mat_fd())
 
-                    my_mcnc_rx = corrector.McncMuReceiver(my_array, copy.deepcopy(my_miso_chan), usr_idx=usr_idx)
+                    my_mcnc_array = copy.deepcopy(my_array)
+                    my_mcnc_array.update_n_users(n_users=1)
+                    my_mcnc_array.set_precoding_matrix(channel_mat_fd=my_miso_chan.get_channel_mat_fd(),
+                                                       mr_precoding=True)
+                    my_mcnc_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
+                    my_mcnc_rx = corrector.McncReceiver(copy.deepcopy(my_mcnc_array), copy.deepcopy(my_miso_chan))
                     my_mcnc_rx_lst.append(my_mcnc_rx)
 
                 # set precoding and calculate AGC
                 my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=True)
                 my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
-                # array parameters automatically updated in the MCNC rx due to shared object - not copied
+                for my_mcnc_rx_obj in my_mcnc_rx_lst:
+                    my_mcnc_rx_obj.update_agc()
+
+                estimate_alpha = False
+                # lambda estimation phase
+                if estimate_alpha:
+                    print("Alpha estimation init!")
+                    start_time = time.time()
+                    bit_rng = np.random.default_rng(4321)
+                    n_ofdm_symb = 1e2
+                    ofdm_symb_idx = 0
+                    alpha_val_vec = []
+
+                    while ofdm_symb_idx < n_ofdm_symb:
+                        tx_bits = np.squeeze(bit_rng.choice((0, 1), (n_users, my_tx.modem.n_bits_per_ofdm_sym)))
+                        tx_ofdm_symbol_fd, clean_ofdm_symbol_fd = my_array.transmit(tx_bits, out_domain_fd=True,
+                                                                                    return_both=True)
+                        clean_nsc_ofdm_symb_fd = np.concatenate(
+                            (clean_ofdm_symbol_fd[:, -my_mod.n_sub_carr // 2:],
+                             clean_ofdm_symbol_fd[:, 1:(my_mod.n_sub_carr // 2) + 1]), axis=1)
+                        rx_nsc_ofdm_symb_fd = np.concatenate(
+                            (tx_ofdm_symbol_fd[:, -my_mod.n_sub_carr // 2:],
+                             tx_ofdm_symbol_fd[:, 1:(my_mod.n_sub_carr // 2) + 1]), axis=1)
+
+                        alpha_numerator_vec = np.multiply(rx_nsc_ofdm_symb_fd,
+                                                          np.conjugate(clean_nsc_ofdm_symb_fd))
+                        alpha_denominator_vec = np.multiply(clean_nsc_ofdm_symb_fd,
+                                                            np.conjugate(clean_nsc_ofdm_symb_fd))
+
+                        ofdm_symb_idx += 1
+                        alpha_val_vec.append(np.abs(np.average(alpha_numerator_vec / alpha_denominator_vec, axis=1)))
+
+                    # calculate alpha average
+                    alpha_vec_est = np.average(alpha_val_vec, axis=0)
+                    print("Alpha coeff estimate:", alpha_vec_est)
+                    print("--- Computation time: %f ---" % (time.time() - start_time))
 
                 ak_hk_vk_noise_scaler_lst = []
                 hk_vk_noise_scaler_lst = []
@@ -154,6 +194,7 @@ if __name__ == '__main__':
 
                     ibo_vec = 10 * np.log10(10 ** (ibo_val_db / 10) * my_mod.n_sub_carr / (vk_pow_vec * n_ant_val))
                     ak_vect = my_mod.calc_alpha(ibo_db=ibo_vec)
+                    # ak_vect = alpha_vec_est
                     ak_vect = np.expand_dims(ak_vect, axis=1)
 
                     ak_hk_vk_agc = ak_vect * hk_vk_agc
@@ -366,8 +407,14 @@ if __name__ == '__main__':
                                         my_miso_rayleigh_chan.reroll_channel_coeffs()
                                     usr_chan_mat_lst.append(my_miso_chan.get_channel_mat_fd())
 
-                                    my_mcnc_rx = corrector.McncMuReceiver(my_array, copy.deepcopy(my_miso_chan),
-                                                                          usr_idx=usr_idx)
+                                    my_mcnc_array = copy.deepcopy(my_array)
+                                    my_mcnc_array.update_n_users(n_users=1)
+                                    my_mcnc_array.set_precoding_matrix(channel_mat_fd=my_miso_chan.get_channel_mat_fd(),
+                                                                       mr_precoding=True)
+                                    my_mcnc_array.update_distortion(ibo_db=ibo_val_db,
+                                                                    avg_sample_pow=my_mod.avg_sample_power)
+                                    my_mcnc_rx = corrector.McncReceiver(copy.deepcopy(my_mcnc_array),
+                                                                        copy.deepcopy(my_miso_chan))
                                     my_mcnc_rx_lst.append(my_mcnc_rx)
 
                                 my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=True)
@@ -443,40 +490,6 @@ if __name__ == '__main__':
                             snap_cnt += 1
                         # print("Eb/N0: %1.1f, chan_rerolls: %d" %(utilities.snr_to_ebn0(snr=snr_db_val, n_fft=n_sub_carr, n_sub_carr=n_sub_carr, constel_size=constel_size), snap_cnt))
 
-                        # estimate_alpha = True
-                        # # lambda estimation phase
-                        # if estimate_alpha:
-                        #     print("Alpha estimation init!")
-                        #     start_time = time.time()
-                        #     bit_rng = np.random.default_rng(4321)
-                        #     n_ofdm_symb = 1e2
-                        #     ofdm_symb_idx = 0
-                        #     alpha_val_vec = []
-                        #
-                        #     while ofdm_symb_idx < n_ofdm_symb:
-                        #         tx_bits = np.squeeze(bit_rng.choice((0, 1), (n_users, my_tx.modem.n_bits_per_ofdm_sym)))
-                        #         tx_ofdm_symbol_fd, clean_ofdm_symbol_fd = my_array.transmit(tx_bits, out_domain_fd=True,
-                        #                                                                     return_both=True)
-                        #         clean_nsc_ofdm_symb_fd = np.concatenate(
-                        #             (clean_ofdm_symbol_fd[:, -my_mod.n_sub_carr // 2:],
-                        #              clean_ofdm_symbol_fd[:, 1:(my_mod.n_sub_carr // 2) + 1]), axis=1)
-                        #         rx_nsc_ofdm_symb_fd = np.concatenate(
-                        #             (tx_ofdm_symbol_fd[:, -my_mod.n_sub_carr // 2:],
-                        #              tx_ofdm_symbol_fd[:, 1:(my_mod.n_sub_carr // 2) + 1]), axis=1)
-                        #
-                        #         alpha_numerator_vec = np.multiply(rx_nsc_ofdm_symb_fd,
-                        #                                           np.conjugate(clean_nsc_ofdm_symb_fd))
-                        #         alpha_denominator_vec = np.multiply(clean_nsc_ofdm_symb_fd,
-                        #                                             np.conjugate(clean_nsc_ofdm_symb_fd))
-                        #
-                        #         ofdm_symb_idx += 1
-                        #         alpha_val_vec.append(np.abs(np.average(alpha_numerator_vec / alpha_denominator_vec, axis=1)))
-                        #
-                        #     # calculate alpha average
-                        #     alpha_vec_est = np.average(alpha_val_vec, axis=0)
-                        #     print("Alpha coeff estimate:", alpha_vec_est)
-                        #     print("--- Computation time: %f ---" % (time.time() - start_time))
-
                         # distorted RX run
                         snap_cnt = 0
                         while True:
@@ -515,15 +528,19 @@ if __name__ == '__main__':
                                     else:
                                         my_miso_chan.reroll_channel_coeffs()
 
-                                    usr_chan_mat_lst.append(my_miso_chan.get_channel_mat_fd())
-                                    my_mcnc_rx = corrector.McncMuReceiver(my_array, copy.deepcopy(my_miso_chan),
-                                                                          usr_idx=usr_idx)
+                                    my_mcnc_array = copy.deepcopy(my_array)
+                                    my_mcnc_array.update_n_users(n_users=1)
+                                    my_mcnc_array.set_precoding_matrix(channel_mat_fd=my_miso_chan.get_channel_mat_fd(),
+                                                                       mr_precoding=True)
+                                    my_mcnc_array.update_distortion(ibo_db=ibo_val_db,
+                                                                    avg_sample_pow=my_mod.avg_sample_power)
+                                    my_mcnc_rx = corrector.McncReceiver(copy.deepcopy(my_mcnc_array),
+                                                                        copy.deepcopy(my_miso_chan))
                                     my_mcnc_rx_lst.append(my_mcnc_rx)
 
                                 # set precoding and calculate AGC
                                 my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=True)
                                 my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
-                                # array parameters automatically updated in the MCNC rx due to shared object - not copied
 
                                 vk_mat = my_array.get_precoding_mat()
                                 vk_pow_vec = np.sum(np.sum(np.power(np.abs(vk_mat), 2), axis=2), axis=1)
@@ -576,22 +593,21 @@ if __name__ == '__main__':
                                 # rx_ofdm_symbol = my_miso_chan.propagate(in_sig_mat=tx_ofdm_symbol)
                                 rx_ofdm_symbol = np.sum(np.multiply(tx_ofdm_symbol, usr_chan_mat_lst[usr_idx]), axis=0)
 
-                                rx_ofdm_symbol = my_noise.process(rx_ofdm_symbol, avg_sample_pow=my_mod.avg_symbol_power \
-                                                                                                 *
-                                                                                                 ak_hk_vk_noise_scaler_lst[
-                                                                                                     usr_idx])
+                                rx_ofdm_symbol = my_noise.process(rx_ofdm_symbol,
+                                                                  avg_sample_pow=my_mod.avg_symbol_power *
+                                                                                 ak_hk_vk_noise_scaler_lst[usr_idx])
 
                                 # apply AGC
                                 rx_ofdm_symbol = np.divide(rx_ofdm_symbol, ak_hk_vk_agc_nfft_lst[usr_idx])
+
                                 rx_bits_per_iter_lst = my_mcnc_rx_lst[usr_idx].receive(
-                                    n_iters_lst=curr_ite_lst_per_usr[usr_idx], in_sig_fd=rx_ofdm_symbol,
-                                    other_usr_bits=tx_bits[1 - usr_idx])
+                                    n_iters_lst=curr_ite_lst_per_usr[usr_idx], in_sig_fd=rx_ofdm_symbol)
 
                                 ber_idx = np.array(list(range(len(mcnc_n_iter_lst))))
                                 act_ber_idx = ber_idx[ite_use_flags_per_usr[usr_idx]] + 1
 
                                 for idx in range(len(rx_bits_per_iter_lst)):
-                                    n_bit_err = utilities.count_mismatched_bits(tx_bits[usr_idx],
+                                    n_bit_err = utilities.count_mismatched_bits(tx_bits[usr_idx, :],
                                                                                 rx_bits_per_iter_lst[idx])
                                     n_err[usr_idx, act_ber_idx[idx]] += n_bit_err
                                     bits_sent[usr_idx, act_ber_idx[idx]] += my_mod.n_bits_per_ofdm_sym
@@ -636,7 +652,7 @@ if __name__ == '__main__':
                     ax1.legend(loc="lower left")
                     plt.tight_layout()
 
-                    filename_str = "ber_vs_ebn0_mu_mcnc_prot_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s_angles%s_distances%s" % (
+                    filename_str = "ber_vs_ebn0_mu_mcnc_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s_angles%s_distances%s" % (
                         my_miso_chan, n_ant_val, ibo_val_db, min(ebn0_arr), max(ebn0_arr), ebn0_arr[1] - ebn0_arr[0],
                         '_'.join([str(val) for val in mcnc_n_iter_lst[1:]]), '_'.join([str(val) for val in usr_angles]),
                         '_'.join([str(val) for val in usr_distances]))
