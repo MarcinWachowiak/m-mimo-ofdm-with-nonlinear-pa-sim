@@ -53,8 +53,8 @@ if __name__ == '__main__':
 
     # modulation
     constel_size = 64
-    n_fft = 1024
-    n_sub_carr = 512
+    n_fft = 4096
+    n_sub_carr = 2048
     cp_len = 1
 
     # SDR
@@ -408,7 +408,7 @@ if __name__ == '__main__':
                                                                                           nperseg=n_samp_per_seg,
                                                                                           return_onesided=False)
 
-                            psd_sel_filename_str = "multiuser_shared_sc_psd_%s_%s_chan_ibo%d_npoints%d_nsnap%d_angle%d_nant%d" % (
+                            psd_sel_filename_str = "multiuser_mrt_shared_sc_psd_%s_%s_chan_ibo%d_npoints%d_nsnap%d_angle%d_nant%d" % (
                                 my_distortion, my_miso_chan, ibo_val_db, n_points, beampattern_n_snapshots,
                                 sel_psd_angle,
                                 n_ant_val)
@@ -445,7 +445,7 @@ if __name__ == '__main__':
                             # plt.close()
 
     # %%
-    # plot beampatterns of desired and distortion components
+    # plot polar beampatterns of desired and distortion components
     fig1, ax1 = plt.subplots(1, 1, subplot_kw=dict(projection='polar'), figsize=(3.5, 3))
     ax1.set_theta_zero_location("N")
     plt.tight_layout()
@@ -489,11 +489,70 @@ if __name__ == '__main__':
     ax1.set_title("Signal power at angle [dB]", pad=-15)
     ax1.legend(title="Signal:", ncol=2, loc='lower center', borderaxespad=-2)
     ax1.grid(True)
-    beampattern_filename_str = "multiuser_shared_sc_softlim_vs_toi_%s_beampatterns_nfft%d_nsc%d ibo%d_angles%s_distances%s_npoints%d_nsnap%d_nant%s" % (
+    beampattern_filename_str = "pol_multiuser_mr_shared_sc_softlim_vs_toi_%s_beampatterns_nfft%d_nsc%d ibo%d_angles%s_distances%s_npoints%d_nsnap%d_nant%s" % (
         my_miso_chan, n_fft, n_sub_carr, ibo_val_db, '_'.join([str(val) for val in usr_angles_deg]),
         '_'.join([str(val) for val in usr_distances]), n_points, beampattern_n_snapshots,
         '_'.join([str(val) for val in [n_ant_val]]))
-    plt.savefig("../figs/multiuser/distortion_directions_eval/%s.pdf" % (beampattern_filename_str),
+    plt.savefig("../figs/multiuser/distortion_directions_eval/%s.png" % (beampattern_filename_str),
+                dpi=600, bbox_inches='tight')
+    plt.show()
+    # plt.cla()
+    # plt.close()
+
+    # %%
+    # plot polar beampatterns of desired and distortion components
+    fig1, ax1 = plt.subplots(1, 1, figsize=(3.5, 3))
+    plt.tight_layout()
+    ax1.set_xlim(-np.pi / 2, np.pi / 2)
+    ax1.set_ylim([-85, -15])
+    ax1.set_xticks(np.linspace(-90, 90, 13, endpoint=True))
+    #ax1.yaxis.set_major_locator(MaxNLocator(5))
+
+    dist_lines_lst = []
+    for dist_idx, my_distortion in enumerate(my_distortion_obj_lst):
+        ax1.plot(np.rad2deg(radian_vals), utilities.to_db(desired_sig_pow_per_dist_obj[dist_idx]),
+                 label="%s Desired" % my_distortion,
+                 linewidth=0.5)
+        ax1.plot(np.rad2deg(radian_vals), utilities.to_db(distorted_sig_combined_pow_per_dist_obj[dist_idx]),
+                 label="%s Distorted" % my_distortion,
+                 linewidth=0.5, zorder=dist_idx + 10)
+
+    # plot reference angles/directions
+    (y_min, y_max) = ax1.get_ylim()
+    ax1.vlines(usr_angles_deg, y_min, y_max, colors='k', linewidth=1.0, linestyles='--',
+               zorder=10)  # label="Users")
+
+    dist_angles = []
+    arcsin_arg_periodize = lambda val_a: val_a - 2.0 if val_a > 1.0 else (
+        val_a + 2.0 if val_a < -1.0 else val_a)
+
+    for usr_ang_idx_1, usr_ang_idx_2, usr_ang_idx_3 in itertools.product(range(n_users), repeat=3):
+        phase_val = np.sin(usr_angles_rad[usr_ang_idx_1]) + np.sin(usr_angles_rad[usr_ang_idx_2]) - np.sin(
+            usr_angles_rad[usr_ang_idx_3])
+        arcsin_val = arcsin_arg_periodize(phase_val)
+        dist_angles.append(np.arcsin(arcsin_val))
+
+    # # generate usr angle idx tuples to calculate the distortion angle
+    # def dist_get_usr_angle_idx():
+    #     usr_idxs_tup_lst = []
+    #     for idx_1 in range(n_users):
+    #         for idx_2 in range(n_users):
+    #             for idx_3 in range(n_users):
+    #                 if not idx
+
+    ax1.vlines(np.rad2deg(dist_angles), y_min, y_max, colors='k', linewidth=1.0, linestyles=':',
+               zorder=10)  # label="Expected distortion")
+    ax1.margins(0.0, 0.0)
+    ax1.set_title("Signal power at angle")
+    ax1.set_xlabel("Angle [°]")
+    ax1.set_ylabel("Signal power [dB]")
+    ax1.legend(title="Signal:", ncol=2, loc='lower center').set_zorder(100)
+    ax1.grid(True)
+    beampattern_filename_str = "lin_multiuser_mr_shared_sc_softlim_vs_toi_%s_beampatterns_nfft%d_nsc%d ibo%d_angles%s_distances%s_npoints%d_nsnap%d_nant%s" % (
+        my_miso_chan, n_fft, n_sub_carr, ibo_val_db, '_'.join([str(val) for val in usr_angles_deg]),
+        '_'.join([str(val) for val in usr_distances]), n_points, beampattern_n_snapshots,
+        '_'.join([str(val) for val in [n_ant_val]]))
+    plt.savefig("../figs/multiuser/distortion_directions_eval/%s.png" % (beampattern_filename_str),
                 dpi=600, bbox_inches='tight')
     plt.show()
     # plt.cla()
