@@ -4,10 +4,10 @@ import numpy as np
 import scipy as scp
 
 import distortion
-
+import utilities
 
 class LinearArray:
-    def __init__(self, n_elements, base_transceiver, center_freq, wav_len_spacing, cord_x=0, cord_y=0, cord_z=0):
+    def __init__(self, n_elements, base_transceiver, center_freq, wav_len_spacing, cord_x=0, cord_y=0, cord_z=0, is_linear=True):
         self.n_elements = n_elements
         self.n_users = base_transceiver.modem.n_users
         self.base_transceiver = base_transceiver
@@ -24,17 +24,30 @@ class LinearArray:
             for idx, base_modem in enumerate(self.base_transceiver):
                 pass
         else:
-            # antenna position vector centered around 0
-            wavelength_at_freq = scp.constants.c / self.center_freq
-            ant_vec = np.linspace(-(self.n_elements - 1) * self.wav_len_spacing * wavelength_at_freq / 2,
-                                  (self.n_elements - 1) * self.wav_len_spacing * wavelength_at_freq / 2,
-                                  self.n_elements)
-            for idx in range(self.n_elements):
-                tmp_transceiver = copy.deepcopy(self.base_transceiver)
-                tmp_transceiver.cord_x = ant_vec[idx]
-                tmp_transceiver.cord_y = 0
-                tmp_transceiver.cord_z = self.cord_z
-                self.array_elements.append(tmp_transceiver)
+            if is_linear:
+                # antenna position vector centered around 0
+                wavelength_at_freq = scp.constants.c / self.center_freq
+                ant_vec = np.linspace(-(self.n_elements - 1) * self.wav_len_spacing * wavelength_at_freq / 2,
+                                      (self.n_elements - 1) * self.wav_len_spacing * wavelength_at_freq / 2,
+                                      self.n_elements)
+                for idx in range(self.n_elements):
+                    tmp_transceiver = copy.deepcopy(self.base_transceiver)
+                    tmp_transceiver.cord_x = ant_vec[idx]
+                    tmp_transceiver.cord_y = 0
+                    tmp_transceiver.cord_z = self.cord_z
+                    self.array_elements.append(tmp_transceiver)
+            else:
+                # uniform circular array with radius specified by wav_len_spacing
+                wavelength_at_freq = scp.constants.c / self.center_freq
+                # spacing on radius <= lambda/2
+                array_radius = wavelength_at_freq * (self.n_elements - 1) / (4 * np.pi)
+                ant_pos_lst = utilities.pts_on_circum(r=array_radius, n=self.n_elements)
+                for idx in range(self.n_elements):
+                    tmp_transceiver = copy.deepcopy(self.base_transceiver)
+                    tmp_transceiver.cord_x = ant_pos_lst[idx][0]
+                    tmp_transceiver.cord_y = ant_pos_lst[idx][1]
+                    tmp_transceiver.cord_z = self.cord_z
+                    self.array_elements.append(tmp_transceiver)
 
     def set_tx_power_lvls(self, tx_power_dbm, total=False):
         for tx in self.array_elements:
