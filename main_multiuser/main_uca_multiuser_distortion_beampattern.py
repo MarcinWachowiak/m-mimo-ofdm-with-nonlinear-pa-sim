@@ -27,7 +27,7 @@ from plot_settings import set_latex_plot_style
 if __name__ == '__main__':
     set_latex_plot_style()
     # Multiple users data
-    usr_angles_deg = np.array([-30, 30])
+    usr_angles_deg = np.array([-10, 10])
     usr_angles_rad = np.deg2rad(usr_angles_deg)
     usr_distances = [300, 300]
     usr_pos_tup = []
@@ -73,7 +73,7 @@ if __name__ == '__main__':
     # Beampatterns
     plot_precoding_beampatterns = True
     beampattern_n_snapshots = 10
-    n_points = 360 * 4
+    n_points = 360
     radial_distance = 3000
     rx_points = utilities.pts_on_circum(r=radial_distance, n=n_points)
     radian_vals = np.radians(np.linspace(-90, 270, n_points + 1))
@@ -442,15 +442,17 @@ if __name__ == '__main__':
                                zorder=10)  # label="Users")
 
                     dist_angles = []
-                    arccos_arg_periodize = lambda val_a: val_a - 2.0 if val_a > 1.0 else (
+                    arcsin_arg_periodize = lambda val_a: val_a - 2.0 if val_a > 1.0 else (
                         val_a + 2.0 if val_a < -1.0 else val_a)
 
                     print(len(list(itertools.product(range(n_users), repeat=3))))
                     for usr_ang_idx_1, usr_ang_idx_2, usr_ang_idx_3 in itertools.product(range(n_users), repeat=3):
-                        phase_val = np.cos(usr_angles_rad[usr_ang_idx_1]) + np.cos(
-                            usr_angles_rad[usr_ang_idx_2]) - np.cos(usr_angles_rad[usr_ang_idx_3])
-                        arcsin_val = arccos_arg_periodize(phase_val)
-                        dist_angles.append(np.arccos(arcsin_val))
+                        phase_val = np.sin(usr_angles_rad[usr_ang_idx_1]) + np.sin(
+                            usr_angles_rad[usr_ang_idx_2]) - np.sin(usr_angles_rad[usr_ang_idx_3])
+                        arccos_val = arcsin_arg_periodize(phase_val)
+                        dist_angles.append(np.arcsin(arccos_val))
+                        dist_angles.append(-np.arcsin(arccos_val))
+
 
 
                     # generate usr angle idx tuples to calculate the distortion angle
@@ -461,13 +463,13 @@ if __name__ == '__main__':
                                     pass
 
 
-                    ax1.vlines(dist_angles, y_min, y_max, colors='k', linestyles=':',
+                    ax1.vlines(np.array(dist_angles), y_min, y_max, colors='r', linestyles=':',
                                zorder=10)  # label="Expected distortion")
                     ax1.margins(0.0, 0.0)
                     ax1.set_title("Signal power at angle [dB]", pad=-10)
                     ax1.legend(title="Signal:", ncol=2, loc='lower center', borderaxespad=-8)
                     ax1.grid(True)
-                    beampattern_filename_str = "multiuser_uca_shared_sc_mrt_beampatterns_%s_%s_nfft%d_nsc%d_ibo%d_angles%s_distances%s_npoints%d_nsnap%d_nant%s" % (
+                    beampattern_filename_str = "multiuser_uca_shared_sc_no_precod_beampatterns_%s_%s_nfft%d_nsc%d_ibo%d_angles%s_distances%s_npoints%d_nsnap%d_nant%s" % (
                         my_distortion, my_miso_chan, n_fft, n_sub_carr, ibo_val_db,
                         '_'.join([str(val) for val in usr_angles_deg]),
                         '_'.join([str(val) for val in usr_distances]), n_points, beampattern_n_snapshots,

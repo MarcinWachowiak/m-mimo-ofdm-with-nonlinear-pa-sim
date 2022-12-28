@@ -40,8 +40,8 @@ class LinearArray:
                 # uniform circular array with radius specified by wav_len_spacing
                 wavelength_at_freq = scp.constants.c / self.center_freq
                 # spacing on radius <= lambda/2
-                array_radius = wavelength_at_freq * (self.n_elements - 1) / (4 * np.pi)
-                ant_pos_lst = utilities.pts_on_circum(r=array_radius, n=self.n_elements)
+                array_radius = wavelength_at_freq * (self.n_elements - 1) / (2 * np.pi)
+                ant_pos_lst = utilities.pts_on_semicircum(r=array_radius, n=self.n_elements)
                 for idx in range(self.n_elements):
                     tmp_transceiver = copy.deepcopy(self.base_transceiver)
                     tmp_transceiver.cord_x = ant_pos_lst[idx][0]
