@@ -1,4 +1,5 @@
 import copy
+from abc import ABC
 
 import numpy as np
 import scipy as scp
@@ -6,8 +7,10 @@ import scipy as scp
 import distortion
 import utilities
 
-class LinearArray:
-    def __init__(self, n_elements, base_transceiver, center_freq, wav_len_spacing, cord_x=0, cord_y=0, cord_z=0, is_linear=True):
+# TODO: replace old calls to classes by new more detailed ones
+
+class AntennaArray(ABC):
+    def __init__(self, n_elements, base_transceiver, center_freq, wav_len_spacing, cord_x=0, cord_y=0, cord_z=0):
         self.n_elements = n_elements
         self.n_users = base_transceiver.modem.n_users
         self.base_transceiver = base_transceiver
@@ -17,37 +20,6 @@ class LinearArray:
         self.cord_x = cord_x
         self.cord_y = cord_y
         self.cord_z = cord_z
-
-        if isinstance(self.base_transceiver, list) and len(self.base_transceiver) == self.n_elements and len(
-                self.base_transceiver) == self.n_elements:
-            # extend for custom list of transceivers
-            for idx, base_modem in enumerate(self.base_transceiver):
-                pass
-        else:
-            if is_linear:
-                # antenna position vector centered around 0
-                wavelength_at_freq = scp.constants.c / self.center_freq
-                ant_vec = np.linspace(-(self.n_elements - 1) * self.wav_len_spacing * wavelength_at_freq / 2,
-                                      (self.n_elements - 1) * self.wav_len_spacing * wavelength_at_freq / 2,
-                                      self.n_elements)
-                for idx in range(self.n_elements):
-                    tmp_transceiver = copy.deepcopy(self.base_transceiver)
-                    tmp_transceiver.cord_x = ant_vec[idx]
-                    tmp_transceiver.cord_y = 0
-                    tmp_transceiver.cord_z = self.cord_z
-                    self.array_elements.append(tmp_transceiver)
-            else:
-                # uniform circular array with radius specified by wav_len_spacing
-                wavelength_at_freq = scp.constants.c / self.center_freq
-                # spacing on radius <= lambda/2
-                array_radius = wavelength_at_freq * (self.n_elements - 1) / (2 * np.pi)
-                ant_pos_lst = utilities.pts_on_semicircum(r=array_radius, n=self.n_elements)
-                for idx in range(self.n_elements):
-                    tmp_transceiver = copy.deepcopy(self.base_transceiver)
-                    tmp_transceiver.cord_x = ant_pos_lst[idx][0]
-                    tmp_transceiver.cord_y = ant_pos_lst[idx][1]
-                    tmp_transceiver.cord_z = self.cord_z
-                    self.array_elements.append(tmp_transceiver)
 
     def set_tx_power_lvls(self, tx_power_dbm, total=False):
         for tx in self.array_elements:
@@ -63,7 +35,7 @@ class LinearArray:
         if out_domain_fd:
             if sum_usr_signals:
                 out_sig_mat = np.empty([self.n_elements, self.base_transceiver.modem.n_fft],
-                                   dtype=np.complex128)
+                                       dtype=np.complex128)
             else:
                 out_sig_mat = np.empty([self.n_users, self.n_elements, self.base_transceiver.modem.n_fft],
                                        dtype=np.complex128)
@@ -74,7 +46,8 @@ class LinearArray:
                     dtype=np.complex128)
             else:
                 out_sig_mat = np.empty(
-                    [self.n_users, self.n_elements, self.base_transceiver.modem.n_fft + self.base_transceiver.modem.cp_len],
+                    [self.n_users, self.n_elements,
+                     self.base_transceiver.modem.n_fft + self.base_transceiver.modem.cp_len],
                     dtype=np.complex128)
 
         if return_both:
@@ -82,15 +55,17 @@ class LinearArray:
                 if sum_usr_signals:
                     clean_sig_mat = np.empty([self.n_elements, self.base_transceiver.modem.n_fft], dtype=np.complex128)
                 else:
-                    clean_sig_mat = np.empty([self.n_users, self.n_elements, self.base_transceiver.modem.n_fft], dtype=np.complex128)
+                    clean_sig_mat = np.empty([self.n_users, self.n_elements, self.base_transceiver.modem.n_fft],
+                                             dtype=np.complex128)
             else:
                 if sum_usr_signals:
                     clean_sig_mat = np.empty(
                         [self.n_elements, self.base_transceiver.modem.n_fft + self.base_transceiver.modem.cp_len],
                         dtype=np.complex128)
                 else:
-                    clean_sig_mat = np.empty([self.n_users, self.n_elements, self.base_transceiver.modem.n_fft + self.base_transceiver.modem.cp_len],
-                        dtype=np.complex128)
+                    clean_sig_mat = np.empty([self.n_users, self.n_elements,
+                                              self.base_transceiver.modem.n_fft + self.base_transceiver.modem.cp_len],
+                                             dtype=np.complex128)
 
             if sum_usr_signals:
                 for idx, tx_transceiver in enumerate(self.array_elements):
@@ -102,18 +77,23 @@ class LinearArray:
                 return np.squeeze(out_sig_mat), np.squeeze(clean_sig_mat)
             else:
                 for tx_idx, tx_transceiver in enumerate(self.array_elements):
-                    usr_signal_lst = tx_transceiver.transmit(in_bits, out_domain_fd=out_domain_fd, return_both=return_both, skip_dist=skip_dist, sum_usr_signals=sum_usr_signals)
+                    usr_signal_lst = tx_transceiver.transmit(in_bits, out_domain_fd=out_domain_fd,
+                                                             return_both=return_both, skip_dist=skip_dist,
+                                                             sum_usr_signals=sum_usr_signals)
                     for usr_idx in range(self.n_users):
                         out_sig_mat[usr_idx, tx_idx, :], clean_sig_mat[usr_idx, tx_idx, :] = usr_signal_lst[usr_idx]
                 return out_sig_mat, clean_sig_mat
         else:
             if sum_usr_signals:
                 for idx, tx_transceiver in enumerate(self.array_elements):
-                    out_sig_mat[idx, :] = tx_transceiver.transmit(in_bits, out_domain_fd=out_domain_fd, return_both=return_both, skip_dist=skip_dist, sum_usr_signals=sum_usr_signals)
+                    out_sig_mat[idx, :] = tx_transceiver.transmit(in_bits, out_domain_fd=out_domain_fd,
+                                                                  return_both=return_both, skip_dist=skip_dist,
+                                                                  sum_usr_signals=sum_usr_signals)
                 return np.squeeze(out_sig_mat)
             else:
                 for tx_idx, tx_transceiver in enumerate(self.array_elements):
-                    usr_signal_lst = tx_transceiver.transmit(in_bits, out_domain_fd=out_domain_fd, return_both=return_both,
+                    usr_signal_lst = tx_transceiver.transmit(in_bits, out_domain_fd=out_domain_fd,
+                                                             return_both=return_both,
                                                              skip_dist=skip_dist, sum_usr_signals=sum_usr_signals)
                     for usr_idx in range(self.n_users):
                         out_sig_mat[usr_idx, tx_idx, :] = usr_signal_lst[usr_idx]
@@ -187,7 +167,8 @@ class LinearArray:
                 elif zf_precoding:
                     per_usr_sc_chan_mat_fd = []
                     for usr_idx, usr_chan_mat_fd in enumerate(channel_mat_fd):
-                        sc_channel_mat_fd = np.concatenate((usr_chan_mat_fd[:, -tx_n_sc // 2:], usr_chan_mat_fd[:, 1:(tx_n_sc // 2) + 1]), axis=1)
+                        sc_channel_mat_fd = np.concatenate(
+                            (usr_chan_mat_fd[:, -tx_n_sc // 2:], usr_chan_mat_fd[:, 1:(tx_n_sc // 2) + 1]), axis=1)
                         per_usr_sc_chan_mat_fd.append(sc_channel_mat_fd)
 
                     mu_chan_mat_per_sc = []
@@ -200,21 +181,24 @@ class LinearArray:
                     try:
                         for sc_idx in range(tx_n_sc):
                             tmp_mat = np.transpose(mu_chan_mat_per_sc[sc_idx])
-                            usr_precoding_mat_fd = np.sqrt(self.n_elements - self.n_users) * np.matmul(np.conjugate(tmp_mat), np.linalg.inv(
-                                np.matmul(np.transpose(tmp_mat), np.conjugate(tmp_mat))))
+                            usr_precoding_mat_fd = np.sqrt(self.n_elements - self.n_users) * np.matmul(
+                                np.conjugate(tmp_mat), np.linalg.inv(
+                                    np.matmul(np.transpose(tmp_mat), np.conjugate(tmp_mat))))
                             precoding_mat_fd[:, :, sc_idx] = np.transpose(usr_precoding_mat_fd)
                     except:
                         pass
                         # try pseudoinverse if the standard one fails
                         for sc_idx in range(tx_n_sc):
                             tmp_mat = np.transpose(mu_chan_mat_per_sc[sc_idx])
-                            usr_precoding_mat_fd = np.sqrt(self.n_elements - self.n_users) * np.matmul(np.conjugate(tmp_mat), np.linalg.pinv(
-                                np.matmul(np.transpose(tmp_mat), np.conjugate(tmp_mat))))
+                            usr_precoding_mat_fd = np.sqrt(self.n_elements - self.n_users) * np.matmul(
+                                np.conjugate(tmp_mat), np.linalg.pinv(
+                                    np.matmul(np.transpose(tmp_mat), np.conjugate(tmp_mat))))
                             precoding_mat_fd[:, :, sc_idx] = np.transpose(usr_precoding_mat_fd)
 
                     # normalize the ZF precoding to have unit power at each subcarrier
                     for sc_idx in range(tx_n_sc):
-                        pow_norm_factor = np.sqrt(np.sum(np.sum(np.power(np.abs(precoding_mat_fd[:, :, sc_idx]), 2), axis=0)))
+                        pow_norm_factor = np.sqrt(
+                            np.sum(np.sum(np.power(np.abs(precoding_mat_fd[:, :, sc_idx]), 2), axis=0)))
                         precoding_mat_fd[:, :, sc_idx] = np.divide(precoding_mat_fd[:, :, sc_idx], pow_norm_factor)
 
                 else:
@@ -227,7 +211,6 @@ class LinearArray:
                         usr_precoding_mat_fd = np.exp(1j * np.angle(sc_channel_mat_fd_conjugate))
                         precoding_mat_fd[usr_idx, :, :] = usr_precoding_mat_fd
 
-
                 # apply precoding matrix to each tx node
                 for tx_idx, tx_transceiver in enumerate(self.array_elements):
                     # select coefficients based on carrier frequencies
@@ -237,7 +220,8 @@ class LinearArray:
             else:
                 composed_chan_mat = None
                 for usr_idx, usr_chan_mat_fd in enumerate(channel_mat_fd):
-                    sc_channel_mat_fd = np.concatenate((usr_chan_mat_fd[:, -tx_n_sc // 2:], usr_chan_mat_fd[:, 1:(tx_n_sc // 2) + 1]), axis=1)
+                    sc_channel_mat_fd = np.concatenate(
+                        (usr_chan_mat_fd[:, -tx_n_sc // 2:], usr_chan_mat_fd[:, 1:(tx_n_sc // 2) + 1]), axis=1)
                     nsc_split_lst = np.hsplit(sc_channel_mat_fd, len(channel_mat_fd))
                     if composed_chan_mat is None:
                         composed_chan_mat = nsc_split_lst[usr_idx]
@@ -264,9 +248,6 @@ class LinearArray:
                     tx_n_sc = tx_transceiver.modem.n_sub_carr
                     precoding_vec = precoding_mat_fd[idx, :]
                     tx_transceiver.modem.set_precoding(precoding_vec)
-
-
-
 
     def update_distortion(self, ibo_db, avg_sample_pow, alpha_val=None):
         # calculate the avg precoding gain only for the desired signal - withing the idx range of subcarriers
@@ -341,3 +322,61 @@ class LinearArray:
         self.n_users = n_users
         for idx, array_tx in enumerate(self.array_elements):
             array_tx.modem.n_users = n_users
+
+
+class LinearArray(AntennaArray):
+    def __init__(self, n_elements, base_transceiver, center_freq, wav_len_spacing, cord_x=0, cord_y=0, cord_z=0):
+        super().__init__(n_elements, base_transceiver, center_freq, wav_len_spacing, cord_x, cord_y, cord_z)
+        # antenna position vector centered around 0
+        wavelength_at_freq = scp.constants.c / self.center_freq
+        ant_vec = np.linspace(-(self.n_elements - 1) * self.wav_len_spacing * wavelength_at_freq / 2,
+                              (self.n_elements - 1) * self.wav_len_spacing * wavelength_at_freq / 2,
+                              self.n_elements)
+        for idx in range(self.n_elements):
+            tmp_transceiver = copy.deepcopy(self.base_transceiver)
+            tmp_transceiver.cord_x = ant_vec[idx]
+            tmp_transceiver.cord_y = 0
+            tmp_transceiver.cord_z = self.cord_z
+            self.array_elements.append(tmp_transceiver)
+
+
+class CircularArray(AntennaArray):
+    def __init__(self, n_elements, base_transceiver, center_freq, wav_len_spacing, cord_x=0, cord_y=0, cord_z=0):
+
+        # TODO: add full circular or semicircular options
+
+        super().__init__(n_elements, base_transceiver, center_freq, wav_len_spacing, cord_x, cord_y, cord_z)
+        # uniform circular array with radius specified by wav_len_spacing
+        wavelength_at_freq = scp.constants.c / self.center_freq
+        # spacing on radius <= lambda/2
+        array_radius = wavelength_at_freq * (self.n_elements - 1) / (2 * np.pi)
+        ant_pos_lst = utilities.pts_on_semicircum(r=array_radius, n=self.n_elements)
+        for idx in range(self.n_elements):
+            tmp_transceiver = copy.deepcopy(self.base_transceiver)
+            tmp_transceiver.cord_x = ant_pos_lst[idx][0]
+            tmp_transceiver.cord_y = ant_pos_lst[idx][1]
+            tmp_transceiver.cord_z = self.cord_z
+            self.array_elements.append(tmp_transceiver)
+
+
+class PlanarRectangularArray(AntennaArray):
+    def __init__(self, n_elements_per_row, n_elements_per_col, base_transceiver, center_freq, wav_len_spacing, cord_x=0, cord_y=0, cord_z=0):
+        n_elements = n_elements_per_row * n_elements_per_col
+        super().__init__(n_elements, base_transceiver, center_freq, wav_len_spacing, cord_x, cord_y, cord_z)
+        # antenna position vector centered around 0
+        wavelength_at_freq = scp.constants.c / self.center_freq
+
+        ant_vec_col = np.linspace(-(n_elements_per_col - 1) * self.wav_len_spacing * wavelength_at_freq / 2,
+                              (n_elements_per_col - 1) * self.wav_len_spacing * wavelength_at_freq / 2,
+                              n_elements_per_col)
+        ant_vec_row = np.linspace(-(n_elements_per_row - 1) * self.wav_len_spacing * wavelength_at_freq / 2,
+                              (n_elements_per_row - 1) * self.wav_len_spacing * wavelength_at_freq / 2,
+                              n_elements_per_row)
+
+        for col_coord in ant_vec_col:
+            for row_coord in ant_vec_row:
+                tmp_transceiver = copy.deepcopy(self.base_transceiver)
+                tmp_transceiver.cord_x = col_coord
+                tmp_transceiver.cord_y = 0
+                tmp_transceiver.cord_z = self.cord_z + row_coord
+                self.array_elements.append(tmp_transceiver)

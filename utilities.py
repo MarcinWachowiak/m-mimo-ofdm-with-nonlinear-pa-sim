@@ -207,8 +207,20 @@ def pts_on_circum(r, n=100):
 def pts_on_semicircum(r, n=100):
     return [(np.cos(np.pi / n * x) * r, np.sin(np.pi / n * x) * r) for x in range(0, n + 1)]
 
+def pts_on_semisphere(r, n=100, center_x=0, center_y=0, center_z=0):
+    azimuth_angle_vec = np.deg2rad(np.linspace(0, 180, int(np.sqrt(n)), endpoint=True))
+    elevation_angle_vec = np.deg2rad(np.linspace(0, 180, int(np.sqrt(n)), endpoint=True))
+    rx_points_lst = []
+    for azimuth_angle in azimuth_angle_vec:
+        for elevation_angle in elevation_angle_vec:
+            rx_pos_x = -r * np.sin(elevation_angle) * np.cos(azimuth_angle) + center_x
+            rx_pos_y = -r * np.sin(elevation_angle) * np.sin(azimuth_angle) + center_y
+            rx_pos_z = -r * np.cos(elevation_angle) + center_z
+            rx_points_lst.append((rx_pos_x, rx_pos_y, rx_pos_z))
+    return rx_points_lst
 
-def plot_spatial_config(ant_array, rx_transceiver, plot_3d=True):
+
+def plot_spatial_config(ant_array, rx_transceiver=None, rx_points_lst=None, plot_3d=True):
     if plot_3d:
         fig = plt.figure()
         ax = fig.add_subplot(projection='3d')
@@ -220,15 +232,24 @@ def plot_spatial_config(ant_array, rx_transceiver, plot_3d=True):
             tx_cord_x.append(transceiver.cord_x)
             tx_cord_y.append(transceiver.cord_y)
             tx_cord_z.append(transceiver.cord_z)
-
-        # plot line form array center to rx
-        ax.plot([ant_array.cord_x, rx_transceiver.cord_x], [ant_array.cord_y, rx_transceiver.cord_y],
-                [ant_array.cord_z, rx_transceiver.cord_z], color="C2",
-                linestyle='--', label="LOS")
-
         ax.scatter(tx_cord_x, tx_cord_y, tx_cord_z, color="C0", marker='^', label="TX")
-        ax.scatter(rx_transceiver.cord_x, rx_transceiver.cord_y, rx_transceiver.cord_z, color="C1", marker='o',
-                   label="RX")
+        if rx_transceiver is not None:
+            # plot line form array center to rx
+            ax.plot([ant_array.cord_x, rx_transceiver.cord_x], [ant_array.cord_y, rx_transceiver.cord_y],
+                    [ant_array.cord_z, rx_transceiver.cord_z], color="C2",
+                    linestyle='--', label="LOS")
+            ax.scatter(rx_transceiver.cord_x, rx_transceiver.cord_y, rx_transceiver.cord_z, color="C1", marker='o',
+                       label="RX")
+        elif rx_points_lst is not None:
+            rx_cord_x = []
+            rx_cord_y = []
+            rx_cord_z = []
+            for rx_point in rx_points_lst:
+                rx_cord_x.append(rx_point[0])
+                rx_cord_y.append(rx_point[1])
+                rx_cord_z.append(rx_point[2])
+            ax.scatter(rx_cord_x, rx_cord_y, rx_cord_z, color="C1", marker='o',
+                       label="RX")
 
         # color ground surface
         ax.zaxis.set_pane_color(colors.to_rgba("gray"))
