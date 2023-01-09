@@ -1,5 +1,6 @@
 from math import sqrt
 
+import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib import rcParams, cycler, rc
 
@@ -34,7 +35,7 @@ def set_latex_plot_style(use_tex=False, fig_width_in=7.0, fig_height_in=None):
     rcParams['path.simplify'] = True
 
     rcParams.update(params)
-
+    matplotlib.use("Qt5Agg")
 
 def reset_color_cycle():
     plt.gca().set_prop_cycle(None)
