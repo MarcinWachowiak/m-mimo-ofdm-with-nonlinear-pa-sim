@@ -9,19 +9,26 @@ import utilities
 
 class Link():
     def __init__(self, mod_obj, array_obj, std_rx_obj, chan_obj, noise_obj, rx_loc_var, n_err_min,
-                 bits_sent_max, is_mcnc=False):
+                 bits_sent_max, is_mcnc=False, csi_noise_db=None):
         self.my_mod = copy.deepcopy(mod_obj)
         self.my_array = copy.deepcopy(array_obj)
         self.my_standard_rx = copy.deepcopy(std_rx_obj)
 
         self.rx_loc_x = self.my_standard_rx.cord_x
-        self.rx_loc_y = self.my_standard_rx.cord_x
+        self.rx_loc_y = self.my_standard_rx.cord_y
         self.my_miso_chan = copy.deepcopy(chan_obj)
+        self.my_miso_chan_csi_err = copy.deepcopy(self.my_miso_chan)
 
         self.my_noise = copy.deepcopy(noise_obj)
+        self.my_csi_noise = copy.deepcopy(noise_obj)
+        self.csi_noise_db = csi_noise_db
+        self.my_csi_noise.snr_db = self.csi_noise_db
 
         if is_mcnc:
-            self.my_cnc_rx = corrector.McncReceiver(self.my_array, self.my_miso_chan)
+            if self.csi_noise_db is None:
+                self.my_cnc_rx = corrector.McncReceiver(self.my_array, self.my_miso_chan)
+            else:
+                self.my_cnc_rx = corrector.McncReceiver(self.my_array, self.my_miso_chan_csi_err)
         else:
             self.my_cnc_rx = corrector.CncReceiver(copy.deepcopy(array_obj.base_transceiver.modem),
                                                    copy.deepcopy(array_obj.base_transceiver.impairment))
@@ -29,6 +36,7 @@ class Link():
         self.my_noise.rng_gen = np.random.default_rng(0)
         self.loc_rng = np.random.default_rng(1)
         self.bit_rng = np.random.default_rng(2)
+        self.my_csi_noise.rng_gen = np.random.default_rng(3)
         self.rx_loc_var = rx_loc_var
 
         self.n_ant_val = len(self.my_array.array_elements)
@@ -45,6 +53,8 @@ class Link():
         self.bit_rng = np.random.default_rng(seed_arr[0])
         self.my_noise.rng_gen = np.random.default_rng(seed_arr[1])
         self.loc_rng = np.random.default_rng(seed_arr[2])
+        if self.csi_noise_db is not None:
+            self.my_csi_noise.rng_gen = np.random.default_rng(seed_arr[3])
 
         res_idx = 0
         if incl_clean_run:
@@ -153,13 +163,31 @@ class Link():
         self.my_noise.snr_db = snr_db_val
 
     def set_precoding_and_recalculate_agc(self):
-        self.my_array.set_precoding_matrix(channel_mat_fd=self.my_miso_chan.channel_mat_fd, mr_precoding=True)
-        self.recalculate_agc()
+        if self.csi_noise_db is None:
+            self.my_array.set_precoding_matrix(channel_mat_fd=self.my_miso_chan.channel_mat_fd, mr_precoding=True)
+            self.recalculate_agc(channel_mat_fd=self.my_miso_chan.channel_mat_fd)
+        else:
+            # introduce csi errors in the channel model used in precoding and MCNC algorithm
+            noisy_channel_mat_fd = np.copy(self.my_miso_chan.channel_mat_fd)
 
-    def recalculate_agc(self, ak_part_only=False):
+            # antenna wise noise addition
+            for row_idx, chan_per_ant in enumerate(noisy_channel_mat_fd):
+                sc_chan_per_ant = np.concatenate((chan_per_ant[-self.my_mod.n_sub_carr // 2:],
+                                     chan_per_ant[1:(self.my_mod.n_sub_carr // 2) + 1]))
+                channel_power_per_fd_sample = np.sum(np.abs(sc_chan_per_ant) ** 2) / len(sc_chan_per_ant)
+                noisy_sc_chan_row = self.my_csi_noise.process(in_sig=sc_chan_per_ant, avg_sample_pow=channel_power_per_fd_sample, disp_data=False)
+                noisy_channel_mat_fd[row_idx, -(self.my_mod.n_sub_carr // 2):] = noisy_sc_chan_row[0:self.my_mod.n_sub_carr // 2]
+                noisy_channel_mat_fd[row_idx, 1:(self.my_mod.n_sub_carr // 2) + 1] = noisy_sc_chan_row[self.my_mod.n_sub_carr // 2:]
+
+            self.my_miso_chan_csi_err.channel_mat_fd = noisy_channel_mat_fd
+
+            self.my_array.set_precoding_matrix(channel_mat_fd=self.my_miso_chan_csi_err.channel_mat_fd, mr_precoding=True)
+            self.recalculate_agc(channel_mat_fd=self.my_miso_chan_csi_err.channel_mat_fd)
+
+    def recalculate_agc(self, channel_mat_fd=None, ak_part_only=False):
         if not ak_part_only:
-            hk_mat = np.concatenate((self.my_miso_chan.channel_mat_fd[:, -self.my_mod.n_sub_carr // 2:],
-                                     self.my_miso_chan.channel_mat_fd[:, 1:(self.my_mod.n_sub_carr // 2) + 1]), axis=1)
+            hk_mat = np.concatenate((channel_mat_fd[:, -self.my_mod.n_sub_carr // 2:],
+                                     channel_mat_fd[:, 1:(self.my_mod.n_sub_carr // 2) + 1]), axis=1)
             vk_mat = self.my_array.get_precoding_mat()
             self.vk_pow_vec = np.sum(np.power(np.abs(vk_mat), 2), axis=1)
             self.hk_vk_agc = np.multiply(hk_mat, vk_mat)
