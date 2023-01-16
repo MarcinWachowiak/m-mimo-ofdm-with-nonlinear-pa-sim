@@ -16,14 +16,45 @@ def _modulate(constellation, n_bits_per_symbol, input_bits):
     return baseband_symbols
 
 
-# @jit(nopython=True)
-def _demodulate(constellation, n_bits_per_symbol, input_symbols):
-    index_list = np.abs(input_symbols - constellation[:, None]).argmin(0)
-    demod_bits = dec2bitarray(index_list, n_bits_per_symbol)
+@jit(nopython=True)
+def soft_decoding(constellation, n_bits_per_symbol, input_symbols, noise_var_vec):
+    demod_bits = np.zeros(len(input_symbols) * n_bits_per_symbol)
+    for i in np.arange(len(input_symbols)):
+        current_symbol = input_symbols[i]
+        for bit_index in np.arange(n_bits_per_symbol):
+            llr_num = 0
+            llr_den = 0
+            for bit_value, symbol in enumerate(constellation):
+                if (bit_value >> bit_index) & 1:
+                    llr_num += np.exp((-np.abs(current_symbol - symbol) ** 2) / noise_var_vec[i])
+                else:
+                    llr_den += np.exp((-np.abs(current_symbol - symbol) ** 2) / noise_var_vec[i])
+
+            if np.real(llr_den) == 0:
+                demod_bits[i * n_bits_per_symbol + n_bits_per_symbol - 1 - bit_index] = np.inf
+            else:
+                demod_bits[i * n_bits_per_symbol + n_bits_per_symbol - 1 - bit_index] = np.log(np.abs(llr_num) / np.abs(llr_den))
+
     return demod_bits
 
 
-# TODO: Separate constellations for RX and TX to ease the access and use of shrinking coeffs
+# @jit(nopython=True)
+def _demodulate(constellation, n_bits_per_symbol, input_symbols, soft=False, noise_var=0.0):
+    if not soft:
+        index_list = np.abs(input_symbols - constellation[:, None]).argmin(0)
+        demod_bits = dec2bitarray(index_list, n_bits_per_symbol)
+    else:
+        if not isinstance(noise_var, np.ndarray):
+            noise_var_vec = np.repeat(noise_var, len(input_symbols))
+            demod_bits = soft_decoding(constellation=constellation, n_bits_per_symbol=n_bits_per_symbol,
+                                       input_symbols=input_symbols,
+                                       noise_var_vec=noise_var_vec)
+        else:
+            demod_bits = soft_decoding(constellation=constellation, n_bits_per_symbol=n_bits_per_symbol,
+                                       input_symbols=input_symbols,
+                                       noise_var_vec=noise_var)
+    return demod_bits
+
 
 class Modem:
 
@@ -207,6 +238,9 @@ class OfdmQamModem(QamModem):
 
     def symbols_to_bits(self, input_symbols):
         return _demodulate(self._constellation, self.n_bits_per_symbol, input_symbols)
+
+    def soft_detection_llr(self, baseband_symbols, noise_var):
+        return _demodulate(self._constellation, self.n_bits_per_symbol, baseband_symbols, soft=True, noise_var=noise_var)
 
     def ofdm_avg_sample_pow(self):
         return self.avg_symbol_power * (self.n_sub_carr / self.n_fft)
