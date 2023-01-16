@@ -89,7 +89,7 @@ if __name__ == '__main__':
                                                                  rx_transceiver=my_standard_rx, n_paths=8,
                                                                  max_delay_spread=1e-6)
 
-        chan_lst = [my_miso_los_chan]
+        chan_lst = [my_miso_two_path_chan, my_miso_rayleigh_chan]
         my_noise = noise.Awgn(snr_db=10, seed=1234)
 
         for my_miso_chan in chan_lst:
