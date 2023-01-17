@@ -33,8 +33,8 @@ if __name__ == '__main__':
 
     # %%
     # parameters
-    n_ant_arr = [16]
-    ibo_arr = [0]
+    n_ant_arr = [64]
+    ibo_arr = [1, 3]
     ebn0_step = [1]
     cnc_n_iter_lst = [1, 2, 3, 4, 5, 6, 7, 8]
     # include clean run is always True
@@ -58,8 +58,8 @@ if __name__ == '__main__':
 
     my_mod = modulation.OfdmQamModem(constel_size=constel_size, n_fft=n_fft, n_sub_carr=n_sub_carr, cp_len=cp_len)
 
-    # my_distortion = distortion.SoftLimiter(0, my_mod.avg_sample_power)
-    my_distortion = distortion.Rapp(ibo_db=0, p_hardness=4.0, avg_samp_pow=my_mod.avg_sample_power)
+    my_distortion = distortion.SoftLimiter(0, my_mod.avg_sample_power)
+    # my_distortion = distortion.Rapp(ibo_db=0, p_hardness=4.0, avg_samp_pow=my_mod.avg_sample_power)
 
     my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
                                     center_freq=int(3.5e9),
@@ -87,7 +87,7 @@ if __name__ == '__main__':
                                                                  rx_transceiver=my_standard_rx, n_paths=8,
                                                                  max_delay_spread=1e-6)
 
-        chan_lst = [my_random_paths_miso_channel]
+        chan_lst = [my_miso_los_chan, my_miso_two_path_chan, my_miso_rayleigh_chan]
         my_noise = noise.Awgn(snr_db=10, seed=1234)
 
         for my_miso_chan in chan_lst:
@@ -104,7 +104,7 @@ if __name__ == '__main__':
                     start_time = time.time()
                     print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
-                    ebn0_arr = np.arange(5, 25.1, ebn0_step_val)
+                    ebn0_arr = np.arange(5, 20.1, ebn0_step_val)
                     snr_arr = ebn0_to_snr(ebn0_arr, my_mod.n_sub_carr, my_mod.n_sub_carr, my_mod.constel_size)
                     ber_per_dist = []
 
