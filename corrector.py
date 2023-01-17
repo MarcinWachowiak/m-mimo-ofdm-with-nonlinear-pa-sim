@@ -27,7 +27,7 @@ class CncReceiver():
             self.impairment.set_ibo(ibo_db)
             self.modem.alpha = self.modem.calc_alpha(ibo_db)
 
-    def receive(self, n_iters_lst, in_sig_fd, alpha_estimation=None, return_bits=True, noise_var=0.0, matlab=None):
+    def receive(self, n_iters_lst, in_sig_fd, alpha_estimation=None, return_bits=True):
         # strip input fd signal of the OOB - include only the symbol data
         n_sub_carr = self.modem.n_sub_carr
         rx_ofdm_nsc_fd = np.concatenate((in_sig_fd[-n_sub_carr // 2:], in_sig_fd[1:(n_sub_carr // 2) + 1]))
@@ -42,12 +42,7 @@ class CncReceiver():
             else:
                 corr_in_sig_fd = rx_ofdm_nsc_fd
 
-            # rx_symbols = self.modem.symbol_detection(corr_in_sig_fd)
-
-            rx_llr_soft_bits = -self.modem.soft_detection_llr(corr_in_sig_fd, noise_var=noise_var)
-            rx_bits = np.squeeze(np.array(matlab.transpose(matlab.nrLDPCDecode(matlab.transpose(matlab.double(rx_llr_soft_bits)), 1, 12))))
-            ldpc_encoded_bits = np.squeeze(np.array(matlab.nrLDPCEncode(matlab.int8(matlab.transpose(rx_bits)), 1)))
-            rx_symbols = self.modem.modulate(ldpc_encoded_bits, get_symbols_only=True)
+            rx_symbols = self.modem.symbol_detection(corr_in_sig_fd)
 
             if iter_idx in n_iters_lst:
                 if return_bits:
@@ -118,7 +113,7 @@ class McncReceiver():
 
         self.agc_corr_vec = ak_hk_vk_agc_nfft
 
-    def receive(self, n_iters_lst, in_sig_fd, return_bits=True, noise_var=0.0, matlab=None):
+    def receive(self, n_iters_lst, in_sig_fd, return_bits=True):
         # strip input fd signal of the OOB - include only the symbol data
         rx_ofdm_nsc_fd = np.concatenate((in_sig_fd[-self.n_sub_carr // 2:], in_sig_fd[1:(self.n_sub_carr // 2) + 1]))
 
@@ -133,21 +128,16 @@ class McncReceiver():
                 corr_in_sig_fd = rx_ofdm_nsc_fd
 
             # perform detection - get symbols
-            # rx_symbols = self.antenna_array.array_elements[0].modem.symbol_detection(corr_in_sig_fd)
-            # rx_bits = self.antenna_array.array_elements[0].modem.symbols_to_bits(rx_symbols)
+            rx_symbols = self.antenna_array.array_elements[0].modem.symbol_detection(corr_in_sig_fd)
 
-            rx_llr_soft_bits = -self.antenna_array.array_elements[0].modem.soft_detection_llr(corr_in_sig_fd, noise_var=noise_var)
-            rx_bits = np.squeeze(np.array(matlab.transpose(matlab.nrLDPCDecode(matlab.transpose(matlab.double(rx_llr_soft_bits)), 1, 12))))
-            ldpc_encoded_bits = np.squeeze(np.array(matlab.nrLDPCEncode(matlab.int8(matlab.transpose(rx_bits)), 1)))
-            rx_symbols = self.antenna_array.array_elements[0].modem.modulate(ldpc_encoded_bits, get_symbols_only=True)
+            rx_bits = self.antenna_array.array_elements[0].modem.symbols_to_bits(rx_symbols)
 
             if iter_idx in n_iters_lst:
                 if return_bits:
                     data_per_iter_lst.append(rx_bits)
                 else:
                     data_per_iter_lst.append(corr_in_sig_fd)
-
-            tx_ofdm_symbol = self.antenna_array.transmit(ldpc_encoded_bits, out_domain_fd=True, return_both=False)
+            tx_ofdm_symbol = self.antenna_array.transmit(rx_bits, out_domain_fd=True, return_both=False)
             rx_ofdm_symbol = self.channel.propagate(in_sig_mat=tx_ofdm_symbol)
             rx_ofdm_symbol = np.divide(rx_ofdm_symbol, self.agc_corr_vec)
 
