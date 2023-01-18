@@ -60,7 +60,7 @@ rx_loc_var = 10.0
 my_mod = modulation.OfdmQamModem(constel_size=constel_size, n_fft=n_fft, n_sub_carr=n_sub_carr, cp_len=cp_len)
 
 # main code tuning variable
-code_rate_str = "1/3"
+code_rate_str = "1/2"
 num, den = code_rate_str.split('/')
 code_rate = float(num) / float(den)
 max_ldpc_ite = 12
