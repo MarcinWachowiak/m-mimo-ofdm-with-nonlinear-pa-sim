@@ -65,8 +65,8 @@ class Link():
                                   (n_bits_sent_shared_arr[0] < self.bits_sent_max)):
 
                     if reroll_chan:
-                        if isinstance(self.my_miso_chan, channel.MisoLosFd) or isinstance(self.my_miso_chan,
-                                                                                          channel.MisoTwoPathFd):
+                        if isinstance(self.my_miso_chan, channel.MisoLosFd) or isinstance(self.my_miso_chan, channel.MisoTwoPathFd) \
+                                                                            or isinstance(self.my_miso_chan, channel.MisoQuadrigaFd):
                             # reroll location
                             self.my_standard_rx.set_position(
                                 cord_x=self.rx_loc_x + self.loc_rng.uniform(low=-self.rx_loc_var / 2.0,
@@ -117,8 +117,8 @@ class Link():
 
             # for direct visibility channel and CNC algorithm channel impact must be averaged
             if reroll_chan:
-                if isinstance(self.my_miso_chan, channel.MisoLosFd) or isinstance(self.my_miso_chan,
-                                                                                  channel.MisoTwoPathFd):
+                if isinstance(self.my_miso_chan, channel.MisoLosFd) or isinstance(self.my_miso_chan,channel.MisoTwoPathFd) \
+                                                                    or isinstance(self.my_miso_chan, channel.MisoQuadrigaFd):
                     # reroll location
                     self.my_standard_rx.set_position(
                         cord_x=self.rx_loc_x + self.loc_rng.uniform(low=-self.rx_loc_var / 2.0,
