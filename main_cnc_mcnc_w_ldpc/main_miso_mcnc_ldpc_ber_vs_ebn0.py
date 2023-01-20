@@ -27,8 +27,9 @@ from utilities import count_mismatched_bits, ebn0_to_snr
 
 set_latex_plot_style()
 
-matlab = matlab.engine.start_matlab()
-matlab.rng(7312)
+meng = matlab.engine.start_matlab()
+meng.rng(7312)
+meng.addpath(r'C:\Users\Marcin\Documents\GitHub\mimo-simulation-py\main_quadriga_channel')
 
 # %%
 # parameters
@@ -50,6 +51,13 @@ n_fft = 4096
 n_sub_carr = 2048
 cp_len = 2
 
+center_freq = 3.5e9
+subcarr_spacing = 15e3
+
+distance = 300
+bandwidth = n_sub_carr * subcarr_spacing
+channel_model_str = '3GPP_38.901_UMa_LOS'
+
 # accuracy
 bits_sent_max = int(1e6)
 n_err_min = int(1e5)
@@ -60,32 +68,36 @@ rx_loc_var = 10.0
 my_mod = modulation.OfdmQamModem(constel_size=constel_size, n_fft=n_fft, n_sub_carr=n_sub_carr, cp_len=cp_len)
 
 # main code tuning variable
-code_rate_str = "1/2"
+code_rate_str = "3/4"
 num, den = code_rate_str.split('/')
 code_rate = float(num) / float(den)
 max_ldpc_ite = 12
 
-rv = matlab.double(0)
+rv = meng.double(0)
 modulation_format_str = "64QAM"
 bits_per_symbol = 6
-n_layers = matlab.double(1)
+n_layers = meng.double(1)
 
-n_info_bits = matlab.int64(my_mod.n_bits_per_ofdm_sym * code_rate)
-out_len = matlab.double(np.ceil(n_info_bits/code_rate))
+n_info_bits = meng.int64(my_mod.n_bits_per_ofdm_sym * code_rate)
+out_len = meng.double(np.ceil(n_info_bits/code_rate))
 if out_len != my_mod.n_bits_per_ofdm_sym:
     raise ValueError('Code output length does not match modulator input length!')
 
-cbs_info_dict = matlab.nrDLSCHInfo(n_info_bits, code_rate)
+cbs_info_dict = meng.nrDLSCHInfo(n_info_bits, code_rate)
 print("DL-SCH coding parameters", cbs_info_dict)
 
 my_distortion = distortion.SoftLimiter(0, my_mod.avg_sample_power)
 my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion))
 my_standard_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
                                          cord_x=rx_loc_x, cord_y=rx_loc_y, cord_z=1.5,
-                                         center_freq=int(3.5e9), carrier_spacing=int(15e3))
+                                         center_freq=int(center_freq), carrier_spacing=int(subcarr_spacing))
 
 for n_ant_val in n_ant_arr:
-    my_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(3.5e9),
+    meng.qd_channel_env_setup(meng.double(n_ant_val), meng.double(n_fft),
+                                       meng.double(subcarr_spacing), meng.double(center_freq),
+                                       meng.double(distance), channel_model_str, nargout=0)
+
+    my_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(center_freq),
                                           wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
     # channel type
     my_miso_los_chan = channel.MisoLosFd()
@@ -98,7 +110,12 @@ for n_ant_val in n_ant_arr:
     my_miso_rayleigh_chan = channel.MisoRayleighFd(tx_transceivers=my_array.array_elements,
                                                    rx_transceiver=my_standard_rx,
                                                    seed=1234)
-    chan_lst = [my_miso_los_chan]  # ,my_miso_two_path_chan, my_miso_rayleigh_chan]
+
+    my_miso_quadriga_chan = channel.MisoQuadrigaFd(tx_transceivers=my_array.array_elements,
+                                                   rx_transceiver=my_standard_rx,
+                                                   matlab_engine=meng)
+
+    chan_lst = [my_miso_quadriga_chan]  # ,my_miso_two_path_chan, my_miso_rayleigh_chan]
 
     for my_miso_chan in chan_lst:
         loc_rng = np.random.default_rng(2137)
@@ -171,12 +188,14 @@ for n_ant_val in n_ant_arr:
                         ak_hk_vk_agc_nfft[-(n_sub_carr // 2):] = ak_hk_vk_agc_avg_vec[0:n_sub_carr // 2]
                         ak_hk_vk_agc_nfft[1:(n_sub_carr // 2) + 1] = ak_hk_vk_agc_avg_vec[n_sub_carr // 2:]
 
+                        # per_sc_noise_var_mod = hk_vk_noise_scaler / np.power(np.abs(hk_vk_agc_avg_vec), 2)
+                        # noise_var_vec = noise_var_snr_based * per_sc_noise_var_mod
                         if np.logical_and((n_err[0] < n_err_min), (bits_sent[0] < bits_sent_max)):
                             tx_bits = bit_rng.choice((0, 1), n_info_bits)
-                            crc_encoded_bits = matlab.nrCRCEncode(matlab.int8(matlab.transpose(tx_bits)), cbs_info_dict['CRC'])
-                            code_block_segment_in = matlab.nrCodeBlockSegmentLDPC(crc_encoded_bits, cbs_info_dict['BGN'])
-                            ldpc_encoded_bits = matlab.nrLDPCEncode(code_block_segment_in, cbs_info_dict['BGN'])
-                            rm_ldpc_bits = np.squeeze(np.array(matlab.nrRateMatchLDPC(ldpc_encoded_bits, out_len, rv, modulation_format_str, n_layers)))
+                            crc_encoded_bits = meng.nrCRCEncode(meng.int8(meng.transpose(tx_bits)), cbs_info_dict['CRC'])
+                            code_block_segment_in = meng.nrCodeBlockSegmentLDPC(crc_encoded_bits, cbs_info_dict['BGN'])
+                            ldpc_encoded_bits = meng.nrLDPCEncode(code_block_segment_in, cbs_info_dict['BGN'])
+                            rm_ldpc_bits = np.squeeze(np.array(meng.nrRateMatchLDPC(ldpc_encoded_bits, out_len, rv, modulation_format_str, n_layers)))
 
                             clean_ofdm_symbol = my_array.transmit(rm_ldpc_bits, out_domain_fd=True,
                                                                   return_both=False,
@@ -192,13 +211,12 @@ for n_ant_val in n_ant_arr:
                                 (clean_rx_ofdm_symbol[-my_mod.cp_len:], clean_rx_ofdm_symbol))
 
                             rx_symbols = my_standard_rx.modem.demodulate(clean_rx_ofdm_symbol, get_symbols_only=True)
-                            # per_sc_noise_var_mod = hk_vk_noise_scaler / np.power(np.abs(hk_vk_agc_avg_vec), 2)
-                            # noise_var_vec = noise_var_snr_based * per_sc_noise_var_mod
+
                             rx_llr_soft_bits = -my_standard_rx.modem.soft_detection_llr(rx_symbols, noise_var=noise_var_snr_based)
-                            rate_recovered_bits = matlab.nrRateRecoverLDPC(matlab.transpose(matlab.double(rx_llr_soft_bits)), n_info_bits, code_rate, rv, modulation_format_str, n_layers)
-                            ldpc_decoded_bits = matlab.nrLDPCDecode(rate_recovered_bits, cbs_info_dict['BGN'], max_ldpc_ite)
-                            desegmented_bits = matlab.nrCodeBlockDesegmentLDPC(ldpc_decoded_bits, cbs_info_dict['BGN'], n_info_bits + cbs_info_dict['L'])
-                            rx_bits = np.squeeze(np.array(matlab.transpose(matlab.nrCRCDecode(desegmented_bits, cbs_info_dict['CRC']))))
+                            rate_recovered_bits = meng.nrRateRecoverLDPC(meng.transpose(meng.double(rx_llr_soft_bits)), n_info_bits, code_rate, rv, modulation_format_str, n_layers)
+                            ldpc_decoded_bits = meng.nrLDPCDecode(rate_recovered_bits, cbs_info_dict['BGN'], max_ldpc_ite)
+                            desegmented_bits = meng.nrCodeBlockDesegmentLDPC(ldpc_decoded_bits, cbs_info_dict['BGN'], n_info_bits + cbs_info_dict['L'])
+                            rx_bits = np.squeeze(np.array(meng.transpose(meng.nrCRCDecode(desegmented_bits, cbs_info_dict['CRC']))))
 
                             # noise + dist variance per symbol = noise variance
                             n_bit_err = count_mismatched_bits(tx_bits, rx_bits)
@@ -264,12 +282,12 @@ for n_ant_val in n_ant_arr:
                         ak_hk_vk_agc_nfft[1:(n_sub_carr // 2) + 1] = ak_hk_vk_agc_avg_vec[n_sub_carr // 2:]
 
                         tx_bits = bit_rng.choice((0, 1), n_info_bits)
-                        crc_encoded_bits = matlab.nrCRCEncode(matlab.int8(matlab.transpose(tx_bits)),
+                        crc_encoded_bits = meng.nrCRCEncode(meng.int8(meng.transpose(tx_bits)),
                                                               cbs_info_dict['CRC'])
-                        code_block_segment_in = matlab.nrCodeBlockSegmentLDPC(crc_encoded_bits, cbs_info_dict['BGN'])
-                        ldpc_encoded_bits = matlab.nrLDPCEncode(code_block_segment_in, cbs_info_dict['BGN'])
+                        code_block_segment_in = meng.nrCodeBlockSegmentLDPC(crc_encoded_bits, cbs_info_dict['BGN'])
+                        ldpc_encoded_bits = meng.nrLDPCEncode(code_block_segment_in, cbs_info_dict['BGN'])
                         rm_ldpc_bits = np.squeeze(
-                            np.array(matlab.nrRateMatchLDPC(ldpc_encoded_bits, out_len, rv, modulation_format_str,
+                            np.array(meng.nrRateMatchLDPC(ldpc_encoded_bits, out_len, rv, modulation_format_str,
                                                             n_layers)))
 
                         tx_ofdm_symbol = my_array.transmit(rm_ldpc_bits, out_domain_fd=True, skip_dist=False)
@@ -291,16 +309,16 @@ for n_ant_val in n_ant_arr:
                         for ite_idx in range(len(rx_sybmols_per_iter_lst)):
                             rx_llr_soft_bits = -my_standard_rx.modem.soft_detection_llr(
                                 rx_sybmols_per_iter_lst[ite_idx], noise_var=noise_var_snr_based)
-                            rate_recovered_bits = matlab.nrRateRecoverLDPC(
-                                matlab.transpose(matlab.double(rx_llr_soft_bits)), n_info_bits,
+                            rate_recovered_bits = meng.nrRateRecoverLDPC(
+                                meng.transpose(meng.double(rx_llr_soft_bits)), n_info_bits,
                                 code_rate, rv, modulation_format_str,
                                 n_layers)
-                            ldpc_decoded_bits = matlab.nrLDPCDecode(rate_recovered_bits, cbs_info_dict['BGN'],
+                            ldpc_decoded_bits = meng.nrLDPCDecode(rate_recovered_bits, cbs_info_dict['BGN'],
                                                                     max_ldpc_ite)
-                            desegmented_bits = matlab.nrCodeBlockDesegmentLDPC(ldpc_decoded_bits, cbs_info_dict['BGN'],
+                            desegmented_bits = meng.nrCodeBlockDesegmentLDPC(ldpc_decoded_bits, cbs_info_dict['BGN'],
                                                                                n_info_bits + cbs_info_dict['L'])
                             rx_bits = np.squeeze(
-                                np.array(matlab.transpose(matlab.nrCRCDecode(desegmented_bits, cbs_info_dict['CRC']))))
+                                np.array(meng.transpose(meng.nrCRCDecode(desegmented_bits, cbs_info_dict['CRC']))))
 
                             n_bit_err = count_mismatched_bits(tx_bits, rx_bits)
                             n_err[act_ber_idx[ite_idx]] += n_bit_err

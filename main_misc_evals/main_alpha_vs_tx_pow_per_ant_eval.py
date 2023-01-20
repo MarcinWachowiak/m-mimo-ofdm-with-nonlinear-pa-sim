@@ -69,7 +69,6 @@ for chan_idx, chan_obj in enumerate(chan_lst):
 
     tmp_chan_mat = chan_obj.get_channel_mat_fd()
     my_array.set_precoding_matrix(channel_mat_fd=tmp_chan_mat, mr_precoding=True)
-
     my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
 
     # estimate lambda correcting coefficient

@@ -7,7 +7,6 @@ import scipy as scp
 import distortion
 import utilities
 
-# TODO: replace old calls to classes by new more detailed ones
 
 class AntennaArray(ABC):
     def __init__(self, n_elements, base_transceiver, center_freq, wav_len_spacing, cord_x=0, cord_y=0, cord_z=0):
@@ -99,7 +98,7 @@ class AntennaArray(ABC):
                         out_sig_mat[usr_idx, tx_idx, :] = usr_signal_lst[usr_idx]
                 return out_sig_mat
 
-    def set_precoding_matrix(self, channel_mat_fd=None, mr_precoding=False, zf_precoding=False, sep_carr_per_usr=False):
+    def set_precoding_matrix(self, channel_mat_fd=None, mr_precoding=False, zf_precoding=False, update_distortion=False, sep_carr_per_usr=False):
         # set precoding vector based on provided channel mat coefficients
         # only the subcarriers are precoded, other normalization operations should be performed in regard to carrier pool
         tx_n_sc = self.base_transceiver.modem.n_sub_carr
@@ -248,6 +247,9 @@ class AntennaArray(ABC):
                     tx_n_sc = tx_transceiver.modem.n_sub_carr
                     precoding_vec = precoding_mat_fd[idx, :]
                     tx_transceiver.modem.set_precoding(precoding_vec)
+
+        if update_distortion:
+            self.update_distortion(ibo_db=self.array_elements[0].impairment.ibo_db, avg_sample_pow=self.array_elements[0].modem.avg_sample_power)
 
     def update_distortion(self, ibo_db, avg_sample_pow, alpha_val=None):
         # calculate the avg precoding gain only for the desired signal - withing the idx range of subcarriers

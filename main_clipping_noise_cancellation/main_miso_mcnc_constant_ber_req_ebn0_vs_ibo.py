@@ -79,6 +79,7 @@ for n_ant_val in n_ant_arr:
     for my_miso_chan in chan_lst:
         chan_mat_at_point = my_miso_chan.get_channel_mat_fd()
         my_array.set_precoding_matrix(channel_mat_fd=chan_mat_at_point, mr_precoding=True)
+
         # channel and array objects are shared not copied
         my_mcnc_rx = corrector.McncReceiver(my_array, my_miso_chan)
 

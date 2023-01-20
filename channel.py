@@ -251,9 +251,27 @@ class MisoRandomPathsFd:
             return fd_sigmat_after_chan
 
 class MisoQuadrigaFd:
-    def __init__(self, tx_transceivers, rx_transceiver, matlab_engine):
-        self.matlab_engine = matlab_engine
-        self.channel_mat_fd = np.array(self.matlab_engine.qd_get_channel_mat(rx_transceiver.cord_x, rx_transceiver.cord_y, rx_transceiver.cord_z))
+    def __init__(self, tx_transceivers, rx_transceiver, channel_model_str, start_matlab_eng=True):
+
+        self.tx_transceivers = tx_transceivers
+        self.rx_transceiver = rx_transceiver
+
+        self.n_ant_val = len(tx_transceivers)
+        self.n_fft = tx_transceivers[0].modem.n_fft
+        self.subcarr_spacing = tx_transceivers[0].carrier_spacing
+        self.center_freq = tx_transceivers[0].center_freq
+        self.channel_model_str = channel_model_str
+        self.distance = np.sqrt(rx_transceiver.cord_x ** 2 + rx_transceiver.cord_y ** 2)
+
+        if start_matlab_eng:
+            self.meng = matlab.engine.start_matlab()
+            self.meng.rng(5)
+
+            self.meng.qd_channel_env_setup(self.meng.double(self.n_ant_val), self.meng.double(self.n_fft),
+                                      self.meng.double(self.subcarr_spacing), self.meng.double(self.center_freq),
+                                      self.meng.double(self.distance), channel_model_str, nargout=0)
+
+            self.channel_mat_fd = np.array(self.meng.qd_get_channel_mat(rx_transceiver.cord_x, rx_transceiver.cord_y, rx_transceiver.cord_z))
 
     def __str__(self):
         return "quadriga"
@@ -262,10 +280,10 @@ class MisoQuadrigaFd:
         return self.channel_mat_fd
 
     def calc_channel_mat(self, tx_transceivers, rx_transceiver):
-        self.channel_mat_fd = np.array(self.matlab_engine.qd_get_channel_mat(rx_transceiver.cord_x, rx_transceiver.cord_y, rx_transceiver.cord_z))
+        self.channel_mat_fd = np.array(self.meng.qd_get_channel_mat(rx_transceiver.cord_x, rx_transceiver.cord_y, rx_transceiver.cord_z))
 
     def reroll_channel_coeffs(self, tx_transceivers, rx_transceiver):
-        self.channel_mat_fd = np.array(self.matlab_engine.qd_get_channel_mat(rx_transceiver.cord_x, rx_transceiver.cord_y, rx_transceiver.cord_z))
+        self.channel_mat_fd = np.array(self.meng.qd_get_channel_mat(rx_transceiver.cord_x, rx_transceiver.cord_y, rx_transceiver.cord_z))
 
     def propagate(self, in_sig_mat, sum=True):
         # channel in frequency domain

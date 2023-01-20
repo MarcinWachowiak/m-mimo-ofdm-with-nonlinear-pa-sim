@@ -16,13 +16,27 @@ class Link():
 
         self.rx_loc_x = self.my_standard_rx.cord_x
         self.rx_loc_y = self.my_standard_rx.cord_y
-        self.my_miso_chan = copy.deepcopy(chan_obj)
-        self.my_miso_chan_csi_err = copy.deepcopy(self.my_miso_chan)
 
         self.my_noise = copy.deepcopy(noise_obj)
         self.my_csi_noise = copy.deepcopy(noise_obj)
         self.csi_noise_db = csi_noise_db
         self.my_csi_noise.snr_db = self.csi_noise_db
+
+        if isinstance(chan_obj, channel.MisoQuadrigaFd):
+            self.is_quadriga = True
+            self.channel_model_str = chan_obj.channel_model_str
+            # some dummy channels needed for setup
+            my_miso_los_chan = channel.MisoLosFd()
+            my_miso_los_chan.calc_channel_mat(tx_transceivers=array_obj.array_elements, rx_transceiver=std_rx_obj,
+                                              skip_attenuation=False)
+            self.my_miso_chan = my_miso_los_chan
+            if self.csi_noise_db is not None:
+                self.my_miso_chan_csi_err = my_miso_los_chan
+        else:
+            self.is_quadriga = False
+            self.my_miso_chan = copy.deepcopy(chan_obj)
+            if self.csi_noise_db is not None:
+                self.my_miso_chan_csi_err = copy.deepcopy(self.my_miso_chan)
 
         if is_mcnc:
             if self.csi_noise_db is None:
@@ -50,11 +64,30 @@ class Link():
 
     def simulate(self, incl_clean_run, reroll_chan, cnc_n_iter_lst, seed_arr, n_err_shared_arr,
                  n_bits_sent_shared_arr):
+
+        # matlab engine is not serializable and has to be started inside the process function
+        if self.is_quadriga:
+            self.my_miso_chan = channel.MisoQuadrigaFd(tx_transceivers=self.my_array.array_elements, rx_transceiver=self.my_standard_rx, channel_model_str=self.channel_model_str)
+            if self.csi_noise_db is not None:
+                self.my_miso_chan_csi_err = channel.MisoQuadrigaFd(tx_transceivers=self.my_array.array_elements, rx_transceiver=self.my_standard_rx, channel_model_str=self.channel_model_str)
+        # update MCNC channel
+        if isinstance(self.my_cnc_rx, corrector.McncReceiver):
+            if self.csi_noise_db is None:
+                self.my_cnc_rx.channel = self.my_miso_chan
+            else:
+                self.my_cnc_rx.channel = self.my_miso_chan_csi_err
+
+
         self.bit_rng = np.random.default_rng(seed_arr[0])
         self.my_noise.rng_gen = np.random.default_rng(seed_arr[1])
         self.loc_rng = np.random.default_rng(seed_arr[2])
         if self.csi_noise_db is not None:
             self.my_csi_noise.rng_gen = np.random.default_rng(seed_arr[3])
+
+        if isinstance(self.my_miso_chan, channel.MisoQuadrigaFd):
+            self.my_miso_chan.meng.rng(seed_arr[4].astype(np.uint32))
+            if self.csi_noise_db is not None:
+                self.my_miso_chan_csi_err.meng.rng(seed_arr[4].astype(np.uint32))
 
         res_idx = 0
         if incl_clean_run:
@@ -65,8 +98,7 @@ class Link():
                                   (n_bits_sent_shared_arr[0] < self.bits_sent_max)):
 
                     if reroll_chan:
-                        if isinstance(self.my_miso_chan, channel.MisoLosFd) or isinstance(self.my_miso_chan, channel.MisoTwoPathFd) \
-                                                                            or isinstance(self.my_miso_chan, channel.MisoQuadrigaFd):
+                        if not isinstance(self.my_miso_chan, channel.MisoRayleighFd):
                             # reroll location
                             self.my_standard_rx.set_position(
                                 cord_x=self.rx_loc_x + self.loc_rng.uniform(low=-self.rx_loc_var / 2.0,
@@ -75,10 +107,9 @@ class Link():
                                                                             high=self.rx_loc_var / 2.0),
                                 cord_z=self.my_standard_rx.cord_z)
                             self.my_miso_chan.calc_channel_mat(tx_transceivers=self.my_array.array_elements,
-                                                               rx_transceiver=self.my_standard_rx,
-                                                               skip_attenuation=False)
-                        elif isinstance(self.my_miso_chan, channel.MisoRandomPathsFd):
-                            self.my_miso_chan.reroll_channel_coeffs(tx_transceivers=self.my_array.array_elements)
+                                                               rx_transceiver=self.my_standard_rx)
+                        # elif isinstance(self.my_miso_chan, channel.MisoRandomPathsFd):
+                        #     self.my_miso_chan.reroll_channel_coeffs(tx_transceivers=self.my_array.array_elements)
                         else:
                             self.my_miso_chan.reroll_channel_coeffs()
 
@@ -117,8 +148,7 @@ class Link():
 
             # for direct visibility channel and CNC algorithm channel impact must be averaged
             if reroll_chan:
-                if isinstance(self.my_miso_chan, channel.MisoLosFd) or isinstance(self.my_miso_chan,channel.MisoTwoPathFd) \
-                                                                    or isinstance(self.my_miso_chan, channel.MisoQuadrigaFd):
+                if not isinstance(self.my_miso_chan, channel.MisoRayleighFd):
                     # reroll location
                     self.my_standard_rx.set_position(
                         cord_x=self.rx_loc_x + self.loc_rng.uniform(low=-self.rx_loc_var / 2.0,
@@ -127,10 +157,9 @@ class Link():
                                                                     high=self.rx_loc_var / 2.0),
                         cord_z=self.my_standard_rx.cord_z)
                     self.my_miso_chan.calc_channel_mat(tx_transceivers=self.my_array.array_elements,
-                                                       rx_transceiver=self.my_standard_rx,
-                                                       skip_attenuation=False)
-                elif isinstance(self.my_miso_chan, channel.MisoRandomPathsFd):
-                    self.my_miso_chan.reroll_channel_coeffs(tx_transceivers=self.my_array.array_elements)
+                                                       rx_transceiver=self.my_standard_rx)
+                # elif isinstance(self.my_miso_chan, channel.MisoRandomPathsFd):
+                #     self.my_miso_chan.reroll_channel_coeffs(tx_transceivers=self.my_array.array_elements)
                 else:
                     self.my_miso_chan.reroll_channel_coeffs()
 
@@ -151,6 +180,12 @@ class Link():
                 n_bit_err = utilities.count_mismatched_bits(tx_bits, rx_bits_per_iter_lst[idx])
                 n_err_shared_arr[act_ber_idx[idx]] += n_bit_err
                 n_bits_sent_shared_arr[act_ber_idx[idx]] += self.n_bits_per_ofdm_sym
+
+        # # close the matlab engine process
+        # if self.is_quadriga:
+        #     self.my_miso_chan.meng.quit()
+        #     if self.csi_noise_db is not None:
+        #         self.my_miso_chan_csi_err.meng.quit()
 
     def update_distortion(self, ibo_val_db):
         self.my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=self.my_mod.avg_sample_power)

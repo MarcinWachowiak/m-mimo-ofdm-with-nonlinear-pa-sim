@@ -26,9 +26,9 @@ import utilities
 set_latex_plot_style()
 # %%
 
-n_ant_arr = [64]
+n_ant_arr = [16]
 ebn0_db_arr = [15]
-ibo_step_arr = [0.25]
+ibo_step_arr = [0.5]
 cnc_n_iter_lst = [1, 2, 3, 4, 5, 6, 7, 8]
 # standard RX
 cnc_n_iter_lst = np.insert(cnc_n_iter_lst, 0, 0)
@@ -44,7 +44,7 @@ n_sub_carr = 2048
 cp_len = 128
 
 # BER accuracy settings
-bits_sent_max = int(1e7)
+bits_sent_max = int(1e6)
 n_err_min = int(1e5)
 
 rx_loc_x, rx_loc_y = 212.0, 212.0
@@ -79,14 +79,14 @@ for n_ant_val in n_ant_arr:
     my_miso_rayleigh_chan = channel.MisoRayleighFd(tx_transceivers=my_array.array_elements,
                                                    rx_transceiver=my_standard_rx,
                                                    seed=1234)
-    chan_lst = [my_miso_los_chan, my_miso_two_path_chan, my_miso_rayleigh_chan]
+    chan_lst = [my_miso_los_chan]
 
     for my_miso_chan in chan_lst:
         loc_rng = np.random.default_rng(2137)
         my_cnc_rx = corrector.CncReceiver(copy.deepcopy(my_mod), copy.deepcopy(my_distortion))
 
         for ibo_step_val in ibo_step_arr:
-            ibo_arr = np.arange(0, 9.0, ibo_step_val)
+            ibo_arr = np.arange(-5, 7.1, ibo_step_val)
 
             for ebn0_db in ebn0_db_arr:
                 start_time = time.time()
@@ -102,6 +102,8 @@ for n_ant_val in n_ant_arr:
                 # %%
                 # BER vs IBO eval
                 for ibo_idx, ibo_val_db in enumerate(ibo_arr):
+                    utilities.print_progress_bar(ibo_idx + 1, len(ibo_arr), prefix='Loop progress:')
+
                     my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
                     my_cnc_rx.update_distortion(ibo_db=ibo_val_db)
 
@@ -133,6 +135,7 @@ for n_ant_val in n_ant_arr:
 
                         chan_mat_at_point = my_miso_chan.get_channel_mat_fd()
                         my_array.set_precoding_matrix(channel_mat_fd=chan_mat_at_point, mr_precoding=True)
+                        my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
 
                         hk_mat = np.concatenate((chan_mat_at_point[:, -my_mod.n_sub_carr // 2:],
                                                  chan_mat_at_point[:, 1:(my_mod.n_sub_carr // 2) + 1]), axis=1)

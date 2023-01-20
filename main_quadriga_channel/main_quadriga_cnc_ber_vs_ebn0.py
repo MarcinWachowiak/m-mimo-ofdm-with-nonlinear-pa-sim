@@ -16,7 +16,6 @@ import multiprocessing as mp
 
 import matplotlib.pyplot as plt
 import numpy as np
-import matlab.engine
 
 import antenna_arrray
 import channel
@@ -33,11 +32,8 @@ if __name__ == '__main__':
 
     set_latex_plot_style(use_tex=False, fig_width_in=5)
 
-    matlab_engine = matlab.engine.start_matlab()
-    matlab_engine.rng(2137)
-
     # parameters
-    n_ant_arr = [8]
+    n_ant_arr = [64]
     ibo_arr = [0]
     ebn0_step = [1]
     cnc_n_iter_lst = [1, 2, 3, 4, 5, 6, 7, 8]
@@ -58,13 +54,11 @@ if __name__ == '__main__':
 
     distance = 300
     bandwidth = n_sub_carr * subcarr_spacing
-    channel_model_str = '3GPP_3D_UMa_LOS'
-
-
+    channel_model_str = '3GPP_38.901_UMa_LOS'
 
     # accuracy
-    bits_sent_max = int(1e6)
-    n_err_min = int(1e5)
+    bits_sent_max = int(1e7)
+    n_err_min = int(1e6)
 
     rx_loc_x, rx_loc_y = 212.0, 212.0
     rx_loc_var = 10.0
@@ -82,10 +76,6 @@ if __name__ == '__main__':
                                              center_freq=int(center_freq), carrier_spacing=int(subcarr_spacing))
     seed_rng = np.random.default_rng(2137)
     for n_ant_val in n_ant_arr:
-        matlab_engine.qd_channel_env_setup(matlab.double(n_ant_val), matlab.double(n_fft),
-                                           matlab.double(subcarr_spacing), matlab.double(center_freq),
-                                           matlab.double(distance), channel_model_str, nargout=0)
-
         my_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(center_freq),
                                               wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
         # channel type
@@ -100,8 +90,7 @@ if __name__ == '__main__':
                                                        rx_transceiver=my_standard_rx,
                                                        seed=1234)
         my_miso_quadriga_chan = channel.MisoQuadrigaFd(tx_transceivers=my_array.array_elements,
-                                                       rx_transceiver=my_standard_rx,
-                                                       matlab_engine=matlab_engine)
+                                                       rx_transceiver=my_standard_rx, channel_model_str=channel_model_str)
         chan_lst = [my_miso_quadriga_chan]
 
         for my_miso_chan in chan_lst:
@@ -124,7 +113,7 @@ if __name__ == '__main__':
                     print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
                     for snr_idx, snr_db_val in enumerate(snr_arr):
                         my_noise.snr_db = snr_db_val
-                        utilities.print_progress_bar(snr_idx + 1, len(snr_arr), prefix='LDPC SNR loop progress:')
+                        utilities.print_progress_bar(snr_idx + 1, len(snr_arr), prefix='SNR loop progress:')
 
                         bers = np.zeros([len(cnc_n_iter_lst) + 1])
                         n_err = np.zeros([len(cnc_n_iter_lst) + 1])
@@ -133,8 +122,7 @@ if __name__ == '__main__':
                         snap_cnt = 0
                         while True:
                             # for direct visibility channel and CNC algorithm channel impact must be averaged
-                            if isinstance(my_miso_chan, channel.MisoLosFd) or isinstance(my_miso_chan, channel.MisoTwoPathFd) \
-                                                                           or isinstance(my_miso_chan, channel.MisoQuadrigaFd):
+                            if not isinstance(my_miso_chan, channel.MisoRayleighFd):
                                 # reroll location
                                 my_standard_rx.set_position(
                                     cord_x=rx_loc_x + loc_rng.uniform(low=-rx_loc_var / 2.0, high=rx_loc_var / 2.0),
@@ -147,6 +135,7 @@ if __name__ == '__main__':
 
                             chan_mat_at_point = my_miso_chan.get_channel_mat_fd()
                             my_array.set_precoding_matrix(channel_mat_fd=chan_mat_at_point, mr_precoding=True)
+                            my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
 
                             hk_mat = np.concatenate((chan_mat_at_point[:, -my_mod.n_sub_carr // 2:],
                                                      chan_mat_at_point[:, 1:(my_mod.n_sub_carr // 2) + 1]), axis=1)
@@ -221,6 +210,7 @@ if __name__ == '__main__':
 
                             chan_mat_at_point = my_miso_chan.get_channel_mat_fd()
                             my_array.set_precoding_matrix(channel_mat_fd=chan_mat_at_point, mr_precoding=True)
+                            my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
 
                             hk_mat = np.concatenate((chan_mat_at_point[:, -my_mod.n_sub_carr // 2:],
                                                      chan_mat_at_point[:, 1:(my_mod.n_sub_carr // 2) + 1]), axis=1)
@@ -286,7 +276,7 @@ if __name__ == '__main__':
 
                     # fix log scaling
                     ax1.set_title("BER vs Eb/N0, %s, CNC, QAM %d, N ANT = %d, IBO = %d [dB]" % (
-                        my_miso_chan, my_mod.constellation_size, n_ant_val, ibo_val_db))
+                        channel_model_str, my_mod.constellation_size, n_ant_val, ibo_val_db))
                     ax1.set_xlabel("Eb/N0 [dB]")
                     ax1.set_ylabel("BER")
                     ax1.grid()
@@ -294,7 +284,7 @@ if __name__ == '__main__':
                     plt.tight_layout()
 
                     filename_str = "ber_vs_ebn0_cnc_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s" % (
-                        my_miso_chan, n_ant_val, ibo_val_db, min(ebn0_arr), max(ebn0_arr), ebn0_arr[1] - ebn0_arr[0],
+                        channel_model_str, n_ant_val, ibo_val_db, min(ebn0_arr), max(ebn0_arr), ebn0_arr[1] - ebn0_arr[0],
                         '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
                     # timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
                     # filename_str += "_" + timestamp
@@ -303,12 +293,12 @@ if __name__ == '__main__':
                     # plt.cla()
                     # plt.close()
 
-                    # # %%
-                    # data_lst = []
-                    # data_lst.append(ebn0_arr)
-                    # for arr1 in ber_per_dist:
-                    #     data_lst.append(arr1)
-                    # utilities.save_to_csv(data_lst=data_lst, filename=filename_str)
+                    # %%
+                    data_lst = []
+                    data_lst.append(ebn0_arr)
+                    for arr1 in ber_per_dist:
+                        data_lst.append(arr1)
+                    utilities.save_to_csv(data_lst=data_lst, filename=filename_str)
 
                     # read_data = utilities.read_from_csv(filename=filename_str)
 

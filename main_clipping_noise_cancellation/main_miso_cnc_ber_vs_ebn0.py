@@ -120,6 +120,7 @@ for n_ant_val in n_ant_arr:
 
                         chan_mat_at_point = my_miso_chan.get_channel_mat_fd()
                         my_array.set_precoding_matrix(channel_mat_fd=chan_mat_at_point, mr_precoding=True)
+                        my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
 
                         hk_mat = np.concatenate((chan_mat_at_point[:, -my_mod.n_sub_carr // 2:],
                                                  chan_mat_at_point[:, 1:(my_mod.n_sub_carr // 2) + 1]), axis=1)
@@ -195,6 +196,7 @@ for n_ant_val in n_ant_arr:
 
                         chan_mat_at_point = my_miso_chan.get_channel_mat_fd()
                         my_array.set_precoding_matrix(channel_mat_fd=chan_mat_at_point, mr_precoding=True)
+                        my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
 
                         hk_mat = np.concatenate((chan_mat_at_point[:, -my_mod.n_sub_carr // 2:],
                                                  chan_mat_at_point[:, 1:(my_mod.n_sub_carr // 2) + 1]), axis=1)
@@ -222,7 +224,7 @@ for n_ant_val in n_ant_arr:
                         ak_hk_vk_agc_nfft[1:(n_sub_carr // 2) + 1] = ak_hk_vk_agc_avg_vec[n_sub_carr // 2:]
 
                         tx_bits = bit_rng.choice((0, 1), my_tx.modem.n_bits_per_ofdm_sym)
-                        tx_ofdm_symbol = my_array.transmit(tx_bits, out_domain_fd=True, skip_dist=False)
+                        tx_ofdm_symbol = my_array.transmit(tx_bits, out_domain_fd=True, skip_dist=False, return_both=False)
                         rx_ofdm_symbol = my_miso_chan.propagate(in_sig_mat=tx_ofdm_symbol)
                         rx_ofdm_symbol = my_noise.process(rx_ofdm_symbol,
                                                           avg_sample_pow=my_mod.avg_symbol_power * ak_hk_vk_noise_scaler)

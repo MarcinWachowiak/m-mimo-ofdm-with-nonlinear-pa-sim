@@ -28,21 +28,24 @@ ibo_step = 0.5
 
 my_miso_chan = "los"
 
-cnc_filename_str = "ber_vs_ibo_cnc_%s_nant%d_ebn0_%d_ibo_min%d_max%d_step%1.2f_niter%s" % (
-    my_miso_chan, n_ant_val, ebn0_db, ibo_min, ibo_max, ibo_step,
-    '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
+cnc_filename_str = "no_noise_ber_vs_ibo_mcnc_los_nant16_ebn0_18_ibo_min-5_max7_step0.50_niter1_2_3_4_5_6_7_8"
+cnc_data_lst_no_noise = utilities.read_from_csv(filename=cnc_filename_str)
+cnc_ibo_arr = cnc_data_lst_no_noise[0]
+cnc_bers_per_ibo_no_noise = cnc_data_lst_no_noise[1:]
+
+cnc_filename_str = "ber_vs_ibo_mcnc_los_nant16_ebn0_15_ibo_min-5_max7_step0.50_niter1_2_3_4_5_6_7_8"
 cnc_data_lst = utilities.read_from_csv(filename=cnc_filename_str)
 cnc_ibo_arr = cnc_data_lst[0]
 cnc_bers_per_ibo = cnc_data_lst[1:]
 
 # cnc_ber_per_ite = np.array(np.transpose(np.vstack(cnc_bers_per_ibo)))
 
-mcnc_filename_str = "ber_vs_ibo_mcnc_%s_nant%d_ebn0_%d_ibo_min%d_max%d_step%1.2f_niter%s" % (
-    my_miso_chan, n_ant_val, ebn0_db, ibo_min, ibo_max, ibo_step,
-    '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
-mcnc_data_lst = utilities.read_from_csv(filename=mcnc_filename_str)
-mcnc_ibo_arr = mcnc_data_lst[0]
-mcnc_bers_per_ibo = mcnc_data_lst[1:]
+# mcnc_filename_str = "ber_vs_ibo_mcnc_%s_nant%d_ebn0_%d_ibo_min%d_max%d_step%1.2f_niter%s" % (
+#     my_miso_chan, n_ant_val, ebn0_db, ibo_min, ibo_max, ibo_step,
+#     '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
+# mcnc_data_lst = utilities.read_from_csv(filename=mcnc_filename_str)
+# mcnc_ibo_arr = mcnc_data_lst[0]
+# mcnc_bers_per_ibo = mcnc_data_lst[1:]
 
 # mcnc_ber_per_ite = np.array(np.transpose(np.vstack(mcnc_bers_per_ibo)))
 
@@ -60,14 +63,14 @@ CB_color_cycle = ['#006BA4', '#FF800E', '#ABABAB', '#595959', '#5F9ED1', '#C8520
 color_idx = 1
 for ite_idx, ite_val in enumerate(cnc_n_iter_lst[1:]):
     if ite_val in sel_cnc_iter_val:
-        ax1.plot(cnc_bers_per_ibo[ite_idx], cnc_bers_per_ibo[ite_idx+1], "-", color=CB_color_cycle[color_idx])
+        ax1.plot(cnc_bers_per_ibo_no_noise[ite_idx], cnc_bers_per_ibo_no_noise[ite_idx+1], "-", color=CB_color_cycle[color_idx])
         color_idx += 1
 plot_settings.reset_color_cycle()
 
 color_idx = 1
 for ite_idx, ite_val in enumerate(cnc_n_iter_lst[1:]):
     if ite_val in sel_cnc_iter_val:
-        ax1.plot(mcnc_bers_per_ibo[ite_idx], mcnc_bers_per_ibo[ite_idx+1], "--", color=CB_color_cycle[color_idx])  # , dashes=(5, 1 + ite_idx))
+        ax1.plot(cnc_bers_per_ibo[ite_idx], cnc_bers_per_ibo[ite_idx+1], "--", color=CB_color_cycle[color_idx])  # , dashes=(5, 1 + ite_idx))
         color_idx += 1
 import matplotlib.lines as mlines
 
@@ -90,26 +93,34 @@ for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
 leg1 = plt.legend(handles=n_ite_legend, title="I iterations:", loc="upper left", ncol=2, framealpha=0.9)
 plt.gca().add_artist(leg1)
 
-cnc_leg = mlines.Line2D([0], [0], linestyle='-', color='k', label='CNC')
-mcnc_leg = mlines.Line2D([0], [0], linestyle='--', color='k', label='MCNC')
+cnc_leg = mlines.Line2D([0], [0], linestyle='-', color='k', label='MCNC no noise')
+mcnc_leg = mlines.Line2D([0], [0], linestyle='--', color='k', label='MCNC Eb/N0: 15 dB')
 ax1.legend(handles=[cnc_leg, mcnc_leg], loc="lower right", framealpha=0.9)
 # plt.gca().add_artist(leg2)
 
 ax1.set_xlabel("BER in [-]")
 ax1.set_ylabel("BER out [-]")
-ax1.set_xlim([6e-4, 1e-1])
-ax1.set_ylim([6e-4, 1e-1])
+ax1.set_xlim([1e-4, 4e-1])
+ax1.set_ylim([1e-4, 4e-1])
+
+pt1 = ax1.get_ylim()
+pt2 = ax1.get_xlim()
+ax1.plot([pt1[0], pt2[1]], [pt1[0], pt2[1]], color='k', linewidth=1, label="No BER gain")
+
+noise_limited_ber = 7.85e-4
+ax1.scatter(noise_limited_ber, noise_limited_ber, color='k', marker='o', zorder=3)
+
 ax1.grid(which='major', linestyle='-')
-ax1.grid(which='minor', linestyle='--')
+# ax1.grid(which='minor', linestyle='--')
 
 
 ax1.annotate('Greater IBO \n (lower distortion)', xy=(6e-4, 1e-2),  xycoords='data',
             xytext=(4e-3, 1e-2), horizontalalignment="center", verticalalignment="center", textcoords='data',
-            arrowprops=dict(facecolor='black' , arrowstyle='->'))
+            arrowprops=dict(facecolor='black', arrowstyle='->'))
 
 plt.tight_layout()
 
-filename_str = "berout_vs_berin_per_single_ite_%s_nant%d_ebn0%d_ibo_min%d_max%d_step%1.2f_niter%s" % (
+filename_str = "no_noise_comparison_mcnc_berout_vs_berin_per_single_ite_%s_nant%d_ebn0%d_ibo_min%d_max%d_step%1.2f_niter%s" % (
     my_miso_chan, n_ant_val, ebn0_db, ibo_min, ibo_max, ibo_step,
     '_'.join([str(val) for val in sel_cnc_iter_val[:]]))
 # timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
