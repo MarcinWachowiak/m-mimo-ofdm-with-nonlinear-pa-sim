@@ -32,10 +32,10 @@ if __name__ == '__main__':
     num_cores = mp.cpu_count() // 2
 
     # parameters
-    n_ant_arr = [16]
+    n_ant_arr = [64]
     ibo_arr = [0]
     ebn0_step = [1]
-    cnc_n_iter_lst = [1, 2]
+    cnc_n_iter_lst = [1, 2, 3, 4, 5, 6, 7, 8]
     # include clean run is always True
     # no distortion and standard RX always included
     incl_clean_run = True
@@ -56,8 +56,8 @@ if __name__ == '__main__':
     channel_model_str = '3GPP_38.901_UMa_LOS'
 
     # accuracy
-    bits_sent_max = int(1e5)
-    n_err_min = int(1e5)
+    bits_sent_max = int(1e7)
+    n_err_min = int(1e6)
 
     rx_loc_x, rx_loc_y = 212.0, 212.0
     rx_loc_var = 10.0

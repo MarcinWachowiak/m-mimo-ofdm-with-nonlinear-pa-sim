@@ -14,7 +14,6 @@ import multiprocessing as mp
 
 import matplotlib.pyplot as plt
 import numpy as np
-import matlab.engine
 
 import antenna_arrray
 import channel
@@ -30,13 +29,13 @@ import mp_model
 if __name__ == '__main__':
 
     set_latex_plot_style()
-    num_cores = 2
+    num_cores = mp.cpu_count() // 2
 
     # parameters
-    n_ant_arr = [16]
+    n_ant_arr = [64]
     ibo_arr = [0]
     ebn0_step = [1]
-    cnc_n_iter_lst = [1, 2]
+    cnc_n_iter_lst = [1, 2, 3, 4, 5, 6, 7, 8]
     # include clean run is always True
     # no distortion and standard RX always included
     incl_clean_run = True
@@ -57,8 +56,8 @@ if __name__ == '__main__':
     channel_model_str = '3GPP_38.901_UMa_LOS'
 
     # accuracy
-    bits_sent_max = int(1e5)
-    n_err_min = int(1e5)
+    bits_sent_max = int(1e7)
+    n_err_min = int(1e6)
 
     rx_loc_x, rx_loc_y = 212.0, 212.0
     rx_loc_var = 10.0
@@ -161,7 +160,7 @@ if __name__ == '__main__':
                         '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
                     # timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
                     # filename_str += "_" + timestamp
-                    plt.savefig("../figs/%s.png" % filename_str, dpi=600, bbox_inches='tight')
+                    plt.savefig("figs/vm_worker_results/%s.png" % filename_str, dpi=600, bbox_inches='tight')
                     # plt.show()
                     plt.cla()
                     plt.close()
