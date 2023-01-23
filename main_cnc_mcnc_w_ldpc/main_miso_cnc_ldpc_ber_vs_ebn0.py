@@ -92,10 +92,6 @@ my_standard_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment
                                          center_freq=int(3.5e9), carrier_spacing=int(15e3))
 
 for n_ant_val in n_ant_arr:
-    meng.qd_channel_env_setup(meng.double(n_ant_val), meng.double(n_fft),
-                                       meng.double(subcarr_spacing), meng.double(center_freq),
-                                       meng.double(distance), channel_model_str, nargout=0)
-
     my_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(center_freq),
                                           wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
     # channel type
@@ -112,7 +108,7 @@ for n_ant_val in n_ant_arr:
 
     my_miso_quadriga_chan = channel.MisoQuadrigaFd(tx_transceivers=my_array.array_elements,
                                                    rx_transceiver=my_standard_rx,
-                                                   matlab_engine=meng)
+                                                   start_matlab_eng=False, channel_model_str=channel_model_str)
 
     chan_lst = [my_miso_quadriga_chan]  # ,my_miso_two_path_chan, my_miso_rayleigh_chan]
 
