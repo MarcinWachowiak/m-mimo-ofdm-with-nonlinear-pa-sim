@@ -29,7 +29,7 @@ import mp_model
 if __name__ == '__main__':
 
     set_latex_plot_style()
-    num_cores = mp.cpu_count() // 2
+    num_cores = 8 # mp.cpu_count() // 2
 
     # parameters
     n_ant_arr = [64]

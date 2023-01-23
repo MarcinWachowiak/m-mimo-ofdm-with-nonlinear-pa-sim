@@ -12,6 +12,7 @@ from plot_settings import set_latex_plot_style
 set_latex_plot_style(use_tex=False, fig_width_in=5)
 
 meng = matlab.engine.start_matlab()
+meng.addpath(r"C:\Users\rkotrys\Documents\GitHub\mimo-simulation-py\main_quadriga_channel")
 meng.rng(2137)
 
 n_ant = 64
@@ -39,5 +40,5 @@ ax1.set_xlim([0, n_sub_carr])
 
 plt.grid()
 plt.tight_layout()
-plt.savefig("../figs/quadriga_channel.png", dpi=600, bbox_inches='tight')
+plt.savefig("figs/quadriga_channel.png", dpi=600, bbox_inches='tight')
 plt.show()

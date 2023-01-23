@@ -265,6 +265,8 @@ class MisoQuadrigaFd:
 
         if start_matlab_eng:
             self.meng = matlab.engine.start_matlab()
+            self.meng.addpath(r"C:\Users\rkotrys\Documents\GitHub\mimo-simulation-py\main_quadriga_channel")
+
             self.meng.rng(5)
 
             self.meng.qd_channel_env_setup(self.meng.double(self.n_ant_val), self.meng.double(self.n_fft),

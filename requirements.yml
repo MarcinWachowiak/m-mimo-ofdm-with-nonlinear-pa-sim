@@ -119,4 +119,3 @@ dependencies:
   - zstd=1.5.2=h7755175_4
   - pip:
       - matlabengineforpython==9.13
-prefix: C:\Users\Marcin\anaconda3\envs\mimo_sim
