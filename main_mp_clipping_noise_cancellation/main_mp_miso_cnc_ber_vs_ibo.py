@@ -32,13 +32,13 @@ if __name__ == '__main__':
     num_cores = mp.cpu_count()
 
     # %%
-    n_ant_arr = [4]
-    ebn0_db_arr = [15]
+    n_ant_arr = [64]
+    ebn0_db_arr = [10, 15, 20, 1000]
     ibo_step_arr = [0.5]
     cnc_n_iter_lst = [1, 2, 3, 4, 5, 6, 7, 8]
     # standard RX
     cnc_n_iter_lst = np.insert(cnc_n_iter_lst, 0, 0)
-    incl_clean_run = False
+    incl_clean_run = True
     reroll_chan = True
 
     # modulation
@@ -58,8 +58,8 @@ if __name__ == '__main__':
     # check modifications before copy and what you copy!
     my_mod = modulation.OfdmQamModem(constel_size=constel_size, n_fft=n_fft, n_sub_carr=n_sub_carr, cp_len=cp_len)
 
-    # my_distortion = distortion.SoftLimiter(ibo_db=0, avg_samp_pow=my_mod.avg_sample_power)
-    my_distortion = distortion.Rapp(ibo_db=0, p_hardness=4.0, avg_samp_pow=my_mod.avg_sample_power)
+    my_distortion = distortion.SoftLimiter(ibo_db=0, avg_samp_pow=my_mod.avg_sample_power)
+    # my_distortion = distortion.Rapp(ibo_db=0, p_hardness=4.0, avg_samp_pow=my_mod.avg_sample_power)
 
     my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
                                     center_freq=int(3.5e9),
@@ -85,7 +85,7 @@ if __name__ == '__main__':
         my_miso_rayleigh_chan = channel.MisoRayleighFd(tx_transceivers=my_array.array_elements,
                                                        rx_transceiver=my_standard_rx,
                                                        seed=1234)
-        chan_lst = [my_miso_los_chan, my_miso_two_path_chan, my_miso_rayleigh_chan]
+        chan_lst = [my_miso_los_chan]
         my_noise = noise.Awgn(snr_db=10, seed=1234)
 
         for my_miso_chan in chan_lst:
@@ -110,8 +110,8 @@ if __name__ == '__main__':
                         mp_link_obj.update_distortion(ibo_val_db=ibo_val_db)
 
                         bers = np.zeros([len(cnc_n_iter_lst) + 1])
-                        n_err_shared_arr = mp.Array(ctypes.c_double, len(cnc_n_iter_lst), lock=True)
-                        n_bits_sent_shared_arr = mp.Array(ctypes.c_double, len(cnc_n_iter_lst), lock=True)
+                        n_err_shared_arr = mp.Array(ctypes.c_double, len(cnc_n_iter_lst) + 1, lock=True)
+                        n_bits_sent_shared_arr = mp.Array(ctypes.c_double, len(cnc_n_iter_lst) + 1, lock=True)
 
                         proc_seed_lst = seed_rng.integers(0, high=sys.maxsize, size=(num_cores, 3))
                         processes = []
