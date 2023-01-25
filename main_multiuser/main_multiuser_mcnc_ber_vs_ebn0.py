@@ -29,8 +29,8 @@ if __name__ == '__main__':
     CB_color_cycle = ['#006BA4', '#FF800E', '#ABABAB', '#595959', '#5F9ED1', '#C85200', '#898989', '#A2C8EC', '#FFBC79',
                       '#CFCFCF']
     # Multiple users data
-    usr_angles = np.array([-30, 60])
-    usr_distances = [100, 300]
+    usr_angles = np.array([-30, 30])
+    usr_distances = [100, 316.3]
     usr_pos_tup = []
     for usr_idx, usr_angle in enumerate(usr_angles + 90):
         usr_pos_x = np.cos(np.deg2rad(usr_angle)) * usr_distances[usr_idx]
@@ -40,10 +40,10 @@ if __name__ == '__main__':
     # usr_pos_tup = [(45, 45), (120, 120), (150, 150)]
     n_users = len(usr_pos_tup)
 
-    n_ant_arr = [16]
+    n_ant_arr = [64]
     ibo_arr = [0]
     ebn0_step = [1]
-    mcnc_n_iter_lst = [1, 2, 3, 4]  # 5, 6, 7, 8]
+    mcnc_n_iter_lst = [1, 2, 3, 4, 5, 6, 7, 8]
     # include clean run is always True
     # no distortion and standard RX always included
     mcnc_n_iter_lst = np.insert(mcnc_n_iter_lst, 0, 0)
@@ -59,21 +59,29 @@ if __name__ == '__main__':
     cp_len = 1
 
     # BER analysis
-    bits_sent_max = int(1e5)
-    n_err_min = int(1e4)
-    ber_reroll_pos = False
+    bits_sent_max = int(1e7)
+    n_err_min = int(1e5)
+    ber_reroll_pos = True
+    precoding_str = 'mr'
+
+    if precoding_str == 'mr':
+        mr_precoding = True
+        zf_precoding = False
+    elif precoding_str == 'zf':
+        mr_precoding = False
+        zf_precoding = True
 
     rx_loc_x, rx_loc_y = 212.0, 212.0
     rx_loc_var = 10.0
 
     # SDR
-    meas_usr_sdr = True
+    meas_usr_sdr = False
     sdr_n_snapshots = 10
     sdr_reroll_pos = False
 
     # Beampatterns
     plot_precoding_beampatterns = False
-    beampattern_n_snapshots = 10
+    beampattern_n_snapshots = 100
     n_points = 180 * 1
     radial_distance = usr_distances[0]
     rx_points = utilities.pts_on_semicircum(r=radial_distance, n=n_points)
@@ -125,13 +133,13 @@ if __name__ == '__main__':
                     my_mcnc_array = copy.deepcopy(my_array)
                     my_mcnc_array.update_n_users(n_users=1)
                     my_mcnc_array.set_precoding_matrix(channel_mat_fd=my_miso_chan.get_channel_mat_fd(),
-                                                       mr_precoding=True)
+                                                       mr_precoding=mr_precoding, zf_precoding=zf_precoding)
                     my_mcnc_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
                     my_mcnc_rx = corrector.McncReceiver(copy.deepcopy(my_mcnc_array), copy.deepcopy(my_miso_chan))
                     my_mcnc_rx_lst.append(my_mcnc_rx)
 
                 # set precoding and calculate AGC
-                my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=True)
+                my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=mr_precoding, zf_precoding=zf_precoding)
                 my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
                 for my_mcnc_rx_obj in my_mcnc_rx_lst:
                     my_mcnc_rx_obj.update_agc()
@@ -241,7 +249,7 @@ if __name__ == '__main__':
 
                                 usr_chan_mat_lst.append(my_miso_chan.get_channel_mat_fd())
 
-                            my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=True)
+                            my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=mr_precoding, zf_precoding=zf_precoding)
                             my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
 
                             vk_mat = my_array.get_precoding_mat()
@@ -376,6 +384,7 @@ if __name__ == '__main__':
                     print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
                     for snr_idx, snr_db_val in enumerate(snr_arr):
                         my_noise.snr_db = snr_db_val
+                        utilities.print_progress_bar(snr_idx + 1, len(snr_arr), prefix='SNR loop progress:')
 
                         bers = np.zeros((n_users, len(mcnc_n_iter_lst) + 1))
                         n_err = np.zeros((n_users, len(mcnc_n_iter_lst) + 1))
@@ -405,19 +414,20 @@ if __name__ == '__main__':
                                                                       skip_attenuation=False)
                                     else:
                                         my_miso_rayleigh_chan.reroll_channel_coeffs()
+
                                     usr_chan_mat_lst.append(my_miso_chan.get_channel_mat_fd())
 
                                     my_mcnc_array = copy.deepcopy(my_array)
                                     my_mcnc_array.update_n_users(n_users=1)
                                     my_mcnc_array.set_precoding_matrix(channel_mat_fd=my_miso_chan.get_channel_mat_fd(),
-                                                                       mr_precoding=True)
+                                                                       mr_precoding=mr_precoding, zf_precoding=zf_precoding)
                                     my_mcnc_array.update_distortion(ibo_db=ibo_val_db,
                                                                     avg_sample_pow=my_mod.avg_sample_power)
                                     my_mcnc_rx = corrector.McncReceiver(copy.deepcopy(my_mcnc_array),
                                                                         copy.deepcopy(my_miso_chan))
                                     my_mcnc_rx_lst.append(my_mcnc_rx)
 
-                                my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=True)
+                                my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=mr_precoding, zf_precoding=zf_precoding)
                                 my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
 
                                 vk_mat = my_array.get_precoding_mat()
@@ -522,6 +532,13 @@ if __name__ == '__main__':
 
                                     if isinstance(my_miso_chan, channel.MisoLosFd) or isinstance(my_miso_chan,
                                                                                                  channel.MisoTwoPathFd):
+                                        # reroll location
+                                        my_standard_rx.set_position(
+                                            cord_x=usr_pos_x + loc_rng.uniform(low=-rx_loc_var / 2.0,
+                                                                               high=rx_loc_var / 2.0),
+                                            cord_y=usr_pos_y + loc_rng.uniform(low=-rx_loc_var / 2.0,
+                                                                               high=rx_loc_var / 2.0),
+                                            cord_z=my_standard_rx.cord_z)
                                         my_miso_chan.calc_channel_mat(tx_transceivers=my_array.array_elements,
                                                                       rx_transceiver=my_standard_rx,
                                                                       skip_attenuation=False)
@@ -531,7 +548,7 @@ if __name__ == '__main__':
                                     my_mcnc_array = copy.deepcopy(my_array)
                                     my_mcnc_array.update_n_users(n_users=1)
                                     my_mcnc_array.set_precoding_matrix(channel_mat_fd=my_miso_chan.get_channel_mat_fd(),
-                                                                       mr_precoding=True)
+                                                                       mr_precoding=mr_precoding, zf_precoding=zf_precoding)
                                     my_mcnc_array.update_distortion(ibo_db=ibo_val_db,
                                                                     avg_sample_pow=my_mod.avg_sample_power)
                                     my_mcnc_rx = corrector.McncReceiver(copy.deepcopy(my_mcnc_array),
@@ -539,7 +556,7 @@ if __name__ == '__main__':
                                     my_mcnc_rx_lst.append(my_mcnc_rx)
 
                                 # set precoding and calculate AGC
-                                my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=True)
+                                my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=mr_precoding, zf_precoding=zf_precoding)
                                 my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
 
                                 vk_mat = my_array.get_precoding_mat()
@@ -652,8 +669,8 @@ if __name__ == '__main__':
                     ax1.legend(loc="lower left")
                     plt.tight_layout()
 
-                    filename_str = "ber_vs_ebn0_mu_mcnc_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s_angles%s_distances%s" % (
-                        my_miso_chan, n_ant_val, ibo_val_db, min(ebn0_arr), max(ebn0_arr), ebn0_arr[1] - ebn0_arr[0],
+                    filename_str = "ber_vs_ebn0_mu_%s_mcnc_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s_angles%s_distances%s" % (
+                        precoding_str, my_miso_chan, n_ant_val, ibo_val_db, min(ebn0_arr), max(ebn0_arr), ebn0_arr[1] - ebn0_arr[0],
                         '_'.join([str(val) for val in mcnc_n_iter_lst[1:]]), '_'.join([str(val) for val in usr_angles]),
                         '_'.join([str(val) for val in usr_distances]))
 

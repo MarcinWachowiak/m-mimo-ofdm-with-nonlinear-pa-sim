@@ -15,7 +15,7 @@ from plot_settings import set_latex_plot_style
 set_latex_plot_style(use_tex=True, fig_width_in=3.5)
 
 cnc_n_iter_lst = [0, 1, 2, 3, 4, 5, 6, 7, 8]
-sel_cnc_iter_val = [0, 1, 2, 5]
+sel_cnc_iter_val = [0, 2, 5, 8]
 
 n_ant_val = 64
 ibo_val_db = 0
@@ -23,9 +23,9 @@ constel_size = 64
 
 ebn0_min = 5
 ebn0_max = 20
-ebn0_step = 0.5
+ebn0_step = 1
 
-my_miso_chan = "rayleigh"
+my_miso_chan = "3GPP_38.901_UMa_LOS"
 
 cnc_filename_str = "ber_vs_ebn0_cnc_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s" % (
     my_miso_chan, n_ant_val, ibo_val_db, ebn0_min, ebn0_max, ebn0_step,
@@ -52,7 +52,7 @@ color_idx = 1
 ax1.plot(cnc_ebn0_arr, cnc_ber_per_dist[0])
 for idx, cnc_iter_val in enumerate(cnc_n_iter_lst):
     if cnc_iter_val in sel_cnc_iter_val:
-        ax1.plot(cnc_ebn0_arr[::2], cnc_ber_per_dist[idx + 1][::2], "-", color=CB_color_cycle[color_idx])
+        ax1.plot(cnc_ebn0_arr[:], cnc_ber_per_dist[idx + 1][:], "-", color=CB_color_cycle[color_idx])
     if cnc_iter_val in sel_cnc_iter_val or cnc_iter_val == 1:
         color_idx += 1
 plot_settings.reset_color_cycle()
@@ -61,8 +61,8 @@ color_idx = 1
 ax1.plot(mcnc_ebn0_arr, mcnc_ber_per_dist[0], "--")
 for idx, cnc_iter_val in enumerate(cnc_n_iter_lst):
     if cnc_iter_val in sel_cnc_iter_val:
-        ax1.plot(mcnc_ebn0_arr[::2], mcnc_ber_per_dist[idx + 1][::2], "--", color=CB_color_cycle[color_idx],
-                 dashes=(5, 1 + idx))
+        ax1.plot(mcnc_ebn0_arr[:], mcnc_ber_per_dist[idx + 1][:], "--", color=CB_color_cycle[color_idx],
+                 )
     if cnc_iter_val in sel_cnc_iter_val or cnc_iter_val == 1:
         color_idx += 1
 
@@ -91,10 +91,10 @@ plt.gca().add_artist(leg1)
 
 cnc_leg = mlines.Line2D([0], [0], linestyle='-', color='k', label='CNC')
 mcnc_leg = mlines.Line2D([0], [0], linestyle='--', color='k', label='MCNC')
-ax1.legend(handles=[cnc_leg, mcnc_leg], loc="upper left", framealpha=0.9, bbox_to_anchor=(0.68, 0.69))
+ax1.legend(handles=[cnc_leg, mcnc_leg], loc="upper left", framealpha=0.9, bbox_to_anchor=(0.68, 0.48))
 # plt.gca().add_artist(leg2)
 
-# ax1.set_title("BER vs Eb/N0, %s, CNC, QAM %d, N ANT = %d, IBO = %d [dB]" % (
+# ax1.set_title("BER vs Eb/N0, %s channel, \n QAM %d, K = %d, IBO = %d dB" % (
 #     my_miso_chan, constel_size, n_ant_val, ibo_val_db))
 ax1.set_xlim([10, 20])
 ax1.set_ylim([1e-5, 3e-1])

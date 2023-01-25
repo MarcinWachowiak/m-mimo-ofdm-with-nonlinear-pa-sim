@@ -29,8 +29,8 @@ if __name__ == '__main__':
     CB_color_cycle = ['#006BA4', '#FF800E', '#ABABAB', '#595959', '#5F9ED1', '#C85200', '#898989', '#A2C8EC', '#FFBC79',
                       '#CFCFCF']
     # Multiple users data
-    usr_angles = np.array([-30, 60])
-    usr_distances = [100, 300]
+    usr_angles = np.array([-30, 30])
+    usr_distances = [100, 316.3]
     usr_pos_tup = []
     for usr_idx, usr_angle in enumerate(usr_angles + 90):
         usr_pos_x = np.cos(np.deg2rad(usr_angle)) * usr_distances[usr_idx]
@@ -40,10 +40,10 @@ if __name__ == '__main__':
     # usr_pos_tup = [(45, 45), (120, 120), (150, 150)]
     n_users = len(usr_pos_tup)
 
-    n_ant_arr = [16]
+    n_ant_arr = [64]
     ibo_arr = [0]
     ebn0_step = [1]
-    cnc_n_iter_lst = [1, 2, 3, 4]  # 5, 6, 7, 8]
+    cnc_n_iter_lst = [1, 2, 3, 4, 5, 6, 7, 8]
     # include clean run is always True
     # no distortion and standard RX always included
     cnc_n_iter_lst = np.insert(cnc_n_iter_lst, 0, 0)
@@ -59,15 +59,24 @@ if __name__ == '__main__':
     cp_len = 1
 
     # BER analysis
-    bits_sent_max = int(1e5)
-    n_err_min = int(1e4)
-    ber_reroll_pos = False
+    bits_sent_max = int(1e7)
+    n_err_min = int(1e5)
+    ber_reroll_pos = True
+    precoding_str = 'zf'
+
+    if precoding_str == 'mr':
+        mr_precoding = True
+        zf_precoding = False
+    elif precoding_str == 'zf':
+        mr_precoding = False
+        zf_precoding = True
+
 
     rx_loc_x, rx_loc_y = 212.0, 212.0
     rx_loc_var = 10.0
 
     # SDR
-    meas_usr_sdr = True
+    meas_usr_sdr = False
     sdr_n_snapshots = 10
     sdr_reroll_pos = False
 
@@ -126,7 +135,7 @@ if __name__ == '__main__':
                     usr_chan_mat_lst.append(my_miso_chan.get_channel_mat_fd())
 
                 # set precoding and calculate AGC
-                my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=True)
+                my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=mr_precoding, zf_precoding=zf_precoding)
                 my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
 
                 ak_hk_vk_noise_scaler_lst = []
@@ -199,7 +208,7 @@ if __name__ == '__main__':
 
                                 usr_chan_mat_lst.append(my_miso_chan.get_channel_mat_fd())
 
-                            my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=True)
+                            my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=mr_precoding, zf_precoding=zf_precoding)
                             my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
 
                             vk_mat = my_array.get_precoding_mat()
@@ -334,6 +343,7 @@ if __name__ == '__main__':
                     print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
                     for snr_idx, snr_db_val in enumerate(snr_arr):
                         my_noise.snr_db = snr_db_val
+                        utilities.print_progress_bar(snr_idx + 1, len(snr_arr), prefix='SNR loop progress:')
 
                         bers = np.zeros((n_users, len(cnc_n_iter_lst) + 1))
                         n_err = np.zeros((n_users, len(cnc_n_iter_lst) + 1))
@@ -365,7 +375,7 @@ if __name__ == '__main__':
 
                                     usr_chan_mat_lst.append(my_miso_chan.get_channel_mat_fd())
 
-                                my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=True)
+                                my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=mr_precoding, zf_precoding=zf_precoding)
                                 my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
 
                                 vk_mat = my_array.get_precoding_mat()
@@ -517,7 +527,7 @@ if __name__ == '__main__':
 
                                     usr_chan_mat_lst.append(my_miso_chan.get_channel_mat_fd())
 
-                                my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=True)
+                                my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=mr_precoding, zf_precoding=zf_precoding)
                                 my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
 
                                 vk_mat = my_array.get_precoding_mat()
@@ -607,7 +617,6 @@ if __name__ == '__main__':
                     fig1, ax1 = plt.subplots(1, 1)
                     ax1.set_yscale('log')
                     usr_marker_lst = ['o', 's', '^', '*']
-                    usr_marker_lst = ['o', 's', '^', '*']
 
                     for usr_idx in range(n_users):
                         ax1.plot(ebn0_arr, bers_per_usr[usr_idx][0, :], label="No distortion", color=CB_color_cycle[0],
@@ -631,8 +640,8 @@ if __name__ == '__main__':
                     ax1.legend()
                     plt.tight_layout()
 
-                    filename_str = "ber_vs_ebn0_mu_cnc_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s_angles%s_distances%s" % (
-                        my_miso_chan, n_ant_val, ibo_val_db, min(ebn0_arr), max(ebn0_arr), ebn0_arr[1] - ebn0_arr[0],
+                    filename_str = "ber_vs_ebn0_mu_%s_cnc_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s_angles%s_distances%s" % (
+                        precoding_str, my_miso_chan, n_ant_val, ibo_val_db, min(ebn0_arr), max(ebn0_arr), ebn0_arr[1] - ebn0_arr[0],
                         '_'.join([str(val) for val in cnc_n_iter_lst[1:]]), '_'.join([str(val) for val in usr_angles]),
                         '_'.join([str(val) for val in usr_distances]))
 
@@ -643,13 +652,14 @@ if __name__ == '__main__':
                     # plt.cla()
                     # plt.close()
 
-                    # # %%
-                    # data_lst = []
-                    # data_lst.append(ebn0_arr)
-                    # for arr1 in ber_per_dist:
-                    #     data_lst.append(arr1)
-                    # utilities.save_to_csv(data_lst=data_lst, filename=filename_str)
+                    # %%
+                    data_lst = []
+                    data_lst.append(ebn0_arr)
+                    for arr1 in bers_per_usr:
+                        for arr2 in arr1:
+                            data_lst.append(arr2)
+                    utilities.save_to_csv(data_lst=data_lst, filename=filename_str)
 
-                    # read_data = utilities.read_from_csv(filename=filename_str)
+                    read_data = utilities.read_from_csv(filename=filename_str)
 
 print("Finished processing!")
