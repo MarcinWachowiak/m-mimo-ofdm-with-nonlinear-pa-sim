@@ -34,7 +34,7 @@ if __name__ == '__main__':
     # parameters
     n_ant_arr = [64]
     ibo_arr = [0]
-    ebn0_step = [1]
+    ebn0_step = [0.25]
     cnc_n_iter_lst = [1, 2, 3, 4, 5, 6, 7, 8]
     # include clean run is always True
     # no distortion and standard RX always included
@@ -56,8 +56,8 @@ if __name__ == '__main__':
     # channel_model_str = '3GPP_38.901_UMa_LOS'
 
     # main code tuning variable
-    code_rate_str_lst = ["1/3", "1/2", "2/3" "3/4"]
-    ebn0_bounds_arr = [[-5.0, 10.1], [-5.0, 15.1], [0.0, 20.1], [0.0, 20.1]]
+    code_rate_str_lst = ["1/3", "2/3"]
+    ebn0_bounds_arr = [[-5.0, 5.1], [0.0, 15.1]]
     max_ldpc_ite = 12
 
     # accuracy

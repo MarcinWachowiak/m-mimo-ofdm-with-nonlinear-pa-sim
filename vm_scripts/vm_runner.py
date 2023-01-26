@@ -8,6 +8,9 @@ from datetime import datetime
 sys.path.append(os.getcwd())
 
 filename_str_lst = [
+    "main_quadriga_channel/main_mp_quadriga_cnc_ber_vs_ebn0.py",
+    "main_quadriga_channel/main_mp_quadriga_mcnc_ber_vs_ebn0.py",
+
     "main_cnc_mcnc_w_ldpc/main_mp_ldpc_cnc_ber_vs_ebn0.py",
     "main_cnc_mcnc_w_ldpc/main_mp_ldpc_mcnc_ber_vs_ebn0.py",
 ]
