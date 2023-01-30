@@ -29,12 +29,12 @@ import mp_model
 if __name__ == '__main__':
 
     set_latex_plot_style()
-    num_cores = 8 # mp.cpu_count() // 2
+    num_cores = 9 # mp.cpu_count() // 2
 
     # parameters
     n_ant_arr = [64]
     ibo_arr = [0]
-    ebn0_step = [0.5]
+    ebn0_step = [1]
     cnc_n_iter_lst = [1, 2, 3, 4, 5, 6, 7, 8]
     # include clean run is always True
     # no distortion and standard RX always included
