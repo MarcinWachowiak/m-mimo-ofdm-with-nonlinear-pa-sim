@@ -21,9 +21,9 @@ n_ant_val = 64
 ibo_val_db = 0
 constel_size = 64
 
-ebn0_min = 5
+ebn0_min = 10
 ebn0_max = 20
-ebn0_step = 1
+ebn0_step = 0.5
 
 my_miso_chan = "3GPP_38.901_UMa_LOS"
 

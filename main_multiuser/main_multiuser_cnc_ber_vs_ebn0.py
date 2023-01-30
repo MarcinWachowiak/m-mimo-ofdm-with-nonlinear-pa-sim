@@ -60,7 +60,7 @@ if __name__ == '__main__':
 
     # BER analysis
     bits_sent_max = int(1e7)
-    n_err_min = int(1e5)
+    n_err_min = int(1e6)
     ber_reroll_pos = True
     precoding_str = 'zf'
 
@@ -71,8 +71,6 @@ if __name__ == '__main__':
         mr_precoding = False
         zf_precoding = True
 
-
-    rx_loc_x, rx_loc_y = 212.0, 212.0
     rx_loc_var = 10.0
 
     # SDR
@@ -93,7 +91,7 @@ if __name__ == '__main__':
     my_distortion = distortion.SoftLimiter(0, my_mod.avg_sample_power)
     my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion))
     my_standard_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
-                                             cord_x=rx_loc_x, cord_y=rx_loc_y, cord_z=1.5,
+                                             cord_x=212, cord_y=212, cord_z=1.5,
                                              center_freq=int(3.5e9), carrier_spacing=int(15e3))
 
     for n_ant_val in n_ant_arr:
@@ -221,6 +219,7 @@ if __name__ == '__main__':
 
                         arr_tx_sig_fd, clean_sig_mat_fd = my_array.transmit(in_bits=tx_bits, out_domain_fd=True,
                                                                             return_both=True)
+
                         for usr_idx, user_pos_tup in enumerate(usr_pos_tup):
                             rx_sig_fd = np.multiply(arr_tx_sig_fd, usr_chan_mat_lst[usr_idx])
                             rx_sc_ofdm_symb_fd = np.concatenate(
@@ -523,7 +522,7 @@ if __name__ == '__main__':
                                                                       rx_transceiver=my_standard_rx,
                                                                       skip_attenuation=False)
                                     else:
-                                        my_miso_rayleigh_chan.reroll_channel_coeffs()
+                                        my_miso_chan.reroll_channel_coeffs()
 
                                     usr_chan_mat_lst.append(my_miso_chan.get_channel_mat_fd())
 

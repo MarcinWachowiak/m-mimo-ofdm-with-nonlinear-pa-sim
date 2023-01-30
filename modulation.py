@@ -178,7 +178,9 @@ def _rx_ofdm_symbol(ofdm_symbol, n_fft: int, n_sub_carr: int, cp_length: int):
 class OfdmQamModem(QamModem):
 
     def __init__(self, constel_size: int, n_fft: int, n_sub_carr: int, cp_len: int, n_users=1):
-        super().__init__(constel_size)
+        super().__init__(constel_sizerb
+
+
 
         self.n_fft = n_fft
         self.n_sub_carr = n_sub_carr

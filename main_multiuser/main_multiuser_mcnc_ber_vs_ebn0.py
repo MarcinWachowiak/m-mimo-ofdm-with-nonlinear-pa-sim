@@ -60,7 +60,7 @@ if __name__ == '__main__':
 
     # BER analysis
     bits_sent_max = int(1e7)
-    n_err_min = int(1e5)
+    n_err_min = int(1e6)
     ber_reroll_pos = True
     precoding_str = 'mr'
 
@@ -71,7 +71,6 @@ if __name__ == '__main__':
         mr_precoding = False
         zf_precoding = True
 
-    rx_loc_x, rx_loc_y = 212.0, 212.0
     rx_loc_var = 10.0
 
     # SDR
@@ -92,7 +91,7 @@ if __name__ == '__main__':
     my_distortion = distortion.SoftLimiter(0, my_mod.avg_sample_power)
     my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion))
     my_standard_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
-                                             cord_x=rx_loc_x, cord_y=rx_loc_y, cord_z=1.5,
+                                             cord_x=212, cord_y=212, cord_z=1.5,
                                              center_freq=int(3.5e9), carrier_spacing=int(15e3))
 
     for n_ant_val in n_ant_arr:
@@ -528,7 +527,6 @@ if __name__ == '__main__':
                                 my_mcnc_rx_lst = []
                                 for usr_idx, usr_pos_tuple_val in enumerate(usr_pos_tup):
                                     usr_pos_x, usr_pos_y = usr_pos_tuple_val
-                                    my_standard_rx.set_position(cord_x=usr_pos_x, cord_y=usr_pos_y, cord_z=1.5)
 
                                     if isinstance(my_miso_chan, channel.MisoLosFd) or isinstance(my_miso_chan,
                                                                                                  channel.MisoTwoPathFd):
@@ -545,6 +543,7 @@ if __name__ == '__main__':
                                     else:
                                         my_miso_chan.reroll_channel_coeffs()
 
+                                    usr_chan_mat_lst.append(my_miso_chan.get_channel_mat_fd())
                                     my_mcnc_array = copy.deepcopy(my_array)
                                     my_mcnc_array.update_n_users(n_users=1)
                                     my_mcnc_array.set_precoding_matrix(channel_mat_fd=my_miso_chan.get_channel_mat_fd(),
@@ -681,12 +680,13 @@ if __name__ == '__main__':
                     # plt.cla()
                     # plt.close()
 
-                    # # %%
-                    # data_lst = []
-                    # data_lst.append(ebn0_arr)
-                    # for arr1 in ber_per_dist:
-                    #     data_lst.append(arr1)
-                    # utilities.save_to_csv(data_lst=data_lst, filename=filename_str)
+                    # %%
+                    data_lst = []
+                    data_lst.append(ebn0_arr)
+                    for arr1 in bers_per_usr:
+                        for arr2 in arr1:
+                            data_lst.append(arr2)
+                    utilities.save_to_csv(data_lst=data_lst, filename=filename_str)
 
                     # read_data = utilities.read_from_csv(filename=filename_str)
 
