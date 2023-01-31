@@ -23,7 +23,7 @@ constel_size = 64
 
 ebn0_min = 10
 ebn0_max = 20
-ebn0_step = 0.5
+ebn0_step = 1
 
 my_miso_chan = "3GPP_38.901_UMa_LOS"
 
@@ -58,11 +58,13 @@ for idx, cnc_iter_val in enumerate(cnc_n_iter_lst):
 plot_settings.reset_color_cycle()
 
 color_idx = 1
-ax1.plot(mcnc_ebn0_arr, mcnc_ber_per_dist[0], "--")
+# ax1.plot(mcnc_ebn0_arr, mcnc_ber_per_dist[0], "--")
 for idx, cnc_iter_val in enumerate(cnc_n_iter_lst):
+    if cnc_iter_val == 0:
+        color_idx += 1
+        continue
     if cnc_iter_val in sel_cnc_iter_val:
-        ax1.plot(mcnc_ebn0_arr[:], mcnc_ber_per_dist[idx + 1][:], "--", color=CB_color_cycle[color_idx],
-                 )
+        ax1.plot(mcnc_ebn0_arr[:], mcnc_ber_per_dist[idx + 1][:], "--", color=CB_color_cycle[color_idx])
     if cnc_iter_val in sel_cnc_iter_val or cnc_iter_val == 1:
         color_idx += 1
 
@@ -91,7 +93,7 @@ plt.gca().add_artist(leg1)
 
 cnc_leg = mlines.Line2D([0], [0], linestyle='-', color='k', label='CNC')
 mcnc_leg = mlines.Line2D([0], [0], linestyle='--', color='k', label='MCNC')
-ax1.legend(handles=[cnc_leg, mcnc_leg], loc="upper left", framealpha=0.9, bbox_to_anchor=(0.68, 0.48))
+ax1.legend(handles=[cnc_leg, mcnc_leg], loc="lower left", framealpha=0.9, bbox_to_anchor=(0.3, 0.001))
 # plt.gca().add_artist(leg2)
 
 # ax1.set_title("BER vs Eb/N0, %s channel, \n QAM %d, K = %d, IBO = %d dB" % (
