@@ -52,13 +52,13 @@ ax1.set_yscale('log', base=10)
 
 CB_color_cycle = ['#006BA4', '#FF800E', '#ABABAB', '#595959', '#5F9ED1', '#C85200', '#898989', '#A2C8EC', '#FFBC79',
                   '#CFCFCF']
-
+code_marker = ['*', '^']
 for code_idx, code_rate_str in enumerate(code_rate_str_lst):
     color_idx = 1
-    ax1.plot(ebn0_arr_lst[code_idx], cnc_ber_per_ldpc_lst[code_idx][0])
+    ax1.plot(ebn0_arr_lst[code_idx], cnc_ber_per_ldpc_lst[code_idx][0], marker=code_marker[code_idx], fillstyle='none')
     for idx, cnc_iter_val in enumerate(cnc_n_iter_lst):
         if cnc_iter_val in sel_cnc_iter_val:
-            ax1.plot(ebn0_arr_lst[code_idx], cnc_ber_per_ldpc_lst[code_idx][idx + 1], "-", color=CB_color_cycle[color_idx])
+            ax1.plot(ebn0_arr_lst[code_idx], cnc_ber_per_ldpc_lst[code_idx][idx + 1], "-", color=CB_color_cycle[color_idx], marker=code_marker[code_idx], fillstyle='none')
         if cnc_iter_val in sel_cnc_iter_val or cnc_iter_val == 1:
             color_idx += 1
     plot_settings.reset_color_cycle()
@@ -95,6 +95,19 @@ for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
 leg1 = plt.legend(handles=n_ite_legend, title="I iterations:", loc="lower left", ncol=1, framealpha=0.9)
 plt.gca().add_artist(leg1)
 
+code_leg_lst = []
+for code_idx, code_rate_str in enumerate(code_rate_str_lst):
+    leg_obj = mlines.Line2D([0], [0], linestyle='none', marker=code_marker[code_idx], fillstyle="none", color='k', label=code_rate_str)
+    code_leg_lst.append(leg_obj)
+
+leg2 = plt.legend(handles=code_leg_lst, title="LDPC:", loc="upper left", framealpha=0.9, bbox_to_anchor=(0.004, 0.80))
+plt.gca().add_artist(leg2)
+
+cnc_leg = mlines.Line2D([0], [0], linestyle='-', color='k', label='CNC')
+mcnc_leg = mlines.Line2D([0], [0], linestyle='--', color='k', label='MCNC')
+ax1.legend(handles=[cnc_leg, mcnc_leg], loc="upper left", framealpha=0.9, bbox_to_anchor=(0.004, 0.58))
+
+
 # cnc_leg = mlines.Line2D([0], [0], linestyle='-', color='k', label='CNC')
 # mcnc_leg = mlines.Line2D([0], [0], linestyle='--', color='k', label='MCNC')
 # ax1.legend(handles=[cnc_leg, mcnc_leg], loc="upper left", framealpha=0.9, bbox_to_anchor=(0.68, 0.69))
@@ -102,7 +115,7 @@ plt.gca().add_artist(leg1)
 
 # ax1.set_title("BER vs Eb/N0, %s, CNC, QAM %d, N ANT = %d, IBO = %d [dB]" % (
 #     my_miso_chan, constel_size, n_ant_val, ibo_val_db))
-# ax1.set_xlim([10, 20])
+ax1.set_xlim([-5, 15])
 # ax1.set_ylim([1e-5, 3e-1])
 
 ax1.grid(which='major', linestyle='-')
