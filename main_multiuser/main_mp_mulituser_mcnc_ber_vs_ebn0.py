@@ -5,15 +5,15 @@ import sys
 
 sys.path.append(os.getcwd())
 
-from multiuser_mp_prototype import multiuser_mcnc_parallel
+from main_multiuser.multiuser_mp_prototype import multiuser_mcnc_parallel
 
 import multiprocessing as mp
 import numpy as np
 
 if __name__ == '__main__':
 
-    num_cores = 5
-    precoding_str = 'zf'
+    num_cores = 12
+    precoding_str = 'mr'
     bits_sent_max = int(1e7 / num_cores)
     n_err_min = int(1e6 / num_cores)
 
