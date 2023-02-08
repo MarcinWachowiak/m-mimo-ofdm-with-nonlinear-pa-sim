@@ -44,8 +44,8 @@ if __name__ == '__main__':
     reroll_chan = True
     cnc_n_iter_lst = np.insert(cnc_n_iter_lst, 0, 0)
 
-    csi_epsylon_lst = [0.01]
-    csi_epsylon_lst.extend(np.arange(0.1, 0.71, 0.1))
+    csi_epsylon_lst = []
+    csi_epsylon_lst.extend(np.arange(0.4, 0.71, 0.1))
 
 #%%
     # modulation
@@ -94,7 +94,7 @@ if __name__ == '__main__':
                                                                      rx_transceiver=my_standard_rx, n_paths=8,
                                                                      max_delay_spread=1e-6)
 
-            chan_lst = [my_miso_los_chan, my_miso_rayleigh_chan]
+            chan_lst = [my_miso_los_chan]
             my_noise = noise.Awgn(snr_db=10, seed=1234)
 
             for my_miso_chan in chan_lst:
@@ -169,7 +169,7 @@ if __name__ == '__main__':
                             '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
                         # timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
                         # filename_str += "_" + timestamp
-                        plt.savefig("../figs/vm_worker_results/%s.png" % filename_str, dpi=600, bbox_inches='tight')
+                        plt.savefig("figs/vm_worker_results/%s.png" % filename_str, dpi=600, bbox_inches='tight')
                         # plt.show()
                         plt.cla()
                         plt.close()
