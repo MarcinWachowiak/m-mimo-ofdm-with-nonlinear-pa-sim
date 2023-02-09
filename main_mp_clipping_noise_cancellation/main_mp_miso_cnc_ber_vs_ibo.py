@@ -33,7 +33,7 @@ if __name__ == '__main__':
 
     # %%
     n_ant_arr = [64]
-    ebn0_db_arr = [12, 15, 18, 1000]
+    ebn0_db_arr = [15, 1000]
     ibo_step_arr = [0.5]
     cnc_n_iter_lst = [1, 2, 3, 4, 5, 6, 7, 8]
     # standard RX
@@ -125,7 +125,7 @@ if __name__ == '__main__':
                         for p in processes:
                             p.join()
 
-                        for ite_idx in range(len(cnc_n_iter_lst)):
+                        for ite_idx in range(len(bers)):
                             if n_bits_sent_shared_arr[ite_idx] == 0:
                                 bers_per_ibo[ite_idx][ibo_idx] = np.nan
                             else:

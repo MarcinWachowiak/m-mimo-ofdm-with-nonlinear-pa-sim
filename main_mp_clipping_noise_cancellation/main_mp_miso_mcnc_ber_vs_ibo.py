@@ -125,7 +125,7 @@ if __name__ == '__main__':
                         for p in processes:
                             p.join()
 
-                        for ite_idx in range(len(cnc_n_iter_lst)):
+                        for ite_idx in range(len(bers)):
                             if n_bits_sent_shared_arr[ite_idx] == 0:
                                 bers_per_ibo[ite_idx][ibo_idx] = np.nan
                             else:

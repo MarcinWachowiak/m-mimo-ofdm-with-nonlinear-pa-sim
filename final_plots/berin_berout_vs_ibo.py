@@ -10,6 +10,7 @@ sys.path.append(os.getcwd())
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import pyplot as plt, ticker as mticker
+from matplotlib.transforms import ScaledTranslation
 
 import utilities
 from plot_settings import set_latex_plot_style
@@ -133,7 +134,7 @@ filename_str = "berout_vs_berin_per_single_ite_%s_nant%d_ebn0%s_ibo_min%d_max%d_
 # timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 # filename_str += "_" + timestamp
 plt.savefig("../figs/%s.pdf" % filename_str, dpi=600, bbox_inches='tight')
-plt.show()
+# plt.show()
 
 
 # %%
@@ -164,8 +165,35 @@ for snr_idx, snr_val in enumerate(snr_lst):
                 color_idx += 1
 
 
-ax1.text(0.25, 0.6, 'Eb/N0 = 15 [dB]', verticalalignment='center', horizontalalignment='center', transform=ax1.transAxes, fontsize=8)
-ax1.text(0.48, 0.2, 'Eb/N0\n=$\infty$ [dB]', verticalalignment='center', horizontalalignment='center', transform=ax1.transAxes, fontsize=8)
+# Ellipse centre coordinates
+x_center, y_center = 2e-2, 2e-3
+ell_offset = ScaledTranslation(x_center, y_center, ax1.transScale)
+ell_tform = ell_offset + ax1.transLimits + ax1.transAxes
+ell = mpatches.Ellipse(xy=(0, 0), width=0.05, height=1.5, angle=0, edgecolor='k', lw=1.0, facecolor='none', zorder=3,
+                       transform=ell_tform)
+ax1.add_artist(ell)
+ax1.annotate('Eb/N0 = 15 [dB]', xy=(x_center, y_center), xytext=(0, 40),
+             textcoords='offset points',
+             color='k', fontsize=11, verticalalignment='center', horizontalalignment='center',
+             arrowprops=dict(arrowstyle='->', facecolor='k', shrinkB=20))
+
+
+# Ellipse centre coordinates
+x_center, y_center =5.5e-2, 3e-4
+ell_offset = ScaledTranslation(x_center, y_center, ax1.transScale)
+ell_tform = ell_offset + ax1.transLimits + ax1.transAxes
+ell = mpatches.Ellipse(xy=(0, 0), width=0.75, height=0.4, angle=0, edgecolor='k', lw=1.0, facecolor='none', zorder=3,
+                       transform=ell_tform)
+ax1.add_artist(ell)
+ax1.annotate('Eb/N0\n=$\infty$ [dB]', xy=(x_center, y_center), xytext=(-27, -22),
+             textcoords='offset points',
+             color='k', fontsize=11, verticalalignment='center', horizontalalignment='center',
+             )
+ax1.annotate("", xy=(5.6e-2,1.8e-4), xytext=(-8, -13), fontsize=11, textcoords='offset points', arrowprops=dict(arrowstyle='->', facecolor='k'))
+
+
+# ax1.text(0.25, 0.6, 'Eb/N0 = 15 [dB]', verticalalignment='center', horizontalalignment='center', transform=ax1.transAxes, fontsize=8)
+# ax1.text(0.48, 0.2, 'Eb/N0\n=$\infty$ [dB]', verticalalignment='center', horizontalalignment='center', transform=ax1.transAxes, fontsize=8)
 
 import matplotlib.lines as mlines
 

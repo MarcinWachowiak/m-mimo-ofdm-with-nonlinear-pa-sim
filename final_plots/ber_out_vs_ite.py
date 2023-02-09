@@ -34,7 +34,7 @@ snr_lst = [12, 15, 18, 1000]
 sel_snr_val_lst = [15, 1000]
 
 ibo_val_lst = np.arange(ibo_min, ibo_max + 0.1, ibo_step)
-ibo_sel_lst = [-3, 0, 1.5, 3]
+ibo_sel_lst = [-3, 0, 1, 3, 6]
 
 for snr_idx, snr_val in enumerate(snr_lst):
     cnc_filename_str = "ber_vs_ibo_cnc_los_nant64_ebn0_%d_ibo_min%d_max%d_step%1.2f_niter1_2_3_4_5_6_7_8" % (
@@ -67,16 +67,19 @@ ax1.set_yscale('log', base=10)
 CB_color_cycle = ['#006BA4', '#FF800E', '#ABABAB', '#595959', '#5F9ED1', '#C85200', '#898989', '#A2C8EC', '#FFBC79',
                   '#CFCFCF']
 
+marker_lst = ["o", "^"]
+marker_idx = 0
 for snr_idx, snr_val in enumerate(snr_lst):
-    color_idx = 2
+    color_idx = 1
     if snr_val in sel_snr_val_lst:
         for ibo_idx, ibo_val in enumerate(ibo_val_lst):
             if ibo_val in ibo_sel_lst:
-                ax1.plot(cnc_n_iter_lst[1:], cnc_bers_per_snr_lst[snr_idx][ibo_idx][1:-1] / cnc_bers_per_snr_lst[snr_idx][ibo_idx][2:], "-",
-                         color=CB_color_cycle[color_idx])
-                ax1.plot(cnc_n_iter_lst[1:], mcnc_bers_per_snr_lst[snr_idx][ibo_idx][1:-1] / mcnc_bers_per_snr_lst[snr_idx][ibo_idx][2:], "--",
-                         color=CB_color_cycle[color_idx])
+                ax1.plot(cnc_n_iter_lst, cnc_bers_per_snr_lst[snr_idx][ibo_idx][1:], "-",
+                         color=CB_color_cycle[color_idx], marker=marker_lst[marker_idx], fillstyle='none')
+                ax1.plot(cnc_n_iter_lst, mcnc_bers_per_snr_lst[snr_idx][ibo_idx][1:], "--",
+                         color=CB_color_cycle[color_idx], marker=marker_lst[marker_idx], fillstyle='none')
                 color_idx += 1
+        marker_idx += 1
     plot_settings.reset_color_cycle()
 
 import matplotlib.lines as mlines
@@ -91,23 +94,28 @@ n_ite_legend = []
 
 import matplotlib.patches as mpatches
 
-color_idx = 2
+color_idx = 1
 for ibo_idx, ibo_val in enumerate(ibo_sel_lst):
     n_ite_legend.append(mpatches.Patch(color=CB_color_cycle[color_idx], label=ibo_val))
     color_idx += 1
-leg1 = plt.legend(handles=n_ite_legend, title="IBO [dB]", loc="upper right", ncol=1, framealpha=0.9)
+leg1 = plt.legend(handles=n_ite_legend, title="IBO [dB]", loc="lower right", ncol=1, framealpha=0.9)
 plt.gca().add_artist(leg1)
 
 cnc_leg = mlines.Line2D([0], [0], linestyle='-', color='k', label='CNC')
 mcnc_leg = mlines.Line2D([0], [0], linestyle='--', color='k', label='MCNC')
 
-ax1.legend(handles=[cnc_leg, mcnc_leg], loc="upper center", framealpha=0.9, ncol=1)
-# plt.gca().add_artist(leg2)
+leg2 = ax1.legend(handles=[cnc_leg, mcnc_leg], loc="lower left", framealpha=0.9, ncol=1)
+plt.gca().add_artist(leg2)
+
+import matplotlib.lines as mlines
+usr_1_leg = mlines.Line2D([0], [0], linestyle='none', marker=marker_lst[0], fillstyle="none", color='k', label="15")
+usr_2_leg = mlines.Line2D([0], [0], linestyle='none', marker=marker_lst[1], fillstyle="none", color='k', label="$\infty$")
+plt.legend(handles=[usr_1_leg, usr_2_leg], title="Eb/N0 [dB]:", loc="lower center", framealpha=0.9)
 
 ax1.set_xlabel("I iterations [-]")
 ax1.set_ylabel("BER out [-]")
-ax1.set_xlim([1, 7])
-# ax1.set_ylim([1e-5, 4e-1])
+ax1.set_xlim([0, 7])
+ax1.set_ylim([1e-4, 2e-1])
 # ax1.xaxis.set_major_locator(mticker.LogLocator(numticks=999))
 # ax1.xaxis.set_minor_locator(mticker.LogLocator(numticks=999, subs="auto"))
 
@@ -124,13 +132,13 @@ pt2 = ax1.get_xlim()
 
 ax1.grid(which='major', linestyle='-')
 # ax1.grid(which='minor', linestyle='--')
+# ax1.annotate('Greater Eb/No \n', xy=(4, 1e-4),  xycoords='data',
+#             xytext=(4, 1e-2), horizontalalignment="center", verticalalignment="center", textcoords='data',
+#             arrowprops=dict(facecolor='black', arrowstyle='->'))
 
-ax1.annotate('Greater Eb/No \n', xy=(4, 1e-4),  xycoords='data',
-            xytext=(4, 1e-2), horizontalalignment="center", verticalalignment="center", textcoords='data',
-            arrowprops=dict(facecolor='black', arrowstyle='->'))
 plt.tight_layout()
 
-filename_str = "ber_gain_vs_ite_%s_nant%d_ebn0%s_ibo_min%d_max%d_step%1.2f_niter%s" % (
+filename_str = "berout_vs_ite_%s_nant%d_ebn0%s_ibo_min%d_max%d_step%1.2f_niter%s" % (
     my_miso_chan, n_ant_val, '_'.join([str(val) for val in sel_snr_val_lst[:]]), ibo_min, ibo_max, ibo_step,
     '_'.join([str(val) for val in cnc_n_iter_lst[:]]))
 # timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
