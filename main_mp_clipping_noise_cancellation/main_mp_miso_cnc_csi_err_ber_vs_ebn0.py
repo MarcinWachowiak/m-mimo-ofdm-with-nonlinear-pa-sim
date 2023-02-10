@@ -30,7 +30,7 @@ import mp_model
 if __name__ == '__main__':
 
     set_latex_plot_style()
-    num_cores = mp.cpu_count()
+    num_cores = 10
 
     # %%
     # parameters
@@ -93,8 +93,9 @@ if __name__ == '__main__':
             my_random_paths_miso_channel = channel.MisoRandomPathsFd(tx_transceivers=my_array.array_elements,
                                                                      rx_transceiver=my_standard_rx, n_paths=8,
                                                                      max_delay_spread=1e-6)
-
-            chan_lst = [my_miso_los_chan, my_miso_rayleigh_chan]
+            my_miso_quadriga_chan = channel.MisoQuadrigaFd(tx_transceivers=my_array.array_elements,
+                                                        rx_transceiver=my_standard_rx, channel_model_str='3GPP_38.901_UMa_LOS', start_matlab_eng=False)
+            chan_lst = [my_miso_quadriga_chan]
             my_noise = noise.Awgn(snr_db=10, seed=1234)
 
             for my_miso_chan in chan_lst:
@@ -123,7 +124,7 @@ if __name__ == '__main__':
                             n_err_shared_arr = mp.Array(ctypes.c_double, len(cnc_n_iter_lst) + 1, lock=True)
                             n_bits_sent_shared_arr = mp.Array(ctypes.c_double, len(cnc_n_iter_lst) + 1, lock=True)
 
-                            proc_seed_lst = seed_rng.integers(0, high=sys.maxsize, size=(num_cores, 4))
+                            proc_seed_lst = seed_rng.integers(0, high=sys.maxsize, size=(num_cores, 4)) 
                             processes = []
                             for idx in range(num_cores):
                                 p = mp.Process(target=mp_link_obj.simulate,
@@ -169,7 +170,7 @@ if __name__ == '__main__':
                             '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
                         # timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
                         # filename_str += "_" + timestamp
-                        plt.savefig("../figs/vm_worker_results/%s.png" % filename_str, dpi=600, bbox_inches='tight')
+                        plt.savefig("figs/vm_worker_results/%s.png" % filename_str, dpi=600, bbox_inches='tight')
                         # plt.show()
                         plt.cla()
                         plt.close()

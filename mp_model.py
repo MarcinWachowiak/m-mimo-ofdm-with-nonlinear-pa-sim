@@ -68,7 +68,7 @@ class Link():
         if self.is_quadriga:
             self.my_miso_chan = channel.MisoQuadrigaFd(tx_transceivers=self.my_array.array_elements, rx_transceiver=self.my_standard_rx, channel_model_str=self.channel_model_str)
             if self.csi_epsylon is not None:
-                self.my_miso_chan_csi_err = channel.MisoQuadrigaFd(tx_transceivers=self.my_array.array_elements, rx_transceiver=self.my_standard_rx, channel_model_str=self.channel_model_str)
+                self.my_miso_chan_csi_err = channel.MisoQuadrigaFd(tx_transceivers=self.my_array.array_elements, rx_transceiver=self.my_standard_rx, channel_model_str=self.channel_model_str, start_matlab_eng=False)
         # update MCNC channel
         if isinstance(self.my_cnc_rx, corrector.McncReceiver):
             if self.csi_epsylon is None:
@@ -83,10 +83,10 @@ class Link():
         if self.csi_epsylon is not None:
             self.my_csi_noise.rng_gen = np.random.default_rng(seed_arr[3])
 
-        if isinstance(self.my_miso_chan, channel.MisoQuadrigaFd):
-            self.my_miso_chan.meng.rng(seed_arr[4].astype(np.uint32))
-            if self.csi_epsylon is not None:
-                self.my_miso_chan_csi_err.meng.rng(seed_arr[4].astype(np.uint32))
+        # if isinstance(self.my_miso_chan, channel.MisoQuadrigaFd):
+        #     self.my_miso_chan.meng.rng(seed_arr[4].astype(np.uint32))
+        #     if self.csi_epsylon is not None:
+        #         self.my_miso_chan_csi_err.meng.rng(seed_arr[4].astype(np.uint32))
 
         res_idx = 0
         if incl_clean_run:
