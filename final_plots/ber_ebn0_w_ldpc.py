@@ -3,12 +3,14 @@
 import os
 import sys
 
+import matplotlib.transforms
+
 import plot_settings
 
 sys.path.append(os.getcwd())
 
 import matplotlib.pyplot as plt
-
+from matplotlib.transforms import ScaledTranslation
 import utilities
 from plot_settings import set_latex_plot_style
 
@@ -24,7 +26,7 @@ constel_size = 64
 ebn0_step = 0.25
 my_miso_chan = "los"
 
-code_rate_str_lst = ["1/3",  "2/3"]
+code_rate_str_lst = ["1/3", "2/3"]
 ebn0_bounds_arr = [[-5.0, 5.1], [0.0, 15.1]]
 
 ebn0_arr_lst = []
@@ -32,7 +34,8 @@ cnc_ber_per_ldpc_lst = []
 mcnc_ber_per_ldpc_lst = []
 for code_idx, code_rate_str in enumerate(code_rate_str_lst):
     cnc_filename_str = "ldpc_%s_ber_vs_ebn0_cnc_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s" % (
-        code_rate_str.replace('/', '_'), my_miso_chan, n_ant_val, ibo_val_db, ebn0_bounds_arr[code_idx][0], ebn0_bounds_arr[code_idx][1], ebn0_step,
+        code_rate_str.replace('/', '_'), my_miso_chan, n_ant_val, ibo_val_db, ebn0_bounds_arr[code_idx][0],
+        ebn0_bounds_arr[code_idx][1], ebn0_step,
         '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
     cnc_data_lst = utilities.read_from_csv(filename=cnc_filename_str)
     cnc_ebn0_arr = cnc_data_lst[0]
@@ -42,13 +45,13 @@ for code_idx, code_rate_str in enumerate(code_rate_str_lst):
     cnc_ber_per_ldpc_lst.append(cnc_ber_per_dist)
 
     mcnc_filename_str = "ldpc_%s_ber_vs_ebn0_mcnc_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s" % (
-        code_rate_str.replace('/', '_'), my_miso_chan, n_ant_val, ibo_val_db, ebn0_bounds_arr[code_idx][0], ebn0_bounds_arr[code_idx][1], ebn0_step,
+        code_rate_str.replace('/', '_'), my_miso_chan, n_ant_val, ibo_val_db, ebn0_bounds_arr[code_idx][0],
+        ebn0_bounds_arr[code_idx][1], ebn0_step,
         '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
     mcnc_data_lst = utilities.read_from_csv(filename=mcnc_filename_str)
     mcnc_ebn0_arr = mcnc_data_lst[0]
     mcnc_ber_per_dist = mcnc_data_lst[1:]
     mcnc_ber_per_ldpc_lst.append(mcnc_ber_per_dist)
-
 
 # %%
 
@@ -64,9 +67,11 @@ for code_idx, code_rate_str in enumerate(code_rate_str_lst):
     for idx, cnc_iter_val in enumerate(cnc_n_iter_lst):
         if cnc_iter_val in sel_cnc_iter_val:
             if cnc_iter_val == 1:
-                ax1.plot(ebn0_arr_lst[code_idx][::2], cnc_ber_per_ldpc_lst[code_idx][idx + 1][::2], "-", color=CB_color_cycle[color_idx])
+                ax1.plot(ebn0_arr_lst[code_idx][::2], cnc_ber_per_ldpc_lst[code_idx][idx + 1][::2], "-",
+                         color=CB_color_cycle[color_idx])
             else:
-                ax1.plot(ebn0_arr_lst[code_idx], cnc_ber_per_ldpc_lst[code_idx][idx + 1], "-", color=CB_color_cycle[color_idx])
+                ax1.plot(ebn0_arr_lst[code_idx], cnc_ber_per_ldpc_lst[code_idx][idx + 1], "-",
+                         color=CB_color_cycle[color_idx])
         if cnc_iter_val in sel_cnc_iter_val or cnc_iter_val == 1:
             color_idx += 1
     plot_settings.reset_color_cycle()
@@ -82,7 +87,8 @@ for code_idx, code_rate_str in enumerate(code_rate_str_lst):
                 ax1.plot(ebn0_arr_lst[code_idx][::2], mcnc_ber_per_ldpc_lst[code_idx][idx + 1][::2], "--",
                          color=CB_color_cycle[color_idx])
             else:
-                ax1.plot(ebn0_arr_lst[code_idx], mcnc_ber_per_ldpc_lst[code_idx][idx + 1], "--", color=CB_color_cycle[color_idx])
+                ax1.plot(ebn0_arr_lst[code_idx], mcnc_ber_per_ldpc_lst[code_idx][idx + 1], "--",
+                         color=CB_color_cycle[color_idx])
         if cnc_iter_val in sel_cnc_iter_val or cnc_iter_val == 1:
             color_idx += 1
 
@@ -109,8 +115,34 @@ for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
 leg1 = plt.legend(handles=n_ite_legend, title="I iterations:", loc="lower left", ncol=1, framealpha=0.9)
 plt.gca().add_artist(leg1)
 
-ax1.text(0.54, 0.7, '1/3', verticalalignment='center', horizontalalignment='center', transform=ax1.transAxes, fontsize=11)
-ax1.text(0.90, 0.7, '2/3', verticalalignment='center', horizontalalignment='center', transform=ax1.transAxes, fontsize=11)
+# ax1.text(0.54, 0.7, '1/3', verticalalignment='center', horizontalalignment='center', transform=ax1.transAxes, fontsize=11)
+# ax1.text(0.90, 0.7, '2/3', verticalalignment='center', horizontalalignment='center', transform=ax1.transAxes,
+#          fontsize=11)
+
+# Ellipse centre coordinates
+x_center, y_center = 1.5, 1e-4
+ell_offset = ScaledTranslation(x_center, y_center, ax1.transScale)
+ell_tform = ell_offset + ax1.transLimits + ax1.transAxes
+ell = mpatches.Ellipse(xy=(0, 0), width=4, height=0.25, angle=0, edgecolor='k', lw=1.0, facecolor='none', zorder=10,
+                       transform=ell_tform)
+ax1.add_artist(ell)
+ax1.annotate('1/3', xy=(x_center, y_center), xytext=(30, -15),
+             textcoords='offset points',
+             color='k', fontsize=11, verticalalignment='center', horizontalalignment='center',
+             arrowprops=dict(arrowstyle='->', facecolor='k', shrinkB=12))
+
+
+# Ellipse centre coordinates
+x_center, y_center = 10, 1e-1
+ell_offset = ScaledTranslation(x_center, y_center, ax1.transScale)
+ell_tform = ell_offset + ax1.transLimits + ax1.transAxes
+ell = mpatches.Ellipse(xy=(0, 0), width=15, height=0.75, angle=0, edgecolor='k', lw=1.0, facecolor='none', zorder=10,
+                       transform=ell_tform)
+ax1.add_artist(ell)
+ax1.annotate('1/2', xy=(x_center, y_center), xytext=(-42, -20),
+             textcoords='offset points',
+             color='k', fontsize=11, verticalalignment='center', horizontalalignment='center',
+             arrowprops=dict(arrowstyle='->', facecolor='k', shrinkB=24))
 
 # code_leg_lst = []
 # for code_idx, code_rate_str in enumerate(code_rate_str_lst):
@@ -123,7 +155,6 @@ ax1.text(0.90, 0.7, '2/3', verticalalignment='center', horizontalalignment='cent
 cnc_leg = mlines.Line2D([0], [0], linestyle='-', color='k', label='CNC')
 mcnc_leg = mlines.Line2D([0], [0], linestyle='--', color='k', label='MCNC')
 ax1.legend(handles=[cnc_leg, mcnc_leg], loc="upper left", framealpha=0.9, bbox_to_anchor=(0.000, 0.92))
-
 
 # cnc_leg = mlines.Line2D([0], [0], linestyle='-', color='k', label='CNC')
 # mcnc_leg = mlines.Line2D([0], [0], linestyle='--', color='k', label='MCNC')

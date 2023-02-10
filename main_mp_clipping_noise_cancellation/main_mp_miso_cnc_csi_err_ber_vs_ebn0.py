@@ -44,8 +44,8 @@ if __name__ == '__main__':
     reroll_chan = True
     cnc_n_iter_lst = np.insert(cnc_n_iter_lst, 0, 0)
 
-    csi_epsylon_lst = [0.01]
-    csi_epsylon_lst.extend(np.arange(0.1, 0.71, 0.1))
+    csi_epsylon_lst = []
+    csi_epsylon_lst.extend(np.arange(0.4, 0.71, 0.1))
 
 #%%
     # modulation
