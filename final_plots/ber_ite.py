@@ -34,7 +34,7 @@ snr_lst = [12, 15, 18, 1000]
 sel_snr_val_lst = [15, 1000]
 
 ibo_val_lst = np.arange(ibo_min, ibo_max + 0.1, ibo_step)
-ibo_sel_lst = [-3, 0, 1, 3, 6]
+ibo_sel_lst = [-3, 0, 3]
 
 for snr_idx, snr_val in enumerate(snr_lst):
     cnc_filename_str = "ber_vs_ibo_cnc_los_nant64_ebn0_%d_ibo_min%d_max%d_step%1.2f_niter1_2_3_4_5_6_7_8" % (

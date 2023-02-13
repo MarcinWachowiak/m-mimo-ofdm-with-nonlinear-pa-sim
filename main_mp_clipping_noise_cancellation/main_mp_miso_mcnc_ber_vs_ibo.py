@@ -32,7 +32,7 @@ if __name__ == '__main__':
     num_cores = mp.cpu_count()
 
     n_ant_arr = [64]
-    ebn0_db_arr = [12, 15, 18, 1000]
+    ebn0_db_arr = [15, 1000]
     ibo_step_arr = [0.5]
     cnc_n_iter_lst = [1, 2, 3, 4, 5, 6, 7, 8]
     # standard RX
@@ -48,7 +48,7 @@ if __name__ == '__main__':
 
     # BER accuracy settings
     bits_sent_max = int(1e7)
-    n_err_min = int(1e5)
+    n_err_min = int(1e6)
 
     rx_loc_x, rx_loc_y = 212.0, 212.0
     rx_loc_var = 10.0
@@ -96,13 +96,13 @@ if __name__ == '__main__':
                                         bits_sent_max=bits_sent_max, is_mcnc=True)
 
             for ibo_step_val in ibo_step_arr:
-                ibo_arr = np.arange(-9, 9.1, ibo_step_val)
+                ibo_arr = [-3, -1, 0, 1, 3]# np.arange(-9, 9.1, ibo_step_val)
 
                 for ebn0_db in ebn0_db_arr:
                     start_time = time.time()
                     print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
                     snr_db_val = ebn0_to_snr(ebn0_db, my_mod.n_sub_carr, my_mod.n_sub_carr, my_mod.constel_size)
-                    bers_per_ibo = np.zeros((len(cnc_n_iter_lst), len(ibo_arr)))
+                    bers_per_ibo = np.zeros((len(cnc_n_iter_lst) + 1, len(ibo_arr)))
                     mp_link_obj.set_snr(snr_db_val=snr_db_val)
 
                     # BER vs IBO eval
@@ -156,7 +156,7 @@ if __name__ == '__main__':
                         '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
                     # timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
                     # filename_str += "_" + timestamp
-                    plt.savefig("figs/vm_worker_results/%s.png" % filename_str, dpi=600, bbox_inches='tight')
+                    plt.savefig("../figs/vm_worker_results/%s.png" % filename_str, dpi=600, bbox_inches='tight')
                     # plt.show()
                     plt.cla()
                     plt.close()
