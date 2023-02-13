@@ -123,26 +123,26 @@ plt.gca().add_artist(leg1)
 x_center, y_center = 1.5, 1e-4
 ell_offset = ScaledTranslation(x_center, y_center, ax1.transScale)
 ell_tform = ell_offset + ax1.transLimits + ax1.transAxes
-ell = mpatches.Ellipse(xy=(0, 0), width=4, height=0.25, angle=0, edgecolor='k', lw=1.0, facecolor='none', zorder=10,
+ell = mpatches.Ellipse(xy=(0, 0), width=4, height=0.25, angle=0, edgecolor='k', lw=0.6, facecolor='none', zorder=10,
                        transform=ell_tform)
 ax1.add_artist(ell)
 ax1.annotate('1/3', xy=(x_center, y_center), xytext=(30, -15),
              textcoords='offset points',
-             color='k', fontsize=11, verticalalignment='center', horizontalalignment='center',
-             arrowprops=dict(arrowstyle='->', facecolor='k', shrinkB=12))
+             color='k', fontsize=9, verticalalignment='center', horizontalalignment='center',
+             arrowprops=dict(arrowstyle='->', facecolor='k', shrinkB=12, lw=0.6,))
 
 
 # Ellipse centre coordinates
 x_center, y_center = 10, 1e-1
 ell_offset = ScaledTranslation(x_center, y_center, ax1.transScale)
 ell_tform = ell_offset + ax1.transLimits + ax1.transAxes
-ell = mpatches.Ellipse(xy=(0, 0), width=15, height=0.75, angle=0, edgecolor='k', lw=1.0, facecolor='none', zorder=10,
+ell = mpatches.Ellipse(xy=(0, 0), width=15, height=0.75, angle=0, edgecolor='k', lw=0.6, facecolor='none', zorder=10,
                        transform=ell_tform)
 ax1.add_artist(ell)
 ax1.annotate('1/2', xy=(x_center, y_center), xytext=(-42, -20),
              textcoords='offset points',
-             color='k', fontsize=11, verticalalignment='center', horizontalalignment='center',
-             arrowprops=dict(arrowstyle='->', facecolor='k', shrinkB=24))
+             color='k', fontsize=9, verticalalignment='center', horizontalalignment='center',
+             arrowprops=dict(arrowstyle='->', facecolor='k', shrinkB=24, lw=0.6,))
 
 # code_leg_lst = []
 # for code_idx, code_rate_str in enumerate(code_rate_str_lst):

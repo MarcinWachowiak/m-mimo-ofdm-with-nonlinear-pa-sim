@@ -48,7 +48,7 @@ if __name__ == '__main__':
 
     # BER accuracy settings
     bits_sent_max = int(1e7)
-    n_err_min = int(1e6)
+    n_err_min = int(1e5)
 
     rx_loc_x, rx_loc_y = 212.0, 212.0
     rx_loc_var = 10.0
@@ -96,7 +96,7 @@ if __name__ == '__main__':
                                         bits_sent_max=bits_sent_max, is_mcnc=True)
 
             for ibo_step_val in ibo_step_arr:
-                ibo_arr = [-3, -1, 0, 1, 3]# np.arange(-9, 9.1, ibo_step_val)
+                ibo_arr = np.arange(0, 9.1, ibo_step_val)
 
                 for ebn0_db in ebn0_db_arr:
                     start_time = time.time()
