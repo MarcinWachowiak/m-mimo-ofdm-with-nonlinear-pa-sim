@@ -20,8 +20,8 @@ for idx, filename_str in enumerate(filename_str_lst):
 
     try:
         subprocess.call("python %s" % filename_str, shell=False)
-    except:
-        print("Runtime error occurred!")
+    except Exception as e:
+        print(e)
 
     print("### Computation time: %f ###" % (time.time() - start_time))
 
