@@ -166,30 +166,30 @@ for snr_idx, snr_val in enumerate(snr_lst):
 
 
 # Ellipse centre coordinates
-x_center, y_center = 2e-2, 2e-3
+x_center, y_center = 2e-2, 1.5e-3
 ell_offset = ScaledTranslation(x_center, y_center, ax1.transScale)
 ell_tform = ell_offset + ax1.transLimits + ax1.transAxes
-ell = mpatches.Ellipse(xy=(0, 0), width=0.05, height=1.5, angle=0, edgecolor='k', lw=1.0, facecolor='none', zorder=3,
+ell = mpatches.Ellipse(xy=(0, 0), width=0.05, height=1.5, angle=0, edgecolor='k', lw=0.6, facecolor='none', zorder=3,
                        transform=ell_tform)
 ax1.add_artist(ell)
 ax1.annotate('Eb/N0 = 15 [dB]', xy=(x_center, y_center), xytext=(0, 40),
              textcoords='offset points',
-             color='k', fontsize=11, verticalalignment='center', horizontalalignment='center',
-             arrowprops=dict(arrowstyle='->', facecolor='k', shrinkB=20))
+             color='k', fontsize=8, verticalalignment='center', horizontalalignment='center',
+             arrowprops=dict(arrowstyle='->', facecolor='k', shrinkB=20, lw=0.6))
 
 
 # Ellipse centre coordinates
 x_center, y_center =5.5e-2, 3e-4
 ell_offset = ScaledTranslation(x_center, y_center, ax1.transScale)
 ell_tform = ell_offset + ax1.transLimits + ax1.transAxes
-ell = mpatches.Ellipse(xy=(0, 0), width=0.75, height=0.4, angle=0, edgecolor='k', lw=1.0, facecolor='none', zorder=3,
+ell = mpatches.Ellipse(xy=(0, 0), width=0.75, height=0.4, angle=0, edgecolor='k', lw=0.6, facecolor='none', zorder=3,
                        transform=ell_tform)
 ax1.add_artist(ell)
 ax1.annotate('Eb/N0\n=$\infty$ [dB]', xy=(x_center, y_center), xytext=(-27, -22),
              textcoords='offset points',
-             color='k', fontsize=11, verticalalignment='center', horizontalalignment='center',
+             color='k', fontsize=8, verticalalignment='center', horizontalalignment='center',
              )
-ax1.annotate("", xy=(5.6e-2,1.8e-4), xytext=(-8, -13), fontsize=11, textcoords='offset points', arrowprops=dict(arrowstyle='->', facecolor='k'))
+ax1.annotate("", xy=(5.35e-2,1.8e-4), xytext=(-8, -13), fontsize=8, textcoords='offset points', arrowprops=dict(arrowstyle='->', facecolor='k', lw=0.6))
 
 
 # ax1.text(0.25, 0.6, 'Eb/N0 = 15 [dB]', verticalalignment='center', horizontalalignment='center', transform=ax1.transAxes, fontsize=8)

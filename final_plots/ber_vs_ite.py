@@ -14,27 +14,27 @@ from matplotlib import pyplot as plt, ticker as mticker
 import utilities
 from plot_settings import set_latex_plot_style
 
-set_latex_plot_style(use_tex=True, fig_width_in=4)
+set_latex_plot_style(use_tex=True, fig_width_in=3.5)
 
-cnc_n_iter_lst = [0, 1, 2, 3, 4, 5, 6, 7]
+cnc_n_iter_lst = [0, 1, 2, 3, 4, 5, 6, 7, 8]
 n_ant_val = 64
 constel_size = 64
 
 my_miso_chan = "los"
-ibo_min = -9
-ibo_max = 9
-ibo_step = 0.5
+ibo_min = -3
+ibo_max = 3
+ibo_step = 2.0
 
 cnc_bers_per_snr_lst = []
 cnc_ibo_array_lst = []
 mcnc_bers_per_snr_lst = []
 mcnc_ibo_array_lst = []
 no_dist_ber_limit = []
-snr_lst = [12, 15, 18, 1000]
+snr_lst = [15, 1000]
 sel_snr_val_lst = [15, 1000]
 
-ibo_val_lst = np.arange(ibo_min, ibo_max + 0.1, ibo_step)
-ibo_sel_lst = [-3, 0, 3]
+ibo_val_lst = [-3, -1, 0, 1, 3]
+ibo_sel_lst = [-3, 0, 1, 3]
 
 for snr_idx, snr_val in enumerate(snr_lst):
     cnc_filename_str = "ber_vs_ibo_cnc_los_nant64_ebn0_%d_ibo_min%d_max%d_step%1.2f_niter1_2_3_4_5_6_7_8" % (
@@ -98,7 +98,7 @@ color_idx = 1
 for ibo_idx, ibo_val in enumerate(ibo_sel_lst):
     n_ite_legend.append(mpatches.Patch(color=CB_color_cycle[color_idx], label=ibo_val))
     color_idx += 1
-leg1 = plt.legend(handles=n_ite_legend, title="IBO [dB]", loc="lower right", ncol=1, framealpha=0.9)
+leg1 = plt.legend(handles=n_ite_legend, title="IBO [dB]", loc="upper right", ncol=1, framealpha=0.9)
 plt.gca().add_artist(leg1)
 
 cnc_leg = mlines.Line2D([0], [0], linestyle='-', color='k', label='CNC')
@@ -110,11 +110,11 @@ plt.gca().add_artist(leg2)
 import matplotlib.lines as mlines
 usr_1_leg = mlines.Line2D([0], [0], linestyle='none', marker=marker_lst[0], fillstyle="none", color='k', label="15")
 usr_2_leg = mlines.Line2D([0], [0], linestyle='none', marker=marker_lst[1], fillstyle="none", color='k', label="$\infty$")
-plt.legend(handles=[usr_1_leg, usr_2_leg], title="Eb/N0 [dB]:", loc="lower center", framealpha=0.9)
+plt.legend(handles=[usr_1_leg, usr_2_leg], title="Eb/N0 [dB]:", loc="lower right", framealpha=0.9, ncol=2)
 
 ax1.set_xlabel("I iterations [-]")
 ax1.set_ylabel("BER out [-]")
-ax1.set_xlim([0, 7])
+ax1.set_xlim([0, 8])
 ax1.set_ylim([1e-4, 2e-1])
 # ax1.xaxis.set_major_locator(mticker.LogLocator(numticks=999))
 # ax1.xaxis.set_minor_locator(mticker.LogLocator(numticks=999, subs="auto"))
@@ -143,7 +143,7 @@ filename_str = "berout_vs_ite_%s_nant%d_ebn0%s_ibo_min%d_max%d_step%1.2f_niter%s
     '_'.join([str(val) for val in cnc_n_iter_lst[:]]))
 # timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 # filename_str += "_" + timestamp
-plt.savefig("../figs/%s.png" % filename_str, dpi=600, bbox_inches='tight')
+plt.savefig("../figs/%s.pdf" % filename_str, dpi=600, bbox_inches='tight')
 plt.show()
 
 print("Finished execution!")

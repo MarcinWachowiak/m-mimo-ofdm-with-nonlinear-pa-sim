@@ -106,7 +106,7 @@ plt.close()
 # Two-path desired vs distortion signal radiation beampattern
 # %%
 
-fig1, ax1 = plt.subplots(1, 1, subplot_kw=dict(projection='polar'), figsize=(5.89572, 5.89572))
+fig1, ax1 = plt.subplots(1, 1, subplot_kw=dict(projection='polar'), figsize=(3.5, 3.0))
 ax1.set_theta_zero_location("E")
 ax1.set_thetalim(0, np.pi)
 ax1.set_xticks(np.pi / 180. * np.linspace(0, 180, 13, endpoint=True))
@@ -118,12 +118,12 @@ radian_vals = np.radians(np.linspace(0, 180, 180 * 10 + 1))
 ax1.plot(radian_vals, to_db(np.divide(two_path_des_sig[-1], norm_coeff)), label="Desired", linewidth=1.5)
 ax1.plot(radian_vals, to_db(np.divide(two_path_dist_sig[-1], norm_coeff)), label="Distortion", linewidth=1.5)
 
-ax1.set_title("Normalized radiation pattern of signal components [dB]", pad=-50)
-ax1.legend(title="Two-path channel, K = 128, IBO = 3 dB, Signals:", ncol=2, loc='lower center', borderaxespad=4)
+# ax1.set_title("Normalized radiation pattern of signal components [dB]", pad=-50)
+ax1.legend(title="Two-path channel, K = 128, IBO = 3 dB, Signals:", ncol=2, loc='lower center', borderaxespad=-0)
 ax1.grid(True)
 
 plt.savefig(
-    "../figs/msc_figs/%s_desired_vs_distortion_signal_beampattern_ibo%d_angle%d_npoints%d_nsnap%d_nant%s.pdf" % (
+    "../figs/msc_figs/%s_desired_vs_distortion_signal_beampattern_ibo%d_angle%d_npoints%d_nsnap%d_nant%s.png" % (
         "two_path", ibo_val_db, precoding_angle, n_points, n_snapshots, n_ant_val),
     dpi=600, bbox_inches='tight')
 
