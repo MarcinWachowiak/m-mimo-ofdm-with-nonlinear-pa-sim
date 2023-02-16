@@ -36,7 +36,7 @@ if __name__ == '__main__':
     # parameters
     n_ant_arr = [64]
     ibo_arr = [0]
-    ebn0_step = [1]
+    ebn0_step = [0.5]
     cnc_n_iter_lst = [1, 2, 3, 4, 5, 6, 7, 8]
     # include clean run is always True
     # no distortion and standard RX always included
@@ -44,7 +44,7 @@ if __name__ == '__main__':
     reroll_chan = True
     cnc_n_iter_lst = np.insert(cnc_n_iter_lst, 0, 0)
 
-    csi_epsylon_lst = [0.0]
+    csi_epsylon_lst = [0.0, 0.1, 0.2, 0.3, 0.4]
     # csi_epsylon_lst.extend(np.arange(0.2, 0.71, 0.1))
 
 #%%
@@ -55,8 +55,8 @@ if __name__ == '__main__':
     cp_len = 8
 
     # accuracy
-    bits_sent_max = int(1e7)
-    n_err_min = int(1e6)
+    bits_sent_max = int(3e7)
+    n_err_min = int(1e7)
 
     rx_loc_x, rx_loc_y = 212.0, 212.0
     rx_loc_var = 10.0
@@ -95,7 +95,7 @@ if __name__ == '__main__':
                                                                      max_delay_spread=1e-6)
             my_miso_quadriga_chan = channel.MisoQuadrigaFd(tx_transceivers=my_array.array_elements,
                                                         rx_transceiver=my_standard_rx, channel_model_str='3GPP_38.901_UMa_LOS', start_matlab_eng=False)
-            chan_lst = [my_miso_quadriga_chan]
+            chan_lst = [my_miso_los_chan]
             my_noise = noise.Awgn(snr_db=10, seed=1234)
 
             for my_miso_chan in chan_lst:
