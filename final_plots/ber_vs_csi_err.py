@@ -61,7 +61,7 @@ my_miso_chan_quadriga = "quadriga"
 cnc_quadriga_bers_per_eps = []
 mcnc_quadriga_bers_per_eps = []
 ebno_quadriga_lst = []
-quadriga_csi_eps_lst = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
+quadriga_csi_eps_lst = [0.01, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
 
 for eps_idx, eps_val in enumerate(quadriga_csi_eps_lst):
     cnc_quadriga_filename_str = "ber_vs_ebn0_cnc_%s_csi_eps%1.3f_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s" % (
@@ -105,8 +105,7 @@ for eps_idx, eps_val in enumerate(csi_eps_lst):
                 continue
             if cnc_iter_val in sel_cnc_ite_lst:
                 ax1.plot(ebno_lst[0], cnc_los_bers_per_eps[eps_idx][ite_idx + 1], "-", color=CB_color_cycle[color_idx], marker=marker_lst[marker_idx], fillstyle='none')
-                ax1.plot(ebno_lst[0], mcnc_los_bers_per_eps[eps_idx][ite_idx + 1], "--", color=CB_color_cycle[color_idx],
-                     marker=marker_lst[marker_idx], fillstyle='none')
+                ax1.plot(ebno_lst[0], mcnc_los_bers_per_eps[eps_idx][ite_idx + 1], "--", color=CB_color_cycle[color_idx], marker=marker_lst[marker_idx], fillstyle='none')
             if cnc_iter_val in sel_cnc_ite_lst or cnc_iter_val == 1:
                 color_idx += 1
         marker_idx += 1
@@ -171,19 +170,19 @@ for eps_idx, eps_val in enumerate(csi_eps_lst):
     if eps_val in sel_eps_lst:
         for ite_idx, cnc_iter_val in enumerate(cnc_n_iter_lst):
             if cnc_iter_val in sel_cnc_ite_lst:
-                ax2.plot(cnc_los_bers_per_eps[eps_idx][1], cnc_los_bers_per_eps[eps_idx][ite_idx + 1], "-", color=CB_color_cycle[color_idx], marker=marker_lst[0], fillstyle='none', markersize=4)
-                ax2.plot(mcnc_los_bers_per_eps[eps_idx][1], mcnc_los_bers_per_eps[eps_idx][ite_idx + 1], "--", color=CB_color_cycle[color_idx], marker=marker_lst[0], fillstyle='none', markersize=4)
+                ax2.plot(cnc_los_bers_per_eps[eps_idx][1], cnc_los_bers_per_eps[eps_idx][ite_idx + 1], "-", color=CB_color_cycle[color_idx], marker=marker_lst[0], fillstyle='none')
+                ax2.plot(mcnc_los_bers_per_eps[eps_idx][1], mcnc_los_bers_per_eps[eps_idx][ite_idx + 1], "--", color=CB_color_cycle[color_idx], marker=marker_lst[0], fillstyle='none')
         color_idx += 1
+
 # Quadriga LOS channel
 marker_idx = 0
 color_idx = 1
-
 for eps_idx, eps_val in enumerate(quadriga_csi_eps_lst):
     if eps_val in sel_eps_lst:
         for ite_idx, cnc_iter_val in enumerate(cnc_n_iter_lst):
             if cnc_iter_val in sel_cnc_ite_lst:
-                ax2.plot(cnc_quadriga_bers_per_eps[eps_idx][1], cnc_quadriga_bers_per_eps[eps_idx][ite_idx + 1], "-", color=CB_color_cycle[color_idx], marker=marker_lst[1], fillstyle='none', markersize=4)
-                ax2.plot(mcnc_quadriga_bers_per_eps[eps_idx][1], mcnc_quadriga_bers_per_eps[eps_idx][ite_idx + 1], "--", color=CB_color_cycle[color_idx], marker=marker_lst[1], fillstyle='none', markersize=4)
+                ax2.plot(cnc_quadriga_bers_per_eps[eps_idx][1], cnc_quadriga_bers_per_eps[eps_idx][ite_idx + 1], "-", color=CB_color_cycle[color_idx], marker=marker_lst[1], fillstyle='none')
+                ax2.plot(mcnc_quadriga_bers_per_eps[eps_idx][1], mcnc_quadriga_bers_per_eps[eps_idx][ite_idx + 1], "--", color=CB_color_cycle[color_idx], marker=marker_lst[1], fillstyle='none')
         color_idx += 1
 
 marker_leg_lst = []
