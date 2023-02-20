@@ -16,7 +16,6 @@ import numpy as np
 from matplotlib.ticker import MaxNLocator
 from scipy.signal import welch
 
-import antenna_arrray
 import channel
 import distortion
 import modulation
@@ -99,7 +98,7 @@ if __name__ == '__main__':
 
     for n_ant_val in n_ant_arr:
         my_array = antenna_arrray.CircularArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(3.5e9),
-                                              wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
+                                                wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
         # channel type
         my_miso_los_chan = channel.MisoLosFd()
         my_miso_los_chan.calc_channel_mat(tx_transceivers=my_array.array_elements, rx_transceiver=my_standard_rx,
@@ -452,7 +451,6 @@ if __name__ == '__main__':
                         arccos_val = arcsin_arg_periodize(phase_val)
                         dist_angles.append(np.arcsin(arccos_val))
                         dist_angles.append(-np.arcsin(arccos_val))
-
 
 
                     # generate usr angle idx tuples to calculate the distortion angle

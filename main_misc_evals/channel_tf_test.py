@@ -10,7 +10,6 @@ import copy
 import matplotlib.pyplot as plt
 import numpy as np
 
-import antenna_arrray
 import channel
 import distortion
 import modulation

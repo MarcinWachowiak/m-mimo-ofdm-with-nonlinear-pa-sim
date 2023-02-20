@@ -13,10 +13,7 @@ import itertools
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.ticker import MaxNLocator
-from scipy.signal import welch
 
-import antenna_arrray
 import channel
 import distortion
 import modulation
@@ -37,8 +34,10 @@ if __name__ == '__main__':
     arr_center_y = 0
     arr_center_z = 15
     for usr_idx, (usr_azimuth, usr_elevation) in enumerate(usr_angles_deg + 90):
-        usr_pos_x = -usr_distances[usr_idx] * np.sin(np.deg2rad(usr_elevation)) * np.cos(np.deg2rad(usr_azimuth)) + arr_center_x
-        usr_pos_y = -usr_distances[usr_idx] * np.sin(np.deg2rad(usr_elevation)) * np.sin(np.deg2rad(usr_azimuth)) + arr_center_y
+        usr_pos_x = -usr_distances[usr_idx] * np.sin(np.deg2rad(usr_elevation)) * np.cos(
+            np.deg2rad(usr_azimuth)) + arr_center_x
+        usr_pos_y = -usr_distances[usr_idx] * np.sin(np.deg2rad(usr_elevation)) * np.sin(
+            np.deg2rad(usr_azimuth)) + arr_center_y
         usr_pos_z = -usr_distances[usr_idx] * np.cos(np.deg2rad(usr_elevation)) + arr_center_z
         usr_pos_tup.append((usr_pos_x, usr_pos_y, usr_pos_z))
     n_users = len(usr_pos_tup)
@@ -63,9 +62,10 @@ if __name__ == '__main__':
     # Beampatterns
     plot_precoding_beampatterns = True
     beampattern_n_snapshots = 5
-    n_points = 90**2 * 1
+    n_points = 90 ** 2 * 1
     radial_distance = 300
-    rx_points = utilities.pts_on_semisphere(r=radial_distance, n=n_points, center_x=arr_center_x, center_y=arr_center_y, center_z=arr_center_z)
+    rx_points = utilities.pts_on_semisphere(r=radial_distance, n=n_points, center_x=arr_center_x, center_y=arr_center_y,
+                                            center_z=arr_center_z)
 
     radian_vals = np.radians(np.linspace(-90, 90, n_points + 1))
 
@@ -81,8 +81,10 @@ if __name__ == '__main__':
                                              center_freq=int(3.5e9), carrier_spacing=int(15e3))
 
     for n_ant_val in n_ant_arr:
-        my_array = antenna_arrray.PlanarRectangularArray(n_elements_per_row=int(np.sqrt(n_ant_val)), n_elements_per_col=int(np.sqrt(n_ant_val)), base_transceiver=my_tx, center_freq=int(3.5e9),
-                                              wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
+        my_array = antenna_arrray.PlanarRectangularArray(n_elements_per_row=int(np.sqrt(n_ant_val)),
+                                                         n_elements_per_col=int(np.sqrt(n_ant_val)),
+                                                         base_transceiver=my_tx, center_freq=int(3.5e9),
+                                                         wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
 
         # verify coordinate and angular relations
         # utilities.plot_spatial_config(ant_array=my_array, rx_points_lst=rx_points, plot_3d=True)
@@ -268,7 +270,7 @@ if __name__ == '__main__':
                         distorted_sig_oob_pow_per_pt.append(np.sum(distortion_oob_sig_pow_arr))
                     # %%
                     # plot beampatterns of desired and distortion components
-                    from mpl_toolkits.axes_grid1 import make_axes_locatable
+
                     CB_color_cycle = ['#006BA4', '#FF800E', '#ABABAB', '#595959', '#5F9ED1', '#C85200', '#898989',
                                       '#A2C8EC', '#FFBC79',
                                       '#CFCFCF']
@@ -277,12 +279,16 @@ if __name__ == '__main__':
                     # fig.set_tight_layout(True)
                     # arrange into matrix
                     n_points_per_row_col = int(np.sqrt(n_points))
-                    desired_sig_pow_mat = 10*np.log10(np.reshape(desired_sig_pow_per_pt, (n_points_per_row_col, n_points_per_row_col)))
-                    distorted_sig_inband_pow_mat = 10*np.log10(np.reshape(distorted_sig_inband_pow_per_pt, (n_points_per_row_col, n_points_per_row_col)))
-                    distorted_sig_oob_pow_mat = 10*np.log10(np.reshape(distorted_sig_oob_pow_per_pt, (n_points_per_row_col, n_points_per_row_col)))
+                    desired_sig_pow_mat = 10 * np.log10(
+                        np.reshape(desired_sig_pow_per_pt, (n_points_per_row_col, n_points_per_row_col)))
+                    distorted_sig_inband_pow_mat = 10 * np.log10(
+                        np.reshape(distorted_sig_inband_pow_per_pt, (n_points_per_row_col, n_points_per_row_col)))
+                    distorted_sig_oob_pow_mat = 10 * np.log10(
+                        np.reshape(distorted_sig_oob_pow_per_pt, (n_points_per_row_col, n_points_per_row_col)))
 
                     # mark predicted intermodulation/distortion directions
-                    print("Number of intermodulation combinations: %d" %(len(list(itertools.product(range(n_users), repeat=3)))))
+                    print("Number of intermodulation combinations: %d" % (
+                        len(list(itertools.product(range(n_users), repeat=3)))))
                     dist_marker_azimuths = []
                     dist_marker_elevations = []
                     arcsin_arg_periodize = lambda val_a: val_a - 1.0 if val_a > 1.0 else (
@@ -299,10 +305,12 @@ if __name__ == '__main__':
                         imd_u = usr_1_u + usr_2_u - usr_3_u
                         imd_v = usr_1_v + usr_2_v - usr_3_v
                         dist_marker_azimuths.append(np.rad2deg(np.arcsin(imd_v)))
-                        dist_marker_elevations.append(np.rad2deg(np.arctan(imd_u / np.sqrt(np.abs(1 - imd_u**2 - imd_v**2)))))
+                        dist_marker_elevations.append(
+                            np.rad2deg(np.arctan(imd_u / np.sqrt(np.abs(1 - imd_u ** 2 - imd_v ** 2)))))
 
                     for ax in axs[1::]:
-                        ax.scatter(dist_marker_azimuths, dist_marker_elevations, color=CB_color_cycle[5], marker="*", label="Distortion", zorder=2)
+                        ax.scatter(dist_marker_azimuths, dist_marker_elevations, color=CB_color_cycle[5], marker="*",
+                                   label="Distortion", zorder=2)
 
                     # mark user directions
                     usr_marker_azimuths = []
@@ -312,8 +320,8 @@ if __name__ == '__main__':
                         usr_marker_elevations.append(usr_angle_tuple[1])
 
                     for ax in axs:
-                        ax.scatter(usr_marker_elevations, usr_marker_azimuths, color="black", marker="x", label="User", zorder=2)
-
+                        ax.scatter(usr_marker_elevations, usr_marker_azimuths, color="black", marker="x", label="User",
+                                   zorder=2)
 
                     im1 = axs[0].contourf(desired_sig_pow_mat, extent=[-90, 90, -90, 90])
                     axs[0].set_aspect("equal")

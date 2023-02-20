@@ -11,7 +11,6 @@ import copy
 import matplotlib.pyplot as plt
 import numpy as np
 
-import antenna_arrray
 import channel
 import distortion
 import modulation
@@ -105,6 +104,6 @@ ax1.legend(title="TX-RX idx:")
 plt.tight_layout()
 plt.savefig(
     "../figs/random_paths_channel_tf_npaths%d_maxdelayspr%1.2e.png" % (
-    my_random_paths_miso_channel.n_paths, my_random_paths_miso_channel.max_delay_spread),
+        my_random_paths_miso_channel.n_paths, my_random_paths_miso_channel.max_delay_spread),
     dpi=600, bbox_inches='tight')
 plt.show()

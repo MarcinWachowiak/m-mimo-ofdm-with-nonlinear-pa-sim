@@ -8,7 +8,6 @@ import copy
 
 import numpy as np
 
-import antenna_arrray
 import channel
 import distortion
 import modulation

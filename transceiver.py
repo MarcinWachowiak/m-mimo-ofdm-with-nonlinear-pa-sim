@@ -56,7 +56,8 @@ class Transceiver:
                 else:
                     per_usr_sig = []
                     for usr_idx in range(self.modem.n_users):
-                        per_usr_sig.append(utilities.to_freq_domain(clean_symb_td[usr_idx], remove_cp=True, cp_len=self.modem.cp_len))
+                        per_usr_sig.append(
+                            utilities.to_freq_domain(clean_symb_td[usr_idx], remove_cp=True, cp_len=self.modem.cp_len))
                     return per_usr_sig
             else:
                 if sum_usr_signals:
@@ -71,11 +72,17 @@ class Transceiver:
         elif return_both and self.impairment is not None:
             if out_domain_fd:
                 if sum_usr_signals:
-                    return utilities.to_freq_domain(self.impairment.process(clean_symb_td), remove_cp=True, cp_len=self.modem.cp_len), utilities.to_freq_domain(clean_symb_td, remove_cp=True, cp_len=self.modem.cp_len)
+                    return utilities.to_freq_domain(self.impairment.process(clean_symb_td), remove_cp=True,
+                                                    cp_len=self.modem.cp_len), utilities.to_freq_domain(clean_symb_td,
+                                                                                                        remove_cp=True,
+                                                                                                        cp_len=self.modem.cp_len)
                 else:
                     per_usr_sig = []
                     for usr_idx in range(self.modem.n_users):
-                        per_usr_sig.append([utilities.to_freq_domain(self.impairment.process(clean_symb_td[usr_idx]), remove_cp=True, cp_len=self.modem.cp_len), utilities.to_freq_domain(clean_symb_td[usr_idx], remove_cp=True, cp_len=self.modem.cp_len)])
+                        per_usr_sig.append([utilities.to_freq_domain(self.impairment.process(clean_symb_td[usr_idx]),
+                                                                     remove_cp=True, cp_len=self.modem.cp_len),
+                                            utilities.to_freq_domain(clean_symb_td[usr_idx], remove_cp=True,
+                                                                     cp_len=self.modem.cp_len)])
                     return per_usr_sig
             else:
                 if sum_usr_signals:
@@ -93,8 +100,9 @@ class Transceiver:
                 else:
                     per_usr_sig = []
                     for usr_idx in range(self.modem.n_users):
-                        per_usr_sig.append(utilities.to_freq_domain(self.impairment.process(clean_symb_td[usr_idx]), remove_cp=True,
-                                                    cp_len=self.modem.cp_len))
+                        per_usr_sig.append(
+                            utilities.to_freq_domain(self.impairment.process(clean_symb_td[usr_idx]), remove_cp=True,
+                                                     cp_len=self.modem.cp_len))
                     return per_usr_sig
             else:
                 if sum_usr_signals:

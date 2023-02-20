@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 import numpy as np
 
-import antenna_arrray
 import channel
 import distortion
 import modulation

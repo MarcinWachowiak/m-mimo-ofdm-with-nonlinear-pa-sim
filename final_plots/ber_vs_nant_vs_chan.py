@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import utilities
 from plot_settings import set_latex_plot_style
 import channel
+
 set_latex_plot_style(use_tex=True, fig_width_in=3.5, fig_height_in=3.5)
 
 n_ant_arr = [1, 2, 4, 8, 16, 32, 64, 128]

@@ -13,7 +13,6 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 import numpy as np
 
-import antenna_arrray
 import channel
 import corrector
 import distortion
@@ -224,7 +223,8 @@ for n_ant_val in n_ant_arr:
                         ak_hk_vk_agc_nfft[1:(n_sub_carr // 2) + 1] = ak_hk_vk_agc_avg_vec[n_sub_carr // 2:]
 
                         tx_bits = bit_rng.choice((0, 1), my_tx.modem.n_bits_per_ofdm_sym)
-                        tx_ofdm_symbol = my_array.transmit(tx_bits, out_domain_fd=True, skip_dist=False, return_both=False)
+                        tx_ofdm_symbol = my_array.transmit(tx_bits, out_domain_fd=True, skip_dist=False,
+                                                           return_both=False)
                         rx_ofdm_symbol = my_miso_chan.propagate(in_sig_mat=tx_ofdm_symbol)
                         rx_ofdm_symbol = my_noise.process(rx_ofdm_symbol,
                                                           avg_sample_pow=my_mod.avg_symbol_power * ak_hk_vk_noise_scaler)

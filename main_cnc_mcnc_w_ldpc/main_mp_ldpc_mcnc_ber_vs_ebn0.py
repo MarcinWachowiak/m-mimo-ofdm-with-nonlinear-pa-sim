@@ -15,7 +15,6 @@ import multiprocessing as mp
 import matplotlib.pyplot as plt
 import numpy as np
 
-import antenna_arrray
 import channel
 import distortion
 import modulation
@@ -171,9 +170,10 @@ if __name__ == '__main__':
                         plt.tight_layout()
 
                         filename_str = "ldpc_%s_ber_vs_ebn0_mcnc_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s" % (
-                        code_rate_str.replace('/', '_'),
-                        my_miso_chan, n_ant_val, ibo_val_db, min(ebn0_arr), max(ebn0_arr), ebn0_arr[1] - ebn0_arr[0],
-                        '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
+                            code_rate_str.replace('/', '_'),
+                            my_miso_chan, n_ant_val, ibo_val_db, min(ebn0_arr), max(ebn0_arr),
+                            ebn0_arr[1] - ebn0_arr[0],
+                            '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
                         # timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
                         # filename_str += "_" + timestamp
                         plt.savefig("figs/vm_worker_results/%s.png" % filename_str, dpi=600, bbox_inches='tight')

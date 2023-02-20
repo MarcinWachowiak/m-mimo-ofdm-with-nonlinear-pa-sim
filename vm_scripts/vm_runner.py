@@ -1,8 +1,8 @@
 # VM simulation runner
 import os
+import subprocess
 import sys
 import time
-import subprocess
 from datetime import datetime
 
 sys.path.append(os.getcwd())

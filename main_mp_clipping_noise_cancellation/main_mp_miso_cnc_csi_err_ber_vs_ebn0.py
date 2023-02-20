@@ -15,7 +15,6 @@ import multiprocessing as mp
 import matplotlib.pyplot as plt
 import numpy as np
 
-import antenna_arrray
 import channel
 import distortion
 import modulation
@@ -26,7 +25,7 @@ from plot_settings import set_latex_plot_style
 from utilities import ebn0_to_snr
 import mp_model
 
-#%%
+# %%
 if __name__ == '__main__':
 
     set_latex_plot_style()
@@ -47,7 +46,7 @@ if __name__ == '__main__':
     csi_epsylon_lst = [0.0]
     # csi_epsylon_lst.extend(np.arange(0.4, 0.71, 0.1))
 
-#%%
+    # %%
     # modulation
     constel_size = 64
     n_fft = 4096
@@ -83,7 +82,8 @@ if __name__ == '__main__':
             my_miso_los_chan.calc_channel_mat(tx_transceivers=my_array.array_elements, rx_transceiver=my_standard_rx,
                                               skip_attenuation=False)
             my_miso_two_path_chan = channel.MisoTwoPathFd()
-            my_miso_two_path_chan.calc_channel_mat(tx_transceivers=my_array.array_elements, rx_transceiver=my_standard_rx,
+            my_miso_two_path_chan.calc_channel_mat(tx_transceivers=my_array.array_elements,
+                                                   rx_transceiver=my_standard_rx,
                                                    skip_attenuation=False)
 
             my_miso_rayleigh_chan = channel.MisoRayleighFd(tx_transceivers=my_array.array_elements,
@@ -94,7 +94,9 @@ if __name__ == '__main__':
                                                                      rx_transceiver=my_standard_rx, n_paths=8,
                                                                      max_delay_spread=1e-6)
             my_miso_quadriga_chan = channel.MisoQuadrigaFd(tx_transceivers=my_array.array_elements,
-                                                        rx_transceiver=my_standard_rx, channel_model_str='3GPP_38.901_UMa_LOS', start_matlab_eng=False)
+                                                           rx_transceiver=my_standard_rx,
+                                                           channel_model_str='3GPP_38.901_UMa_LOS',
+                                                           start_matlab_eng=False)
             chan_lst = [my_miso_los_chan, my_miso_quadriga_chan]
             my_noise = noise.Awgn(snr_db=10, seed=1234)
 
@@ -124,7 +126,7 @@ if __name__ == '__main__':
                             n_err_shared_arr = mp.Array(ctypes.c_double, len(cnc_n_iter_lst) + 1, lock=True)
                             n_bits_sent_shared_arr = mp.Array(ctypes.c_double, len(cnc_n_iter_lst) + 1, lock=True)
 
-                            proc_seed_lst = seed_rng.integers(0, high=sys.maxsize, size=(num_cores, 4)) 
+                            proc_seed_lst = seed_rng.integers(0, high=sys.maxsize, size=(num_cores, 4))
                             processes = []
                             for idx in range(num_cores):
                                 p = mp.Process(target=mp_link_obj.simulate,

@@ -139,7 +139,7 @@ ax1.legend(handles=[cnc_leg, mcnc_leg], loc="upper left", framealpha=0.9, bbox_t
 # plt.gca().add_artist(leg3)
 ax1.set_title(
     "BER in regard to number of antennas for selected channels, \n QAM %d, IBO = %d dB, Eb/N0 = %d dB" % (
-    constel_size, ibo_val_db, ebn0_db))
+        constel_size, ibo_val_db, ebn0_db))
 
 plt.tight_layout()
 # %%

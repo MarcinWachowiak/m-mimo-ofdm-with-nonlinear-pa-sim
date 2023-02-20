@@ -12,7 +12,6 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 import numpy as np
 
-import antenna_arrray
 import channel
 import distortion
 import modulation
@@ -104,9 +103,9 @@ if __name__ == '__main__':
                                         bits_sent_max=bits_sent_max, is_mcnc=True)
             mp_link_obj.set_snr(snr_db_val=snr_db_val)
 
-            n_err_shared_arr = mp.Array(ctypes.c_double, len(cnc_n_iter_lst)+1, lock=True)
-            n_bits_sent_shared_arr = mp.Array(ctypes.c_double, len(cnc_n_iter_lst)+1, lock=True)
-            bers_per_ite = np.zeros(len(cnc_n_iter_lst)+1)
+            n_err_shared_arr = mp.Array(ctypes.c_double, len(cnc_n_iter_lst) + 1, lock=True)
+            n_bits_sent_shared_arr = mp.Array(ctypes.c_double, len(cnc_n_iter_lst) + 1, lock=True)
+            bers_per_ite = np.zeros(len(cnc_n_iter_lst) + 1)
 
             proc_seed_lst = seed_rng.integers(0, high=sys.maxsize, size=(num_cores, 3))
             processes = []

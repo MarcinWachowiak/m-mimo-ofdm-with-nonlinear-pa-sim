@@ -49,8 +49,8 @@ for chan_idx, my_miso_chan in enumerate(my_miso_chan_lst):
         for snr_idx, snr_db_val in enumerate(ebn0_db_arr):
             for ite_idx in range(len(cnc_n_iter_lst)):
                 cnc_ber_per_ibo_snr_iter[ibo_idx, snr_idx, ite_idx] = \
-                cnc_tmp_data[ibo_idx * len(ebn0_db_arr) + snr_idx][
-                    ite_idx]
+                    cnc_tmp_data[ibo_idx * len(ebn0_db_arr) + snr_idx][
+                        ite_idx]
 
     CB_color_cycle = ['#006BA4', '#FF800E', '#ABABAB', '#595959', '#5F9ED1', '#C85200', '#898989', '#A2C8EC', '#FFBC79',
                       '#CFCFCF']
@@ -110,8 +110,8 @@ for chan_idx, my_miso_chan in enumerate(my_miso_chan_lst):
         for snr_idx, snr_db_val in enumerate(ebn0_db_arr):
             for ite_idx in range(len(cnc_n_iter_lst)):
                 mcnc_ber_per_ibo_snr_iter[ibo_idx, snr_idx, ite_idx] = \
-                mcnc_tmp_data[ibo_idx * len(ebn0_db_arr) + snr_idx][
-                    ite_idx]
+                    mcnc_tmp_data[ibo_idx * len(ebn0_db_arr) + snr_idx][
+                        ite_idx]
 
     # %%
     # extract SNR value providing given BER from collected data

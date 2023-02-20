@@ -1,18 +1,17 @@
-import matplotlib.pyplot as plt
 import numpy as np
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 K_antennas = 10
-alpha = np.deg2rad(-60) # np.linspace(-90, 90, n_samples, endpoint=True)
-beta = np.deg2rad(60) # np.linspace(-90, 90, n_samples, endpoint=True)
+alpha = np.deg2rad(-60)  # np.linspace(-90, 90, n_samples, endpoint=True)
+beta = np.deg2rad(60)  # np.linspace(-90, 90, n_samples, endpoint=True)
 dist_alpha_k = np.zeros(K_antennas)
 dist_beta_k = np.zeros(K_antennas)
 
 arccos_arg_periodize = lambda val_a: val_a - 2.0 if val_a > 1.0 else (val_a + 2.0 if val_a < -1.0 else val_a)
 
 for k_idx in range(K_antennas):
-    dist_alpha_k[k_idx] = np.arccos((np.cos(alpha - 2*np.pi*k_idx/K_antennas))) + 2*np.pi*k_idx/K_antennas
-    dist_beta_k[k_idx] = np.arccos(arccos_arg_periodize(2*np.cos(beta - 2*np.pi*k_idx/K_antennas) - np.cos(alpha - 2*np.pi*k_idx/K_antennas))) + 2*np.pi*k_idx/K_antennas
+    dist_alpha_k[k_idx] = np.arccos((np.cos(alpha - 2 * np.pi * k_idx / K_antennas))) + 2 * np.pi * k_idx / K_antennas
+    dist_beta_k[k_idx] = np.arccos(arccos_arg_periodize(2 * np.cos(beta - 2 * np.pi * k_idx / K_antennas) - np.cos(
+        alpha - 2 * np.pi * k_idx / K_antennas))) + 2 * np.pi * k_idx / K_antennas
 
 print("Alpha dist angles: ", np.rad2deg(dist_alpha_k))
 print("Beta dist angles: ", np.rad2deg(dist_beta_k))

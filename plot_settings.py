@@ -37,6 +37,7 @@ def set_latex_plot_style(use_tex=False, fig_width_in=7.0, fig_height_in=None):
     rcParams.update(params)
     matplotlib.use("Qt5Agg")
 
+
 def reset_color_cycle():
     plt.gca().set_prop_cycle(None)
     CB_color_cycle = ['#377eb8', '#ff7f00', '#4daf4a',

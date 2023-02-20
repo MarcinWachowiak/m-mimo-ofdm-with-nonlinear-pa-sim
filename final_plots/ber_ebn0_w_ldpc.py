@@ -3,8 +3,6 @@
 import os
 import sys
 
-import matplotlib.transforms
-
 import plot_settings
 
 sys.path.append(os.getcwd())
@@ -129,8 +127,7 @@ ax1.add_artist(ell)
 ax1.annotate('1/3', xy=(x_center, y_center), xytext=(30, -15),
              textcoords='offset points',
              color='k', fontsize=9, verticalalignment='center', horizontalalignment='center',
-             arrowprops=dict(arrowstyle='->', facecolor='k', shrinkB=12, lw=0.6,))
-
+             arrowprops=dict(arrowstyle='->', facecolor='k', shrinkB=12, lw=0.6, ))
 
 # Ellipse centre coordinates
 x_center, y_center = 10, 1e-1
@@ -142,7 +139,7 @@ ax1.add_artist(ell)
 ax1.annotate('1/2', xy=(x_center, y_center), xytext=(-42, -20),
              textcoords='offset points',
              color='k', fontsize=9, verticalalignment='center', horizontalalignment='center',
-             arrowprops=dict(arrowstyle='->', facecolor='k', shrinkB=24, lw=0.6,))
+             arrowprops=dict(arrowstyle='->', facecolor='k', shrinkB=24, lw=0.6, ))
 
 # code_leg_lst = []
 # for code_idx, code_rate_str in enumerate(code_rate_str_lst):

@@ -13,7 +13,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy import interpolate
 
-import antenna_arrray
 import channel
 import corrector
 import distortion
@@ -62,7 +61,6 @@ my_standard_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment
                                          cord_x=212,
                                          cord_y=212, cord_z=1.5,
                                          center_freq=int(3.5e9), carrier_spacing=int(15e3))
-
 
 for n_ant_val in n_ant_arr:
     my_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(3.5e9),
@@ -134,18 +132,22 @@ for n_ant_val in n_ant_arr:
                             lambda_denominator_vecs = []
                             while ofdm_symb_idx < n_ofdm_symb:
                                 tx_bits = bit_rng.choice((0, 1), my_tx.modem.n_bits_per_ofdm_sym)
-                                tx_ofdm_symbol_fd, clean_ofdm_symbol_fd = my_array.transmit(tx_bits, out_domain_fd=True, return_both=True)
+                                tx_ofdm_symbol_fd, clean_ofdm_symbol_fd = my_array.transmit(tx_bits, out_domain_fd=True,
+                                                                                            return_both=True)
 
                                 rx_sig_fd = my_miso_chan.propagate(in_sig_mat=tx_ofdm_symbol_fd)
                                 rx_sig_clean_fd = my_miso_chan.propagate(in_sig_mat=clean_ofdm_symbol_fd)
 
                                 clean_nsc_ofdm_symb_fd = np.concatenate(
-                                    (rx_sig_clean_fd[-my_mod.n_sub_carr // 2:], rx_sig_clean_fd[1:(my_mod.n_sub_carr // 2) + 1]))
+                                    (rx_sig_clean_fd[-my_mod.n_sub_carr // 2:],
+                                     rx_sig_clean_fd[1:(my_mod.n_sub_carr // 2) + 1]))
                                 rx_nsc_ofdm_symb_fd = np.concatenate(
                                     (rx_sig_fd[-my_mod.n_sub_carr // 2:], rx_sig_fd[1:(my_mod.n_sub_carr // 2) + 1]))
 
-                                lambda_numerator_vecs.append(np.multiply(rx_nsc_ofdm_symb_fd, np.conjugate(clean_nsc_ofdm_symb_fd)))
-                                lambda_denominator_vecs.append(np.multiply(clean_nsc_ofdm_symb_fd, np.conjugate(clean_nsc_ofdm_symb_fd)))
+                                lambda_numerator_vecs.append(
+                                    np.multiply(rx_nsc_ofdm_symb_fd, np.conjugate(clean_nsc_ofdm_symb_fd)))
+                                lambda_denominator_vecs.append(
+                                    np.multiply(clean_nsc_ofdm_symb_fd, np.conjugate(clean_nsc_ofdm_symb_fd)))
 
                                 ofdm_symb_idx += 1
 
@@ -208,7 +210,8 @@ for n_ant_val in n_ant_arr:
 
                                     chan_mat_at_point = my_miso_chan.get_channel_mat_fd()
                                     my_array.set_precoding_matrix(channel_mat_fd=chan_mat_at_point, mr_precoding=True)
-                                    my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
+                                    my_array.update_distortion(ibo_db=ibo_val_db,
+                                                               avg_sample_pow=my_mod.avg_sample_power)
 
                                     hk_mat = np.concatenate((chan_mat_at_point[:, -my_mod.n_sub_carr // 2:],
                                                              chan_mat_at_point[:, 1:(my_mod.n_sub_carr // 2) + 1]),
@@ -259,8 +262,8 @@ for n_ant_val in n_ant_arr:
                                     n_err[act_ber_idx[idx]] += n_bit_err
                                     bits_sent[act_ber_idx[idx]] += my_mod.n_bits_per_ofdm_sym
                             print("Eb/N0: %1.1f, chan_rerolls: %d" % (
-                            utilities.snr_to_ebn0(snr=snr_db_val, n_fft=n_sub_carr, n_sub_carr=n_sub_carr,
-                                                  constel_size=constel_size), snap_cnt))
+                                utilities.snr_to_ebn0(snr=snr_db_val, n_fft=n_sub_carr, n_sub_carr=n_sub_carr,
+                                                      constel_size=constel_size), snap_cnt))
                             ber_per_ibo_snr_iter[ibo_idx, snr_idx, :] = n_err / bits_sent
 
                     print("--- Computation time: %f ---" % (time.time() - start_time))
@@ -306,7 +309,8 @@ for n_ant_val in n_ant_arr:
                             ite_val = "0 - standard"
                         ax1.plot(ibo_arr, req_ebn0_per_ibo[ite_idx, :], label=ite_val)
 
-                    ax1.set_title("Fixed BER = %1.1e, %s, CNC, QAM %d, N ANT = %d" % (target_ber_val, my_miso_chan, my_mod.constellation_size, n_ant_val))
+                    ax1.set_title("Fixed BER = %1.1e, %s, CNC, QAM %d, N ANT = %d" % (
+                    target_ber_val, my_miso_chan, my_mod.constellation_size, n_ant_val))
                     ax1.set_xlabel("IBO [dB]")
                     ax1.set_ylabel("Eb/n0 [dB]")
                     ax1.grid()
@@ -332,6 +336,5 @@ for n_ant_val in n_ant_arr:
                     utilities.save_to_csv(data_lst=data_lst, filename=filename_str)
 
                     read_data = utilities.read_from_csv(filename=filename_str)
-
 
 print("Finished execution!")

@@ -12,7 +12,6 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 import numpy as np
 
-import antenna_arrray
 import channel
 import distortion
 import modulation
@@ -235,5 +234,6 @@ for arr1 in sdr_at_ibo_per_n_ant:
     for arr2 in arr1:
         data_lst.append(arr2.tolist())
 
-utilities.save_to_csv(data_lst=data_lst, filename="sdr_vs_ibo_per_channel_ibo%dto%d_%dnant" % (min(ibo_arr), max(ibo_arr), np.max(n_ant_arr)), )
+utilities.save_to_csv(data_lst=data_lst, filename="sdr_vs_ibo_per_channel_ibo%dto%d_%dnant" % (
+min(ibo_arr), max(ibo_arr), np.max(n_ant_arr)), )
 print("Finished execution!")

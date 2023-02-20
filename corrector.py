@@ -2,7 +2,7 @@ import numpy as np
 import torch
 
 import distortion
-from antenna_arrray import LinearArray
+from antenna_array import LinearArray
 from distortion import SoftLimiter
 from modulation import OfdmQamModem
 
@@ -99,7 +99,7 @@ class McncReceiver():
         else:
             ibo_vec = 10 * np.log10(
                 10 ** (self.antenna_array.array_elements[0].impairment.ibo_db / 10) * self.n_sub_carr / (
-                            vk_pow_vec * len(self.antenna_array.array_elements)))
+                        vk_pow_vec * len(self.antenna_array.array_elements)))
             ak_vect = self.antenna_array.array_elements[0].modem.calc_alpha(ibo_db=ibo_vec)
 
         ak_vect = np.expand_dims(ak_vect, axis=1)
@@ -222,7 +222,7 @@ class CncMuReceiver():
             # perform upsampled modulation
             ofdm_sym_fd_upsampled = np.zeros(int(self.modem.n_sub_carr * self.upsample_factor), dtype=np.complex128)
 
-            combined_tx_symbols = np.sqrt(2)/2.0 * rx_symbols + np.sqrt(2)/2.0 * other_usr_symbols
+            combined_tx_symbols = np.sqrt(2) / 2.0 * rx_symbols + np.sqrt(2) / 2.0 * other_usr_symbols
             ofdm_sym_fd_upsampled[-(n_sub_carr // 2):] = combined_tx_symbols[0:n_sub_carr // 2]
             ofdm_sym_fd_upsampled[1:(n_sub_carr // 2) + 1] = combined_tx_symbols[n_sub_carr // 2:]
 
@@ -276,7 +276,7 @@ class McncMuReceiver():
         else:
             ibo_vec = 10 * np.log10(
                 10 ** (self.antenna_array.array_elements[0].impairment.ibo_db / 10) * self.n_sub_carr / (
-                            vk_pow_vec * len(self.antenna_array.array_elements)))
+                        vk_pow_vec * len(self.antenna_array.array_elements)))
             ak_vect = self.antenna_array.array_elements[0].modem.calc_alpha(ibo_db=ibo_vec)
 
         ak_vect = np.expand_dims(ak_vect, axis=1)
@@ -359,4 +359,3 @@ class McncMuReceiver():
         ak_hk_vk_agc_nfft[1:(self.n_sub_carr // 2) + 1] = ak_hk_vk_agc_avg_vec[self.n_sub_carr // 2:]
 
         self.agc_corr_vec = ak_hk_vk_agc_nfft
-

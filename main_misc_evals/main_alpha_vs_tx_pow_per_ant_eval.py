@@ -13,7 +13,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import utilities
-import antenna_arrray
 import channel
 import distortion
 import modulation
@@ -98,8 +97,10 @@ for chan_idx, chan_obj in enumerate(chan_lst):
             axis=1)
 
         # estimate lambda parameters for each antenna and compare in regard to the average
-        lambda_numerator_vecs = np.average((np.multiply(tx_nsc_ofdm_symb_fd, np.conjugate(clean_nsc_ofdm_symb_fd))), axis=1)
-        lambda_denominator_vecs = np.average((np.multiply(clean_nsc_ofdm_symb_fd, np.conjugate(clean_nsc_ofdm_symb_fd))), axis=1)
+        lambda_numerator_vecs = np.average((np.multiply(tx_nsc_ofdm_symb_fd, np.conjugate(clean_nsc_ofdm_symb_fd))),
+                                           axis=1)
+        lambda_denominator_vecs = np.average(
+            (np.multiply(clean_nsc_ofdm_symb_fd, np.conjugate(clean_nsc_ofdm_symb_fd))), axis=1)
         tmp_lambda_vec.append(np.abs(lambda_numerator_vecs / lambda_denominator_vecs))
         ofdm_symb_pow_lst.append(np.sum(np.abs(clean_nsc_ofdm_symb_fd) ** 2, axis=1) / my_mod.n_fft)
         ofdm_symb_idx += 1
@@ -107,7 +108,7 @@ for chan_idx, chan_obj in enumerate(chan_lst):
     # calculate the power of signal for each antenna
     tx_pow_arr[chan_idx, :] = np.average(ofdm_symb_pow_lst, axis=0)
     lambda_per_nant_per_ibo[chan_idx, :] = np.average(tmp_lambda_vec, axis=0)
-    
+
     print("--- Computation time: %f ---" % (time.time() - start_time))
 
 ibo_per_tx = np.multiply(10, np.log10(np.divide(my_array.array_elements[0].impairment.sat_pow, tx_pow_arr)))
