@@ -13,6 +13,7 @@ from datetime import datetime
 import numpy as np
 from scipy.signal import welch
 
+import antenna_array
 import channel
 import distortion
 import modulation
@@ -67,9 +68,8 @@ rx_sig_at_max_point_des = []
 rx_sig_at_max_point_dist = []
 
 bit_rng = np.random.default_rng(4321)
-my_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(3.5e9),
+my_array = antenna_array.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(3.5e9),
                                       wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
-
 if channel_type_str == "los":
     my_miso_chan = channel.MisoLosFd()
 elif channel_type_str == "two_path":

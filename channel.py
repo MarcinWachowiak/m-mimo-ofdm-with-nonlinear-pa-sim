@@ -5,6 +5,10 @@ from scipy import constants as scp_constants
 
 
 class MisoLosFd:
+    """
+    Multiple-input single-output (MISO) line-of-sight (LOS) channel class.
+    """
+
     def __init__(self):
         self.channel_mat_fd = None
 

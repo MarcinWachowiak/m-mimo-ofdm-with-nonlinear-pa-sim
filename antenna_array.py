@@ -1,15 +1,35 @@
 import copy
 from abc import ABC
+from typing import Union
 
 import numpy as np
 import scipy as scp
+from numpy import ndarray
 
 import distortion
 import utilities
+from transceiver import Transceiver
 
 
 class AntennaArray(ABC):
-    def __init__(self, n_elements, base_transceiver, center_freq, wav_len_spacing, cord_x=0, cord_y=0, cord_z=0):
+    """
+    Base class of the antenna array objects.
+
+    :param n_elements: number of antenna elements in the array
+    :param base_transceiver: transceiver object that will be copied for each antenna node
+    :param center_freq: center frequency of the system, used for element spacing calculations
+    :param wav_len_spacing: spacing of antenna expressed in fraction of the wavelength
+    :param cord_x: x coordinate of the center of the array
+    :param cord_y: y coordinate of the center of the array
+    :param cord_z: z coordinate of the center of the array
+    """
+
+    def __init__(self, n_elements: int, base_transceiver: Transceiver, center_freq: int,
+                 wav_len_spacing: float = 0.5, cord_x: float = 0, cord_y: float = 0, cord_z: float = 0):
+        """
+        Constructor method.
+        """
+
         self.n_elements = n_elements
         self.n_users = base_transceiver.modem.n_users
         self.base_transceiver = base_transceiver
@@ -20,14 +40,36 @@ class AntennaArray(ABC):
         self.cord_y = cord_y
         self.cord_z = cord_z
 
-    def set_tx_power_lvls(self, tx_power_dbm, total=False):
+    def set_tx_power_lvls(self, tx_power_dbm: float, total: bool = False) -> None:
+        """
+        [Unused] Set transmit power in dBm.
+
+        :param tx_power_dbm: transmit power in dBm
+        :param total: is the power value a cumulative sum of all elements TX power
+        :return: None
+        """
+
         for tx in self.array_elements:
+            # is the power value a sum of all TX powers or per individual TX
             if total:
                 tx.set_tx_power_dbm(10 * (np.log10(10 ** (tx_power_dbm / 10) / len(self.array_elements))))
             else:
                 tx.set_tx_power_dbm(tx_power_dbm)
 
-    def transmit(self, in_bits, out_domain_fd=True, return_both=False, skip_dist=False, sum_usr_signals=True):
+    def transmit(self, in_bits: ndarray, out_domain_fd: bool = True, return_both: bool = False, skip_dist: bool = False,
+                 sum_usr_signals: bool = True) -> Union[tuple[ndarray, ndarray], ndarray]:
+        """
+        Transmit the input data with multiple antenna transceivers.
+
+        :param in_bits: array of bits to be transmitted 1D for single user, 2D for multiple users
+        :param out_domain_fd: flag if to return the signal in frequency domain or in time domain representation
+        :param return_both: flag if both distorted and non-distorted signals should be returned
+        :param skip_dist: flag if nonlinear processing should be skipped
+        :param sum_usr_signals: flag in multiuser case if usr signals are summed together at the TX
+        :return: multidimensional signal matrix or tuple of them with transmitted signal samples
+            [usr_idx, tx_idx, sample_idx]
+        """
+
         if sum_usr_signals is False and self.n_users == 1:
             sum_usr_signals = True
 
@@ -98,10 +140,24 @@ class AntennaArray(ABC):
                         out_sig_mat[usr_idx, tx_idx, :] = usr_signal_lst[usr_idx]
                 return out_sig_mat
 
-    def set_precoding_matrix(self, channel_mat_fd=None, mr_precoding=False, zf_precoding=False, update_distortion=False,
-                             sep_carr_per_usr=False):
-        # set precoding vector based on provided channel mat coefficients
-        # only the subcarriers are precoded, other normalization operations should be performed in regard to carrier pool
+    def set_precoding_matrix(self, channel_mat_fd: list[ndarray] = None, mr_precoding: bool = False,
+                             zf_precoding: bool = False, update_distortion: bool = False,
+                             sep_carr_per_usr: bool = False) -> None:
+        """
+        Set precoding vectors in each TX modulators based on provided channel mat coefficients.
+        Only the subcarriers are precoded, other normalization operations should be performed in regard to carrier pool.
+
+        :param channel_mat_fd: channel matrix used to calculate the precoding, for multiple users it is a list
+            of channel matrices
+        :param mr_precoding: flag for Maximum Ratio Transmission (MRT) precoding
+        :param zf_precoding: flag for Zero Forcing (ZF) precoding
+        :param update_distortion: flat if distortion maximum power should be updated after the precoding changes
+            the average power to maintain constant IBO
+        :param sep_carr_per_usr: flag if the users are allocated on separate sets of subcarriers, precoding is
+            then applied only to selected sets of subcarriers
+        :return: None
+        """
+
         tx_n_sc = self.base_transceiver.modem.n_sub_carr
 
         if not isinstance(channel_mat_fd, list):
@@ -185,7 +241,7 @@ class AntennaArray(ABC):
                                 np.conjugate(tmp_mat), np.linalg.inv(
                                     np.matmul(np.transpose(tmp_mat), np.conjugate(tmp_mat))))
                             precoding_mat_fd[:, :, sc_idx] = np.transpose(usr_precoding_mat_fd)
-                    except:
+                    except Exception as e:
                         pass
                         # try pseudoinverse if the standard one fails
                         for sc_idx in range(tx_n_sc):
@@ -250,16 +306,26 @@ class AntennaArray(ABC):
                     tx_transceiver.modem.set_precoding(precoding_vec)
 
         if update_distortion:
+            # update the average signal power expected by the distortion after it has been changed by precoding
+            # coefficients to maintain constant IBO
             self.update_distortion(ibo_db=self.array_elements[0].impairment.ibo_db,
                                    avg_sample_pow=self.array_elements[0].modem.avg_sample_power)
 
-    def update_distortion(self, ibo_db, avg_sample_pow, alpha_val=None):
+    def update_distortion(self, ibo_db: float, avg_sample_pow: float, alpha_val: float = None) -> None:
+        """
+        Update the average and maximum power expected by distortion: soft-limiter to maintain constant Input Backoff
+        (IBO) after applied precoding.
+
+        :param ibo_db: input backoff (IBO) value in [dB]
+        :param avg_sample_pow: average power of the signal sample
+        :param alpha_val: value of the alpha - shrinking coefficient
+        :return: None
+        """
+
         # calculate the avg precoding gain only for the desired signal - withing the idx range of subcarriers
         # for idx, tx_transceiver in enumerate(self.array_elements):
         # select coefficients based on carrier frequencies
-        tx_n_sc = self.base_transceiver.modem.n_sub_carr
         # Equal total TX power precoding distortion normalization
-
         if self.n_users == 1:
             # get precoding matrix
             precoding_matrix = np.ones((self.n_elements, self.base_transceiver.modem.n_sub_carr), dtype=np.complex128)
@@ -282,7 +348,9 @@ class AntennaArray(ABC):
         #                                           np.power(np.sum(np.power(np.abs(sc_channel_mat), 2), axis=0), 2)))
         # print("AVG precoding gain: ", avg_precoding_gain)
 
+        # update the ibo
         for idx, array_transceiver in enumerate(self.array_elements):
+            # TODO: Third order Nonlinear distortion update needs to be implemented properly
             if isinstance(array_transceiver.impairment, distortion.ThirdOrderNonLin):
                 array_transceiver.modem.alpha = alpha_val
                 array_transceiver.impairment.set_toi(ibo_db)
@@ -292,7 +360,12 @@ class AntennaArray(ABC):
 
             array_transceiver.impairment.set_avg_sample_power(avg_sample_pow * avg_precoding_gain)
 
-    def get_avg_precoding_gain(self):
+    def get_avg_precoding_gain(self) -> float:
+        """
+        Calculate the average precoding power gain based on the precoding matrices in the array system.
+
+        :return: average precoding power gain
+        """
 
         if self.n_users == 1:
             # get precoding matrix
@@ -309,7 +382,13 @@ class AntennaArray(ABC):
 
         return avg_precoding_gain
 
-    def get_precoding_mat(self):
+    def get_precoding_mat(self) -> ndarray:
+        """
+        Return the precoding matrix from all transceivers.
+
+        :return: multidimensional array of precoding coefficients [usr_idx, tx_idx, sample_idx]
+        """
+
         if self.n_users == 1:
             precoding_matrix = np.empty((self.n_elements, self.base_transceiver.modem.n_sub_carr), dtype=np.complex128)
             for idx, array_tx in enumerate(self.array_elements):
@@ -322,14 +401,37 @@ class AntennaArray(ABC):
 
         return precoding_matrix
 
-    def update_n_users(self, n_users):
+    def update_n_users(self, n_users) -> None:
+        """
+        Update the number of users in the system (in each transceiver)
+
+        :param n_users: number of users
+        :return: None
+        """
         self.n_users = n_users
         for idx, array_tx in enumerate(self.array_elements):
             array_tx.modem.n_users = n_users
 
 
 class LinearArray(AntennaArray):
-    def __init__(self, n_elements, base_transceiver, center_freq, wav_len_spacing, cord_x=0, cord_y=0, cord_z=0):
+    """
+    Uniform linear array (ULA) class.
+
+    :param n_elements: number of antenna elements in the array
+    :param base_transceiver: transceiver object that will be copied for each antenna node
+    :param center_freq: center frequency of the system, used for element spacing calculations
+    :param wav_len_spacing: spacing of antenna expressed in fraction of the wavelength
+    :param cord_x: x coordinate of the center of the array
+    :param cord_y: y coordinate of the center of the array
+    :param cord_z: z coordinate of the center of the array
+    """
+
+    def __init__(self, n_elements: int, base_transceiver: Transceiver, center_freq: int, wav_len_spacing: float,
+                 cord_x: float = 0, cord_y: float = 0, cord_z: float = 0):
+        """
+        Create a uniform linear antenna array along X axis.
+        """
+
         super().__init__(n_elements, base_transceiver, center_freq, wav_len_spacing, cord_x, cord_y, cord_z)
         # antenna position vector centered around 0
         wavelength_at_freq = scp.constants.c / self.center_freq
@@ -345,9 +447,25 @@ class LinearArray(AntennaArray):
 
 
 class CircularArray(AntennaArray):
-    def __init__(self, n_elements, base_transceiver, center_freq, wav_len_spacing, cord_x=0, cord_y=0, cord_z=0):
-        # TODO: add full circular or semicircular options
+    """
+    Uniform circular array (UCA) class.
 
+    :param n_elements: number of antenna elements in the array
+    :param base_transceiver: transceiver object that will be copied for each antenna node
+    :param center_freq: center frequency of the system, used for element spacing calculations
+    :param wav_len_spacing: spacing of antenna expressed in fraction of the wavelength
+    :param cord_x: x coordinate of the center of the array
+    :param cord_y: y coordinate of the center of the array
+    :param cord_z: z coordinate of the center of the array
+    """
+
+    def __init__(self, n_elements: int, base_transceiver: Transceiver, center_freq: int, wav_len_spacing: float,
+                 cord_x: float = 0, cord_y: float = 0, cord_z: float = 0):
+        """
+        Create a uniform circular antenna array on X-Y plane.
+        """
+
+        # TODO: add a switch for full circular or semicircular topology
         super().__init__(n_elements, base_transceiver, center_freq, wav_len_spacing, cord_x, cord_y, cord_z)
         # uniform circular array with radius specified by wav_len_spacing
         wavelength_at_freq = scp.constants.c / self.center_freq
@@ -363,8 +481,25 @@ class CircularArray(AntennaArray):
 
 
 class PlanarRectangularArray(AntennaArray):
-    def __init__(self, n_elements_per_row, n_elements_per_col, base_transceiver, center_freq, wav_len_spacing, cord_x=0,
-                 cord_y=0, cord_z=0):
+    """
+    Uniform rectangular array class.
+
+    :param n_elements_per_row: number of elements in a row
+    :param n_elements_per_col: number of elements in a column
+    :param base_transceiver: transceiver object that will be copied for each antenna node
+    :param center_freq: center frequency of the system, used for element spacing calculations
+    :param wav_len_spacing: spacing of antenna expressed in fraction of the wavelength
+    :param cord_x: x coordinate of the center of the array
+    :param cord_y: y coordinate of the center of the array
+    :param cord_z: z coordinate of the center of the array
+    """
+
+    def __init__(self, n_elements_per_row: int, n_elements_per_col: int, base_transceiver: Transceiver, center_freq: int, wav_len_spacing: float,
+                 cord_x: float = 0, cord_y: float = 0, cord_z: float = 0):
+        """
+        Create a uniform rectangular antenna array on X-Z plane.
+        """
+
         n_elements = n_elements_per_row * n_elements_per_col
         super().__init__(n_elements, base_transceiver, center_freq, wav_len_spacing, cord_x, cord_y, cord_z)
         # antenna position vector centered around 0

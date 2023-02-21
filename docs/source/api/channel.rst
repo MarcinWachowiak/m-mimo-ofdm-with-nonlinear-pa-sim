@@ -1,0 +1,5 @@
+Channel
+-------
+
+.. automodule:: channel
+    :members:

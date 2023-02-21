@@ -1,18 +1,8 @@
 API
 ===
 
-.. autosummary::
-   :toctree: generated
+.. toctree::
 
-    antenna_array
-    channel
-    corrector
-    distortion
-    filter
-    modulation
-    mp_model
-    noise
-    plot_settings
-    speedup
-    transceiver
-    utilities
+   api/antenna_array
+   api/channel
+
