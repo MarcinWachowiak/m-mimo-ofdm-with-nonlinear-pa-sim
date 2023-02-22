@@ -56,7 +56,7 @@ if __name__ == '__main__':
 
     # accuracy
     bits_sent_max = int(3e7)
-    n_err_min = int(1e7)
+    n_err_min = int(1e6)
 
     rx_loc_x, rx_loc_y = 212.0, 212.0
     rx_loc_var = 10.0
