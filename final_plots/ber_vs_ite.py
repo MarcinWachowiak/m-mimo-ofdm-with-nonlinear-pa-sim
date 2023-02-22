@@ -7,9 +7,8 @@ import plot_settings
 
 sys.path.append(os.getcwd())
 
-import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib import pyplot as plt, ticker as mticker
+from matplotlib import pyplot as plt
 
 import utilities
 from plot_settings import set_latex_plot_style
@@ -38,7 +37,7 @@ ibo_sel_lst = [-3, 0, 1, 3]
 
 for snr_idx, snr_val in enumerate(snr_lst):
     cnc_filename_str = "ber_vs_ibo_cnc_los_nant64_ebn0_%d_ibo_min%d_max%d_step%1.2f_niter1_2_3_4_5_6_7_8" % (
-    snr_val, ibo_min, ibo_max, ibo_step)
+        snr_val, ibo_min, ibo_max, ibo_step)
     cnc_data_lst = utilities.read_from_csv(filename=cnc_filename_str)
     cnc_ibo_arr = cnc_data_lst[0]
     snr_ber_limit = np.average(cnc_data_lst[1])
@@ -49,7 +48,7 @@ for snr_idx, snr_val in enumerate(snr_lst):
     no_dist_ber_limit.append(snr_ber_limit)
 
     mcnc_filename_str = "ber_vs_ibo_mcnc_los_nant64_ebn0_%d_ibo_min%d_max%d_step%1.2f_niter1_2_3_4_5_6_7_8" % (
-    snr_val, ibo_min, ibo_max, ibo_step)
+        snr_val, ibo_min, ibo_max, ibo_step)
     mcnc_data_lst = utilities.read_from_csv(filename=mcnc_filename_str)
     mcnc_ibo_arr = mcnc_data_lst[0]
     # snr_ber_limit = np.average(cnc_data_lst[1])
@@ -108,8 +107,10 @@ leg2 = ax1.legend(handles=[cnc_leg, mcnc_leg], loc="lower left", framealpha=0.9,
 plt.gca().add_artist(leg2)
 
 import matplotlib.lines as mlines
+
 usr_1_leg = mlines.Line2D([0], [0], linestyle='none', marker=marker_lst[0], fillstyle="none", color='k', label="15")
-usr_2_leg = mlines.Line2D([0], [0], linestyle='none', marker=marker_lst[1], fillstyle="none", color='k', label="$\infty$")
+usr_2_leg = mlines.Line2D([0], [0], linestyle='none', marker=marker_lst[1], fillstyle="none", color='k',
+                          label="$\infty$")
 plt.legend(handles=[usr_1_leg, usr_2_leg], title="Eb/N0 [dB]:", loc="lower right", framealpha=0.9, ncol=2)
 
 ax1.set_xlabel("I iterations [-]")

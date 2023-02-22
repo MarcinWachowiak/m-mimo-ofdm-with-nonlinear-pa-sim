@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import plot_settings
-from speedup import jit
 
 
 # @jit(nopython=True)

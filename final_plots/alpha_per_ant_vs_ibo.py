@@ -14,7 +14,6 @@ import utilities
 import modulation
 from plot_settings import set_latex_plot_style
 
-
 set_latex_plot_style(use_tex=True, fig_width_in=3.5)
 # %%
 
@@ -23,7 +22,6 @@ my_mod = modulation.OfdmQamModem(constel_size=64, n_fft=4096, n_sub_carr=2048, c
 data_lst = utilities.read_from_csv(filename="alpha_vs_tx_power_per_ant64_ibo0.0")
 ibo_per_tx = [data_lst[0], data_lst[2], data_lst[4]]
 alpha_per_nant_per_ibo = [data_lst[1], data_lst[3], data_lst[5]]
-
 
 # %%
 fig1, ax1 = plt.subplots(1, 1)

@@ -15,7 +15,6 @@ import multiprocessing as mp
 import matplotlib.pyplot as plt
 import numpy as np
 
-import antenna_arrray
 import channel
 import distortion
 import modulation
@@ -89,7 +88,8 @@ if __name__ == '__main__':
 
         for n_ant_val in n_ant_arr:
 
-            my_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(center_freq),
+            my_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx,
+                                                  center_freq=int(center_freq),
                                                   wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
             # channel type
 
@@ -103,9 +103,10 @@ if __name__ == '__main__':
             for my_miso_chan in chan_lst:
 
                 mp_link_obj = mp_ldpc_model.Link_LDPC(mod_obj=my_mod, array_obj=my_array, std_rx_obj=my_standard_rx,
-                                            chan_obj=my_miso_chan, noise_obj=my_noise,
-                                            rx_loc_var=rx_loc_var, n_err_min=n_err_min,
-                                            bits_sent_max=bits_sent_max, is_mcnc=False, code_rate=code_rate, max_ldpc_ite=12)
+                                                      chan_obj=my_miso_chan, noise_obj=my_noise,
+                                                      rx_loc_var=rx_loc_var, n_err_min=n_err_min,
+                                                      bits_sent_max=bits_sent_max, is_mcnc=False, code_rate=code_rate,
+                                                      max_ldpc_ite=12)
 
                 for ibo_val_db in ibo_arr:
                     mp_link_obj.update_distortion(ibo_val_db=ibo_val_db)
@@ -168,9 +169,10 @@ if __name__ == '__main__':
                         ax1.legend()
                         plt.tight_layout()
 
-                        filename_str = "ldpc_%s_ber_vs_ebn0_cnc_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s" % ( code_rate_str.replace('/', '_'),
-                            my_miso_chan, n_ant_val, ibo_val_db, min(ebn0_arr), max(ebn0_arr), ebn0_arr[1] - ebn0_arr[0],
-                            '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
+                        filename_str = "ldpc_%s_ber_vs_ebn0_cnc_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s" % (
+                        code_rate_str.replace('/', '_'),
+                        my_miso_chan, n_ant_val, ibo_val_db, min(ebn0_arr), max(ebn0_arr), ebn0_arr[1] - ebn0_arr[0],
+                        '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
                         # timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
                         # filename_str += "_" + timestamp
                         plt.savefig("figs/vm_worker_results/%s.png" % filename_str, dpi=600, bbox_inches='tight')

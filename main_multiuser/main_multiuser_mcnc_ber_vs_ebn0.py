@@ -15,7 +15,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import MaxNLocator
 
-import antenna_arrray
 import channel
 import distortion
 import modulation
@@ -138,7 +137,8 @@ if __name__ == '__main__':
                     my_mcnc_rx_lst.append(my_mcnc_rx)
 
                 # set precoding and calculate AGC
-                my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=mr_precoding, zf_precoding=zf_precoding)
+                my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=mr_precoding,
+                                              zf_precoding=zf_precoding)
                 my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
                 for my_mcnc_rx_obj in my_mcnc_rx_lst:
                     my_mcnc_rx_obj.update_agc()
@@ -248,7 +248,8 @@ if __name__ == '__main__':
 
                                 usr_chan_mat_lst.append(my_miso_chan.get_channel_mat_fd())
 
-                            my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=mr_precoding, zf_precoding=zf_precoding)
+                            my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=mr_precoding,
+                                                          zf_precoding=zf_precoding)
                             my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
 
                             vk_mat = my_array.get_precoding_mat()
@@ -419,14 +420,16 @@ if __name__ == '__main__':
                                     my_mcnc_array = copy.deepcopy(my_array)
                                     my_mcnc_array.update_n_users(n_users=1)
                                     my_mcnc_array.set_precoding_matrix(channel_mat_fd=my_miso_chan.get_channel_mat_fd(),
-                                                                       mr_precoding=mr_precoding, zf_precoding=zf_precoding)
+                                                                       mr_precoding=mr_precoding,
+                                                                       zf_precoding=zf_precoding)
                                     my_mcnc_array.update_distortion(ibo_db=ibo_val_db,
                                                                     avg_sample_pow=my_mod.avg_sample_power)
                                     my_mcnc_rx = corrector.McncReceiver(copy.deepcopy(my_mcnc_array),
                                                                         copy.deepcopy(my_miso_chan))
                                     my_mcnc_rx_lst.append(my_mcnc_rx)
 
-                                my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=mr_precoding, zf_precoding=zf_precoding)
+                                my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst,
+                                                              mr_precoding=mr_precoding, zf_precoding=zf_precoding)
                                 my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
 
                                 vk_mat = my_array.get_precoding_mat()
@@ -547,7 +550,8 @@ if __name__ == '__main__':
                                     my_mcnc_array = copy.deepcopy(my_array)
                                     my_mcnc_array.update_n_users(n_users=1)
                                     my_mcnc_array.set_precoding_matrix(channel_mat_fd=my_miso_chan.get_channel_mat_fd(),
-                                                                       mr_precoding=mr_precoding, zf_precoding=zf_precoding)
+                                                                       mr_precoding=mr_precoding,
+                                                                       zf_precoding=zf_precoding)
                                     my_mcnc_array.update_distortion(ibo_db=ibo_val_db,
                                                                     avg_sample_pow=my_mod.avg_sample_power)
                                     my_mcnc_rx = corrector.McncReceiver(copy.deepcopy(my_mcnc_array),
@@ -555,7 +559,8 @@ if __name__ == '__main__':
                                     my_mcnc_rx_lst.append(my_mcnc_rx)
 
                                 # set precoding and calculate AGC
-                                my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=mr_precoding, zf_precoding=zf_precoding)
+                                my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst,
+                                                              mr_precoding=mr_precoding, zf_precoding=zf_precoding)
                                 my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
 
                                 vk_mat = my_array.get_precoding_mat()
@@ -669,7 +674,8 @@ if __name__ == '__main__':
                     plt.tight_layout()
 
                     filename_str = "ber_vs_ebn0_mu_%s_mcnc_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s_angles%s_distances%s" % (
-                        precoding_str, my_miso_chan, n_ant_val, ibo_val_db, min(ebn0_arr), max(ebn0_arr), ebn0_arr[1] - ebn0_arr[0],
+                        precoding_str, my_miso_chan, n_ant_val, ibo_val_db, min(ebn0_arr), max(ebn0_arr),
+                        ebn0_arr[1] - ebn0_arr[0],
                         '_'.join([str(val) for val in mcnc_n_iter_lst[1:]]), '_'.join([str(val) for val in usr_angles]),
                         '_'.join([str(val) for val in usr_distances]))
 

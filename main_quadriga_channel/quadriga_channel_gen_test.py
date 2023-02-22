@@ -23,16 +23,17 @@ distance = 300
 bandwidth = n_sub_carr * subcarr_spacing
 channel_model_str = '3GPP_38.901_UMa_LOS'
 
-meng.qd_channel_env_setup(meng.double(n_ant), meng.double(n_sub_carr), meng.double(subcarr_spacing), meng.double(center_freq), meng.double(distance), channel_model_str, nargout=0)
+meng.qd_channel_env_setup(meng.double(n_ant), meng.double(n_sub_carr), meng.double(subcarr_spacing),
+                          meng.double(center_freq), meng.double(distance), channel_model_str, nargout=0)
 
 channel_mat_tmp = np.array(meng.qd_get_channel_mat(distance, 0, 1.5))
 
-#%%
+# %%
 fig1, ax1 = plt.subplots(1, 1)
 for idx in range(5):
     # despite no position change the channel is different
     channel_mat = np.array(meng.qd_get_channel_mat(distance, 0, 1.5))
-    ax1.plot(10*np.log10(np.abs(channel_mat[idx, :])))
+    ax1.plot(10 * np.log10(np.abs(channel_mat[idx, :])))
 
 ax1.set_xlabel("Subcarrier index [-]")
 ax1.set_ylabel("Channel attenuation [dB]")

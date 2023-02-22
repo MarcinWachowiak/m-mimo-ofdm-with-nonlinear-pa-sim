@@ -11,7 +11,7 @@ bit_rng = np.random.default_rng(2137)
 my_mod = modulation.OfdmQamModem(constel_size=64, n_fft=4096, n_sub_carr=2048, cp_len=128)
 
 # main code tuning variable
-code_rate = 1/3  # % Target code rate, a real number between 0 and 1
+code_rate = 1 / 3  # % Target code rate, a real number between 0 and 1
 max_ldpc_ite = 12
 
 rv = matlab.double(0)
@@ -20,18 +20,18 @@ bits_per_symbol = 6
 n_layers = matlab.double(1)
 
 transport_block_size = matlab.int64(my_mod.n_bits_per_ofdm_sym * code_rate)
-out_len = matlab.double(np.ceil(transport_block_size/code_rate))
+out_len = matlab.double(np.ceil(transport_block_size / code_rate))
 if out_len != my_mod.n_bits_per_ofdm_sym:
     raise ValueError('Code output length does not match modulator input length!')
 
 cbs_info_dict = matlab.nrDLSCHInfo(transport_block_size, code_rate)
 print("DL-SCH coding parameters", cbs_info_dict)
 
-#%%
+# %%
 # input bits vector
 bits_in = bit_rng.choice((0, 1), transport_block_size)
 
-crc_encoded_bits = matlab.nrCRCEncode(matlab.int8(matlab.transpose(bits_in)),cbs_info_dict['CRC'])
+crc_encoded_bits = matlab.nrCRCEncode(matlab.int8(matlab.transpose(bits_in)), cbs_info_dict['CRC'])
 # CRC encoding
 code_block_segment_in = matlab.nrCodeBlockSegmentLDPC(crc_encoded_bits, cbs_info_dict['BGN'])
 ldpc_encoded_bits = matlab.nrLDPCEncode(code_block_segment_in, cbs_info_dict['BGN'])
@@ -43,7 +43,8 @@ snrdB = 9990.0
 rx_sig, noise_var = matlab.awgn(symbols_in, snrdB, nargout=2)
 # Symbol demapping
 soft_bits_llr = matlab.nrSymbolDemodulate(rx_sig, modulation_format_str, noise_var)
-rate_recovered_bits = matlab.nrRateRecoverLDPC(soft_bits_llr, transport_block_size, code_rate, rv, modulation_format_str, n_layers)
+rate_recovered_bits = matlab.nrRateRecoverLDPC(soft_bits_llr, transport_block_size, code_rate, rv,
+                                               modulation_format_str, n_layers)
 decBits = matlab.nrLDPCDecode(rate_recovered_bits, cbs_info_dict['BGN'], max_ldpc_ite)
 blocks_out = matlab.nrCodeBlockDesegmentLDPC(decBits, cbs_info_dict['BGN'], transport_block_size + cbs_info_dict['L'])
 crc_decoded_bits = matlab.nrCRCDecode(blocks_out, cbs_info_dict['CRC'])

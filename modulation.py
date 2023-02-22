@@ -33,7 +33,8 @@ def soft_decoding(constellation, n_bits_per_symbol, input_symbols, noise_var_vec
             if np.real(llr_den) == 0:
                 demod_bits[i * n_bits_per_symbol + n_bits_per_symbol - 1 - bit_index] = np.inf
             else:
-                demod_bits[i * n_bits_per_symbol + n_bits_per_symbol - 1 - bit_index] = np.log(np.abs(llr_num) / np.abs(llr_den))
+                demod_bits[i * n_bits_per_symbol + n_bits_per_symbol - 1 - bit_index] = np.log(
+                    np.abs(llr_num) / np.abs(llr_den))
 
     return demod_bits
 
@@ -240,7 +241,8 @@ class OfdmQamModem(QamModem):
         return _demodulate(self._constellation, self.n_bits_per_symbol, input_symbols)
 
     def soft_detection_llr(self, baseband_symbols, noise_var):
-        return _demodulate(self._constellation, self.n_bits_per_symbol, baseband_symbols, soft=True, noise_var=noise_var)
+        return _demodulate(self._constellation, self.n_bits_per_symbol, baseband_symbols, soft=True,
+                           noise_var=noise_var)
 
     def ofdm_avg_sample_pow(self):
         return self.avg_symbol_power * (self.n_sub_carr / self.n_fft)

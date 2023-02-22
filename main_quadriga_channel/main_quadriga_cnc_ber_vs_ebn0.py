@@ -1,7 +1,6 @@
 # MISO OFDM simulation with nonlinearity
 # Clipping noise cancellation eval
 # %%
-import ctypes
 import os
 import sys
 
@@ -12,12 +11,10 @@ sys.path.append(os.getcwd())
 import copy
 import time
 from datetime import datetime
-import multiprocessing as mp
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-import antenna_arrray
 import channel
 import distortion
 import modulation
@@ -26,7 +23,6 @@ import transceiver
 import utilities
 from plot_settings import set_latex_plot_style
 from utilities import ebn0_to_snr
-import mp_model
 
 if __name__ == '__main__':
 
@@ -76,7 +72,8 @@ if __name__ == '__main__':
                                              center_freq=int(center_freq), carrier_spacing=int(subcarr_spacing))
     seed_rng = np.random.default_rng(2137)
     for n_ant_val in n_ant_arr:
-        my_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(center_freq),
+        my_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx,
+                                              center_freq=int(center_freq),
                                               wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
         # channel type
         my_miso_los_chan = channel.MisoLosFd()
@@ -90,7 +87,8 @@ if __name__ == '__main__':
                                                        rx_transceiver=my_standard_rx,
                                                        seed=1234)
         my_miso_quadriga_chan = channel.MisoQuadrigaFd(tx_transceivers=my_array.array_elements,
-                                                       rx_transceiver=my_standard_rx, channel_model_str=channel_model_str)
+                                                       rx_transceiver=my_standard_rx,
+                                                       channel_model_str=channel_model_str)
         chan_lst = [my_miso_quadriga_chan]
 
         for my_miso_chan in chan_lst:
@@ -196,8 +194,9 @@ if __name__ == '__main__':
 
                             # for direct visibility channel and CNC algorithm channel impact must be averaged
                             snap_cnt += 1
-                            if isinstance(my_miso_chan, channel.MisoLosFd) or isinstance(my_miso_chan, channel.MisoTwoPathFd) \
-                                                                            or isinstance(my_miso_chan, channel.MisoQuadrigaFd):
+                            if isinstance(my_miso_chan, channel.MisoLosFd) or isinstance(my_miso_chan,
+                                                                                         channel.MisoTwoPathFd) \
+                                    or isinstance(my_miso_chan, channel.MisoQuadrigaFd):
                                 # reroll location
                                 my_standard_rx.set_position(
                                     cord_x=rx_loc_x + loc_rng.uniform(low=-rx_loc_var / 2.0, high=rx_loc_var / 2.0),
@@ -284,7 +283,8 @@ if __name__ == '__main__':
                     plt.tight_layout()
 
                     filename_str = "ber_vs_ebn0_cnc_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s" % (
-                        channel_model_str, n_ant_val, ibo_val_db, min(ebn0_arr), max(ebn0_arr), ebn0_arr[1] - ebn0_arr[0],
+                        channel_model_str, n_ant_val, ibo_val_db, min(ebn0_arr), max(ebn0_arr),
+                        ebn0_arr[1] - ebn0_arr[0],
                         '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
                     # timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
                     # filename_str += "_" + timestamp

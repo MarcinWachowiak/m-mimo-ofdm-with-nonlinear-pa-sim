@@ -20,11 +20,10 @@ if __name__ == '__main__':
     seed_rng = np.random.default_rng(2137)
     proc_seed_lst = seed_rng.integers(0, high=sys.maxsize, size=(num_cores, 2))
 
-
-
     processes = []
     for idx in range(num_cores):
-        p = mp.Process(target=multiuser_mcnc_parallel, args=(idx, precoding_str, bits_sent_max, n_err_min, proc_seed_lst[idx]))
+        p = mp.Process(target=multiuser_mcnc_parallel,
+                       args=(idx, precoding_str, bits_sent_max, n_err_min, proc_seed_lst[idx]))
         processes.append(p)
         p.start()
 

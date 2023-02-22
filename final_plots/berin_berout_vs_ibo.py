@@ -7,7 +7,6 @@ import plot_settings
 
 sys.path.append(os.getcwd())
 
-import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import pyplot as plt, ticker as mticker
 from matplotlib.transforms import ScaledTranslation
@@ -37,7 +36,8 @@ snr_lst = [12, 15, 18, 1000]
 sel_snr_val_lst = [15, 1000]
 
 for snr_idx, snr_val in enumerate(snr_lst):
-    cnc_filename_str = "ber_vs_ibo_cnc_los_nant64_ebn0_%d_ibo_min%d_max%d_step%1.2f_niter1_2_3_4_5_6_7_8" % (snr_val, ibo_min, ibo_max, ibo_step)
+    cnc_filename_str = "ber_vs_ibo_cnc_los_nant64_ebn0_%d_ibo_min%d_max%d_step%1.2f_niter1_2_3_4_5_6_7_8" % (
+    snr_val, ibo_min, ibo_max, ibo_step)
     cnc_data_lst = utilities.read_from_csv(filename=cnc_filename_str)
     cnc_ibo_arr = cnc_data_lst[0]
     snr_ber_limit = np.average(cnc_data_lst[1])
@@ -47,7 +47,8 @@ for snr_idx, snr_val in enumerate(snr_lst):
     cnc_ibo_array_lst.append(cnc_ibo_arr)
     no_dist_ber_limit.append(snr_ber_limit)
 
-    mcnc_filename_str = "ber_vs_ibo_mcnc_los_nant64_ebn0_%d_ibo_min%d_max%d_step%1.2f_niter1_2_3_4_5_6_7_8" % (snr_val, ibo_min, ibo_max, ibo_step)
+    mcnc_filename_str = "ber_vs_ibo_mcnc_los_nant64_ebn0_%d_ibo_min%d_max%d_step%1.2f_niter1_2_3_4_5_6_7_8" % (
+    snr_val, ibo_min, ibo_max, ibo_step)
     mcnc_data_lst = utilities.read_from_csv(filename=mcnc_filename_str)
     mcnc_ibo_arr = mcnc_data_lst[0]
     # snr_ber_limit = np.average(cnc_data_lst[1])
@@ -65,19 +66,20 @@ ax1.set_aspect('equal')
 CB_color_cycle = ['#006BA4', '#FF800E', '#ABABAB', '#595959', '#5F9ED1', '#C85200', '#898989', '#A2C8EC', '#FFBC79',
                   '#CFCFCF']
 
-
 for snr_idx, snr_val in enumerate(snr_lst):
     color_idx = 2
     if snr_val in sel_snr_val_lst:
         for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
             if ite_val in sel_cnc_iter_val:
-                ax1.plot(cnc_bers_per_snr_lst[snr_idx][ite_idx], cnc_bers_per_snr_lst[snr_idx][ite_idx + 1], "-", color=CB_color_cycle[color_idx])
-                ax1.plot(mcnc_bers_per_snr_lst[snr_idx][ite_idx], mcnc_bers_per_snr_lst[snr_idx][ite_idx + 1], "--", color=CB_color_cycle[color_idx])
+                ax1.plot(cnc_bers_per_snr_lst[snr_idx][ite_idx], cnc_bers_per_snr_lst[snr_idx][ite_idx + 1], "-",
+                         color=CB_color_cycle[color_idx])
+                ax1.plot(mcnc_bers_per_snr_lst[snr_idx][ite_idx], mcnc_bers_per_snr_lst[snr_idx][ite_idx + 1], "--",
+                         color=CB_color_cycle[color_idx])
                 color_idx += 1
     plot_settings.reset_color_cycle()
 
-
 import matplotlib.lines as mlines
+
 n_ite_legend = []
 # color_idx = 0
 # for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
@@ -87,6 +89,7 @@ n_ite_legend = []
 # leg1 = plt.legend(handles=n_ite_legend, title="I iterations:", loc="upper right", ncol=1, framealpha=0.9)
 
 import matplotlib.patches as mpatches
+
 color_idx = 2
 for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
     if ite_val in sel_cnc_iter_val:
@@ -112,13 +115,15 @@ ax1.xaxis.set_minor_locator(mticker.LogLocator(numticks=999, subs="auto"))
 pt1 = ax1.get_ylim()
 pt2 = ax1.get_xlim()
 ax1.plot([pt1[0], pt2[1]], [pt1[0], pt2[1]], color='k', linestyle=':', linewidth=1, label="No gain")
-ax1.text(0.2, 0.4, 'Eb/N0\n=15 [dB]', verticalalignment='center', horizontalalignment='center', transform=ax1.transAxes, fontsize=8)
-ax1.text(0.86, 0.1, 'Eb/N0\n=$\infty$ [dB]', verticalalignment='center', horizontalalignment='center', transform=ax1.transAxes, fontsize=8)
-
+ax1.text(0.2, 0.4, 'Eb/N0\n=15 [dB]', verticalalignment='center', horizontalalignment='center', transform=ax1.transAxes,
+         fontsize=8)
+ax1.text(0.86, 0.1, 'Eb/N0\n=$\infty$ [dB]', verticalalignment='center', horizontalalignment='center',
+         transform=ax1.transAxes, fontsize=8)
 
 for snr_idx, snr_val in enumerate(snr_lst):
     if snr_val in sel_snr_val_lst:
-        ax1.scatter(no_dist_ber_limit[snr_idx], no_dist_ber_limit[snr_idx], color=CB_color_cycle[0], marker='o', zorder=3)
+        ax1.scatter(no_dist_ber_limit[snr_idx], no_dist_ber_limit[snr_idx], color=CB_color_cycle[0], marker='o',
+                    zorder=3)
 
 ax1.grid(which='major', linestyle='-')
 # ax1.grid(which='minor', linestyle='--')
@@ -147,7 +152,7 @@ ax1.set_xscale('log', base=10)
 CB_color_cycle = ['#006BA4', '#FF800E', '#ABABAB', '#595959', '#5F9ED1', '#C85200', '#898989', '#A2C8EC', '#FFBC79',
                   '#CFCFCF']
 
-sel_cnc_iter_val = [1,2,5]
+sel_cnc_iter_val = [1, 2, 5]
 sel_snr_val_lst = [15]
 snr_marker_lst = ['o', 's', '^', '*']
 # ber in as per standard detection corrected by alpha
@@ -157,13 +162,16 @@ for snr_idx, snr_val in enumerate(snr_lst):
         for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
             if ite_val in sel_cnc_iter_val:
                 # ber in vs ber out
-                ax1.plot(cnc_bers_per_snr_lst[snr_idx][1], cnc_bers_per_snr_lst[snr_idx][ite_idx+1], "-", color=CB_color_cycle[color_idx])
-                ax1.plot(mcnc_bers_per_snr_lst[snr_idx][1], mcnc_bers_per_snr_lst[snr_idx][ite_idx+1], "--", color=CB_color_cycle[color_idx])
+                ax1.plot(cnc_bers_per_snr_lst[snr_idx][1], cnc_bers_per_snr_lst[snr_idx][ite_idx + 1], "-",
+                         color=CB_color_cycle[color_idx])
+                ax1.plot(mcnc_bers_per_snr_lst[snr_idx][1], mcnc_bers_per_snr_lst[snr_idx][ite_idx + 1], "--",
+                         color=CB_color_cycle[color_idx])
 
-                ax1.plot(cnc_bers_per_snr_lst[3][1], cnc_bers_per_snr_lst[3][ite_idx + 1], "-", color=CB_color_cycle[color_idx])
-                ax1.plot(mcnc_bers_per_snr_lst[3][1], mcnc_bers_per_snr_lst[3][ite_idx + 1], "--", color=CB_color_cycle[color_idx])
+                ax1.plot(cnc_bers_per_snr_lst[3][1], cnc_bers_per_snr_lst[3][ite_idx + 1], "-",
+                         color=CB_color_cycle[color_idx])
+                ax1.plot(mcnc_bers_per_snr_lst[3][1], mcnc_bers_per_snr_lst[3][ite_idx + 1], "--",
+                         color=CB_color_cycle[color_idx])
                 color_idx += 1
-
 
 # Ellipse centre coordinates
 x_center, y_center = 2e-2, 1.5e-3
@@ -177,9 +185,8 @@ ax1.annotate('Eb/N0 = 15 [dB]', xy=(x_center, y_center), xytext=(0, 40),
              color='k', fontsize=8, verticalalignment='center', horizontalalignment='center',
              arrowprops=dict(arrowstyle='->', facecolor='k', shrinkB=20, lw=0.6))
 
-
 # Ellipse centre coordinates
-x_center, y_center =5.5e-2, 3e-4
+x_center, y_center = 5.5e-2, 3e-4
 ell_offset = ScaledTranslation(x_center, y_center, ax1.transScale)
 ell_tform = ell_offset + ax1.transLimits + ax1.transAxes
 ell = mpatches.Ellipse(xy=(0, 0), width=0.75, height=0.4, angle=0, edgecolor='k', lw=0.6, facecolor='none', zorder=3,
@@ -189,8 +196,8 @@ ax1.annotate('Eb/N0\n=$\infty$ [dB]', xy=(x_center, y_center), xytext=(-27, -22)
              textcoords='offset points',
              color='k', fontsize=8, verticalalignment='center', horizontalalignment='center',
              )
-ax1.annotate("", xy=(5.35e-2,1.8e-4), xytext=(-8, -13), fontsize=8, textcoords='offset points', arrowprops=dict(arrowstyle='->', facecolor='k', lw=0.6))
-
+ax1.annotate("", xy=(5.35e-2, 1.8e-4), xytext=(-8, -13), fontsize=8, textcoords='offset points',
+             arrowprops=dict(arrowstyle='->', facecolor='k', lw=0.6))
 
 # ax1.text(0.25, 0.6, 'Eb/N0 = 15 [dB]', verticalalignment='center', horizontalalignment='center', transform=ax1.transAxes, fontsize=8)
 # ax1.text(0.48, 0.2, 'Eb/N0\n=$\infty$ [dB]', verticalalignment='center', horizontalalignment='center', transform=ax1.transAxes, fontsize=8)
@@ -216,6 +223,7 @@ leg2 = plt.legend(handles=snr_leg_lst, title="Eb/N0 [dB]:", loc="lower left", fr
 # plt.gca().add_artist(leg2)
 
 import matplotlib.patches as mpatches
+
 n_ite_legend = []
 color_idx = 2
 for ite_idx, ite_val in enumerate(cnc_n_iter_lst):
@@ -249,7 +257,6 @@ ax1.grid(which='major', linestyle='-')
 ax1.set_xlabel("BER in [-]")
 ax1.set_ylabel("BER out [-]")
 
-
 plt.tight_layout()
 
 filename_str = "berout_vs_berin_per_combined_ite_%s_nant%d_ebn0%s_ibo_min%d_max%d_step%1.2f_niter%s" % (
@@ -259,9 +266,5 @@ filename_str = "berout_vs_berin_per_combined_ite_%s_nant%d_ebn0%s_ibo_min%d_max%
 # filename_str += "_" + timestamp
 plt.savefig("../figs/%s.pdf" % filename_str, dpi=600, bbox_inches='tight')
 plt.show()
-
-
-
-
 
 print("Finished execution!")

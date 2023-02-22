@@ -14,7 +14,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import matlab.engine
 
-import antenna_arrray
 import channel
 import corrector
 import distortion
@@ -78,7 +77,7 @@ bits_per_symbol = 6
 n_layers = meng.double(1)
 
 n_info_bits = meng.int64(my_mod.n_bits_per_ofdm_sym * code_rate)
-out_len = meng.double(np.ceil(n_info_bits/code_rate))
+out_len = meng.double(np.ceil(n_info_bits / code_rate))
 if out_len != my_mod.n_bits_per_ofdm_sym:
     raise ValueError('Code output length does not match modulator input length!')
 
@@ -186,10 +185,12 @@ for n_ant_val in n_ant_arr:
 
                         if np.logical_and((n_err[0] < n_err_min), (bits_sent[0] < bits_sent_max)):
                             tx_bits = bit_rng.choice((0, 1), n_info_bits)
-                            crc_encoded_bits = meng.nrCRCEncode(meng.int8(meng.transpose(tx_bits)), cbs_info_dict['CRC'])
+                            crc_encoded_bits = meng.nrCRCEncode(meng.int8(meng.transpose(tx_bits)),
+                                                                cbs_info_dict['CRC'])
                             code_block_segment_in = meng.nrCodeBlockSegmentLDPC(crc_encoded_bits, cbs_info_dict['BGN'])
                             ldpc_encoded_bits = meng.nrLDPCEncode(code_block_segment_in, cbs_info_dict['BGN'])
-                            rm_ldpc_bits = np.squeeze(np.array(meng.nrRateMatchLDPC(ldpc_encoded_bits, out_len, rv, modulation_format_str, n_layers)))
+                            rm_ldpc_bits = np.squeeze(np.array(
+                                meng.nrRateMatchLDPC(ldpc_encoded_bits, out_len, rv, modulation_format_str, n_layers)))
 
                             clean_ofdm_symbol = my_array.transmit(rm_ldpc_bits, out_domain_fd=True,
                                                                   return_both=False,
@@ -205,11 +206,17 @@ for n_ant_val in n_ant_arr:
                                 (clean_rx_ofdm_symbol[-my_mod.cp_len:], clean_rx_ofdm_symbol))
 
                             rx_symbols = my_standard_rx.modem.demodulate(clean_rx_ofdm_symbol, get_symbols_only=True)
-                            rx_llr_soft_bits = -my_standard_rx.modem.soft_detection_llr(rx_symbols, noise_var=noise_var_snr_based)
-                            rate_recovered_bits = meng.nrRateRecoverLDPC(meng.transpose(meng.double(rx_llr_soft_bits)), n_info_bits, code_rate, rv, modulation_format_str, n_layers)
-                            ldpc_decoded_bits = meng.nrLDPCDecode(rate_recovered_bits, cbs_info_dict['BGN'], max_ldpc_ite)
-                            desegmented_bits = meng.nrCodeBlockDesegmentLDPC(ldpc_decoded_bits, cbs_info_dict['BGN'], n_info_bits + cbs_info_dict['L'])
-                            rx_bits = np.squeeze(np.array(meng.transpose(meng.nrCRCDecode(desegmented_bits, cbs_info_dict['CRC']))))
+                            rx_llr_soft_bits = -my_standard_rx.modem.soft_detection_llr(rx_symbols,
+                                                                                        noise_var=noise_var_snr_based)
+                            rate_recovered_bits = meng.nrRateRecoverLDPC(meng.transpose(meng.double(rx_llr_soft_bits)),
+                                                                         n_info_bits, code_rate, rv,
+                                                                         modulation_format_str, n_layers)
+                            ldpc_decoded_bits = meng.nrLDPCDecode(rate_recovered_bits, cbs_info_dict['BGN'],
+                                                                  max_ldpc_ite)
+                            desegmented_bits = meng.nrCodeBlockDesegmentLDPC(ldpc_decoded_bits, cbs_info_dict['BGN'],
+                                                                             n_info_bits + cbs_info_dict['L'])
+                            rx_bits = np.squeeze(
+                                np.array(meng.transpose(meng.nrCRCDecode(desegmented_bits, cbs_info_dict['CRC']))))
 
                             # noise + dist variance per symbol = noise variance
                             n_bit_err = count_mismatched_bits(tx_bits, rx_bits)
@@ -277,11 +284,12 @@ for n_ant_val in n_ant_arr:
 
                         tx_bits = bit_rng.choice((0, 1), n_info_bits)
                         crc_encoded_bits = meng.nrCRCEncode(meng.int8(meng.transpose(tx_bits)),
-                                                              cbs_info_dict['CRC'])
+                                                            cbs_info_dict['CRC'])
                         code_block_segment_in = meng.nrCodeBlockSegmentLDPC(crc_encoded_bits, cbs_info_dict['BGN'])
                         ldpc_encoded_bits = meng.nrLDPCEncode(code_block_segment_in, cbs_info_dict['BGN'])
-                        rm_ldpc_bits = np.squeeze(np.array(meng.nrRateMatchLDPC(ldpc_encoded_bits, out_len, rv, modulation_format_str,
-                                                                                n_layers)))
+                        rm_ldpc_bits = np.squeeze(
+                            np.array(meng.nrRateMatchLDPC(ldpc_encoded_bits, out_len, rv, modulation_format_str,
+                                                          n_layers)))
 
                         tx_ofdm_symbol = my_array.transmit(rm_ldpc_bits, out_domain_fd=True, skip_dist=False)
                         rx_ofdm_symbol = my_miso_chan.propagate(in_sig_mat=tx_ofdm_symbol)
@@ -305,9 +313,9 @@ for n_ant_val in n_ant_arr:
                                 code_rate, rv, modulation_format_str,
                                 n_layers)
                             ldpc_decoded_bits = meng.nrLDPCDecode(rate_recovered_bits, cbs_info_dict['BGN'],
-                                                                    max_ldpc_ite)
+                                                                  max_ldpc_ite)
                             desegmented_bits = meng.nrCodeBlockDesegmentLDPC(ldpc_decoded_bits, cbs_info_dict['BGN'],
-                                                                               n_info_bits + cbs_info_dict['L'])
+                                                                             n_info_bits + cbs_info_dict['L'])
                             rx_bits = np.squeeze(
                                 np.array(meng.transpose(meng.nrCRCDecode(desegmented_bits, cbs_info_dict['CRC']))))
 
@@ -346,9 +354,10 @@ for n_ant_val in n_ant_arr:
                 ax1.legend()
                 plt.tight_layout()
 
-                filename_str = "ldpc_%s_ber_vs_ebn0_cnc_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s" % ( code_rate_str.replace('/', '_'),
-                    my_miso_chan, n_ant_val, ibo_val_db, min(ebn0_arr), max(ebn0_arr), ebn0_arr[1] - ebn0_arr[0],
-                    '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
+                filename_str = "ldpc_%s_ber_vs_ebn0_cnc_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s" % (
+                code_rate_str.replace('/', '_'),
+                my_miso_chan, n_ant_val, ibo_val_db, min(ebn0_arr), max(ebn0_arr), ebn0_arr[1] - ebn0_arr[0],
+                '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
                 # timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
                 # filename_str += "_" + timestamp
                 plt.savefig("../figs/%s.png" % filename_str, dpi=600, bbox_inches='tight')

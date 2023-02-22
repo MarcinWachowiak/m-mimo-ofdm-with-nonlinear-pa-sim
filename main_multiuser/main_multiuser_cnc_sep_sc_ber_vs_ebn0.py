@@ -13,9 +13,7 @@ from datetime import datetime
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.ticker import MaxNLocator
 
-import antenna_arrray
 import channel
 import distortion
 import modulation
@@ -106,8 +104,9 @@ if __name__ == '__main__':
         for my_miso_chan in chan_lst:
 
             loc_rng = np.random.default_rng(2137)
-            my_cnc_mod = modulation.OfdmQamModem(constel_size=constel_size, n_fft=n_fft//2, n_sub_carr=n_sub_carr//2, cp_len=cp_len,
-                                     n_users=1)
+            my_cnc_mod = modulation.OfdmQamModem(constel_size=constel_size, n_fft=n_fft // 2,
+                                                 n_sub_carr=n_sub_carr // 2, cp_len=cp_len,
+                                                 n_users=1)
             my_cnc_rx = corrector.CncReceiver(my_cnc_mod, copy.deepcopy(my_distortion))
 
             for ibo_val_db in ibo_arr:
@@ -212,7 +211,8 @@ if __name__ == '__main__':
 
                                     usr_chan_mat_lst.append(my_miso_chan.get_channel_mat_fd())
 
-                                my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=True, sep_carr_per_usr=True)
+                                my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=True,
+                                                              sep_carr_per_usr=True)
                                 my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
 
                                 vk_mat = my_array.get_precoding_mat()
@@ -278,7 +278,8 @@ if __name__ == '__main__':
                                         (clean_rx_ofdm_symbol[-my_mod.cp_len:], clean_rx_ofdm_symbol))
                                     rx_bits = my_standard_rx.receive(clean_rx_ofdm_symbol)
                                     rx_bits_per_usr_lst = np.hsplit(rx_bits, n_users)
-                                    n_bit_err = utilities.count_mismatched_bits(tx_bits_per_usr_lst[usr_idx], rx_bits_per_usr_lst[usr_idx])
+                                    n_bit_err = utilities.count_mismatched_bits(tx_bits_per_usr_lst[usr_idx],
+                                                                                rx_bits_per_usr_lst[usr_idx])
                                     n_err[usr_idx, 0] += n_bit_err
                                     bits_sent[usr_idx, 0] += my_mod.n_bits_per_ofdm_sym
                             else:
@@ -330,7 +331,8 @@ if __name__ == '__main__':
 
                                     usr_chan_mat_lst.append(my_miso_chan.get_channel_mat_fd())
 
-                                my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=True, sep_carr_per_usr=True)
+                                my_array.set_precoding_matrix(channel_mat_fd=usr_chan_mat_lst, mr_precoding=True,
+                                                              sep_carr_per_usr=True)
                                 my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
 
                                 vk_mat = my_array.get_precoding_mat()
@@ -385,17 +387,22 @@ if __name__ == '__main__':
                                 # rx_ofdm_symbol = my_miso_chan.propagate(in_sig_mat=tx_ofdm_symbol)
                                 rx_ofdm_symbol = np.sum(np.multiply(tx_ofdm_symbol, usr_chan_mat_lst[usr_idx]), axis=0)
 
-                                rx_ofdm_symbol = my_noise.process(rx_ofdm_symbol, avg_sample_pow=my_mod.avg_symbol_power * ak_hk_vk_noise_scaler_lst[usr_idx])
+                                rx_ofdm_symbol = my_noise.process(rx_ofdm_symbol,
+                                                                  avg_sample_pow=my_mod.avg_symbol_power *
+                                                                                 ak_hk_vk_noise_scaler_lst[usr_idx])
                                 rx_ofdm_symbol = np.divide(rx_ofdm_symbol, ak_hk_vk_agc_nfft_lst[usr_idx])
 
-                                rx_ofdm_symbol_sc = np.concatenate((rx_ofdm_symbol[-my_mod.n_sub_carr // 2:], rx_ofdm_symbol[1:(my_mod.n_sub_carr // 2) + 1]))
+                                rx_ofdm_symbol_sc = np.concatenate((rx_ofdm_symbol[-my_mod.n_sub_carr // 2:],
+                                                                    rx_ofdm_symbol[1:(my_mod.n_sub_carr // 2) + 1]))
                                 tmp_rx_ofdm_symbol_per_usr_lst = np.hsplit(rx_ofdm_symbol_sc, n_users)
                                 rx_ofdm_symbol_per_usr_lst = []
 
-
-                                rec_ofdm_symb_per_usr = np.zeros(n_fft//n_users, dtype=np.complex128)
-                                rec_ofdm_symb_per_usr[-(n_sub_carr // n_users // 2):] = tmp_rx_ofdm_symbol_per_usr_lst[usr_idx][0:n_sub_carr//n_users // 2]
-                                rec_ofdm_symb_per_usr[1:(n_sub_carr // n_users // 2) + 1] = tmp_rx_ofdm_symbol_per_usr_lst[usr_idx][n_sub_carr//n_users // 2:]
+                                rec_ofdm_symb_per_usr = np.zeros(n_fft // n_users, dtype=np.complex128)
+                                rec_ofdm_symb_per_usr[-(n_sub_carr // n_users // 2):] = tmp_rx_ofdm_symbol_per_usr_lst[
+                                                                                            usr_idx][
+                                                                                        0:n_sub_carr // n_users // 2]
+                                rec_ofdm_symb_per_usr[1:(n_sub_carr // n_users // 2) + 1] = \
+                                tmp_rx_ofdm_symbol_per_usr_lst[usr_idx][n_sub_carr // n_users // 2:]
 
                                 rx_bits_per_iter_lst = my_cnc_rx.receive(n_iters_lst=curr_ite_lst_per_usr[usr_idx],
                                                                          in_sig_fd=rec_ofdm_symb_per_usr)

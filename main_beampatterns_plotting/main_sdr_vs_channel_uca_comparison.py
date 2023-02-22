@@ -13,7 +13,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import welch
 
-import antenna_arrray
 import channel
 import distortion
 import modulation
@@ -61,7 +60,7 @@ n_snapshots = 3
 # %%
 # plot PSD for chosen point/angle
 point_idx_psd = 78
-n_ant_vec = [1, 4 ,8, 16]
+n_ant_vec = [1, 4, 8, 16]
 
 desired_sc_psd_at_angle_lst = []
 distortion_sc_psd_at_angle_lst = []

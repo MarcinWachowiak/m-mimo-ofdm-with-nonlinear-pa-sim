@@ -15,7 +15,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.ticker import MaxNLocator
 
-import antenna_arrray
 import channel
 import distortion
 import modulation

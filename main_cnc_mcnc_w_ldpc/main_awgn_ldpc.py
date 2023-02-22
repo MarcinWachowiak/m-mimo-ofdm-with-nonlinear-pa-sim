@@ -20,7 +20,7 @@ import modulation
 import noise
 import transceiver
 from plot_settings import set_latex_plot_style
-from utilities import count_mismatched_bits, ebn0_to_snr, to_db
+from utilities import count_mismatched_bits, ebn0_to_snr
 
 set_latex_plot_style(use_tex=False, fig_width_in=5)
 
@@ -119,7 +119,8 @@ for idx, snr in enumerate(snr_arr):
                                                        code_rate, rv, modulation_format_str,
                                                        n_layers)
         ldpc_decoded_bits = matlab.nrLDPCDecode(rate_recovered_bits, cbs_info_dict['BGN'], max_ldpc_ite)
-        desegmented_bits = matlab.nrCodeBlockDesegmentLDPC(ldpc_decoded_bits, cbs_info_dict['BGN'], n_info_bits + cbs_info_dict['L'])
+        desegmented_bits = matlab.nrCodeBlockDesegmentLDPC(ldpc_decoded_bits, cbs_info_dict['BGN'],
+                                                           n_info_bits + cbs_info_dict['L'])
         rx_bits = np.squeeze(np.array(matlab.transpose(matlab.nrCRCDecode(desegmented_bits, cbs_info_dict['CRC']))))
         # checking soft-detection
         # soft_bits_tmp = np.copy(rx_llr_soft_bits)
@@ -146,7 +147,7 @@ fig1, ax1 = plt.subplots(1, 1)
 ax1.set_yscale('log')
 
 ax1.plot(ebn0_arr, bers_lst[0], label="No dist")
-ax1.plot(ebn0_arr, bers_lst[1], label="No dist + LDPC %s" %(code_rate_str))
+ax1.plot(ebn0_arr, bers_lst[1], label="No dist + LDPC %s" % (code_rate_str))
 
 # fix log scaling
 ax1.set_title("Bit error rate, QAM" + str(my_mod.constellation_size))

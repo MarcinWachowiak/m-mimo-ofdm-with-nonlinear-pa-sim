@@ -66,16 +66,20 @@ class Link():
 
         # matlab engine is not serializable and has to be started inside the process function
         if self.is_quadriga:
-            self.my_miso_chan = channel.MisoQuadrigaFd(tx_transceivers=self.my_array.array_elements, rx_transceiver=self.my_standard_rx, channel_model_str=self.channel_model_str)
+            self.my_miso_chan = channel.MisoQuadrigaFd(tx_transceivers=self.my_array.array_elements,
+                                                       rx_transceiver=self.my_standard_rx,
+                                                       channel_model_str=self.channel_model_str)
             if self.csi_epsylon is not None:
-                self.my_miso_chan_csi_err = channel.MisoQuadrigaFd(tx_transceivers=self.my_array.array_elements, rx_transceiver=self.my_standard_rx, channel_model_str=self.channel_model_str, start_matlab_eng=False)
+                self.my_miso_chan_csi_err = channel.MisoQuadrigaFd(tx_transceivers=self.my_array.array_elements,
+                                                                   rx_transceiver=self.my_standard_rx,
+                                                                   channel_model_str=self.channel_model_str,
+                                                                   start_matlab_eng=False)
         # update MCNC channel
         if isinstance(self.my_cnc_rx, corrector.McncReceiver):
             if self.csi_epsylon is None:
                 self.my_cnc_rx.channel = self.my_miso_chan
             else:
                 self.my_cnc_rx.channel = self.my_miso_chan_csi_err
-
 
         self.bit_rng = np.random.default_rng(seed_arr[0])
         self.my_noise.rng_gen = np.random.default_rng(seed_arr[1])
@@ -206,20 +210,25 @@ class Link():
 
             # antenna wise noise addition
             for row_idx, chan_per_ant in enumerate(noisy_channel_mat_fd):
-                sc_chan_per_ant = np.concatenate((chan_per_ant[-self.my_mod.n_sub_carr // 2:], chan_per_ant[1:(self.my_mod.n_sub_carr // 2) + 1]))
+                sc_chan_per_ant = np.concatenate(
+                    (chan_per_ant[-self.my_mod.n_sub_carr // 2:], chan_per_ant[1:(self.my_mod.n_sub_carr // 2) + 1]))
                 channel_power_per_fd_sample = np.sum(np.abs(sc_chan_per_ant) ** 2) / len(sc_chan_per_ant)
-                channel_noise = self.my_noise.rng_gen.standard_normal((len(sc_chan_per_ant), 2)).view(np.complex128)[:, 0] * 0.5 * np.sqrt(2 * channel_power_per_fd_sample) * self.csi_epsylon
+                channel_noise = self.my_noise.rng_gen.standard_normal((len(sc_chan_per_ant), 2)).view(np.complex128)[:,
+                                0] * 0.5 * np.sqrt(2 * channel_power_per_fd_sample) * self.csi_epsylon
                 scaled_channel = np.sqrt(1 - np.power(self.csi_epsylon, 2)) * sc_chan_per_ant
                 noisy_sc_chan_row = scaled_channel + channel_noise
                 # noisy_channel_power_per_fd_sample = np.sum(np.abs(noisy_sc_chan_row) ** 2) / len(sc_chan_per_ant)
 
                 # noisy_sc_chan_row = self.my_csi_noise.process(in_sig=sc_chan_per_ant, avg_sample_pow=channel_power_per_fd_sample, disp_data=False)
-                noisy_channel_mat_fd[row_idx, -(self.my_mod.n_sub_carr // 2):] = noisy_sc_chan_row[0:self.my_mod.n_sub_carr // 2]
-                noisy_channel_mat_fd[row_idx, 1:(self.my_mod.n_sub_carr // 2) + 1] = noisy_sc_chan_row[self.my_mod.n_sub_carr // 2:]
+                noisy_channel_mat_fd[row_idx, -(self.my_mod.n_sub_carr // 2):] = noisy_sc_chan_row[
+                                                                                 0:self.my_mod.n_sub_carr // 2]
+                noisy_channel_mat_fd[row_idx, 1:(self.my_mod.n_sub_carr // 2) + 1] = noisy_sc_chan_row[
+                                                                                     self.my_mod.n_sub_carr // 2:]
 
             self.my_miso_chan_csi_err.channel_mat_fd = noisy_channel_mat_fd
 
-            self.my_array.set_precoding_matrix(channel_mat_fd=self.my_miso_chan_csi_err.channel_mat_fd, mr_precoding=True)
+            self.my_array.set_precoding_matrix(channel_mat_fd=self.my_miso_chan_csi_err.channel_mat_fd,
+                                               mr_precoding=True)
             self.recalculate_agc(channel_mat_fd=self.my_miso_chan_csi_err.channel_mat_fd)
 
     def recalculate_agc(self, channel_mat_fd=None, ak_part_only=False):

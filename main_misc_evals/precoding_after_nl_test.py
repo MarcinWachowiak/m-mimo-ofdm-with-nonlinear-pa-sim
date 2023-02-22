@@ -12,7 +12,6 @@ import copy
 import matplotlib.pyplot as plt
 import numpy as np
 
-import antenna_arrray
 import channel
 import distortion
 import modulation
@@ -20,6 +19,7 @@ import transceiver
 from plot_settings import set_latex_plot_style
 
 from scipy import signal
+
 # TODO: consider logger
 set_latex_plot_style()
 # %%
@@ -83,12 +83,10 @@ phase = np.pi * 2 * freq_bin_vec / my_mod.n_sub_carr * 10
 # ordered_phase_vec = np.concatenate((phase_vec[-my_mod.n_fft // 2:], phase_vec[1:(my_mod.n_fft // 2) + 1]))
 ordered_phase_vec = np.concatenate((phase[-my_mod.n_fft // 2:], phase[1:(my_mod.n_fft // 2) + 1]))
 # new_chan_fd = np.expand_dims(np.exp(1j* np.pi * np.sin(ordered_phase_vec)), axis=0)
-new_chan_fd = np.expand_dims(np.exp(1j* np.pi * signal.sawtooth(ordered_phase_vec)), axis=0)
-
+new_chan_fd = np.expand_dims(np.exp(1j * np.pi * signal.sawtooth(ordered_phase_vec)), axis=0)
 
 # new_chan_fd = np.expand_dims(np.exp(1j * ordered_phase_vec), axis=0)
 my_chan.channel_mat_fd = new_chan_fd
-
 
 channel_mat = my_chan.get_channel_mat_fd()
 my_array.set_precoding_matrix(channel_mat, mr_precoding=True)
@@ -97,15 +95,16 @@ my_array.update_distortion(ibo_db=ibo_db, avg_sample_pow=my_mod.avg_sample_power
 # transmit single burst and evaluate the impact of nonlinearity on the symbol
 
 # tx_bits = bit_rng.choice((0, 1), my_mod.n_bits_per_ofdm_sym)
-tx_bit_seq = [0,0,0,0,0,0]
+tx_bit_seq = [0, 0, 0, 0, 0, 0]
 tx_symbol = my_mod.modulate(tx_bit_seq, get_symbols_only=True)
 symbols_init_phase = np.angle(tx_symbol)
 
 # tx_bits = np.repeat(tx_bit_seq, my_mod.n_sub_carr)
 # # tx_ofdm_symbol, clean_ofdm_symbol = my_array.transmit(in_bits=tx_bits, out_domain_fd=True, return_both=True)
 
-modulated_symbols = np.repeat([7+0j], my_mod.n_sub_carr)
-precoded_symbols = np.squeeze(my_array.array_elements[0].modem.precode_symbols(modulated_symbols, my_array.array_elements[0].modem.precoding_mat))
+modulated_symbols = np.repeat([7 + 0j], my_mod.n_sub_carr)
+precoded_symbols = np.squeeze(
+    my_array.array_elements[0].modem.precode_symbols(modulated_symbols, my_array.array_elements[0].modem.precoding_mat))
 clean_ofdm_symbol = modulation._tx_ofdm_symbol(precoded_symbols, my_mod.n_fft, my_mod.n_sub_carr, my_mod.cp_len)
 tx_ofdm_symbol = my_distortion.process(clean_ofdm_symbol)
 
@@ -138,7 +137,7 @@ phase_after_precod = np.concatenate(
 phase_after_nl = np.concatenate(
     (phase_after_nl[1:(my_mod.n_sub_carr // 2) + 1], phase_after_nl[-(my_mod.n_sub_carr // 2):]), axis=0)
 precod_phase = np.concatenate(
-    (precod_phase[-(my_mod.n_sub_carr // 2):], precod_phase[0:(my_mod.n_sub_carr // 2)], ), axis=0)
+    (precod_phase[-(my_mod.n_sub_carr // 2):], precod_phase[0:(my_mod.n_sub_carr // 2)],), axis=0)
 sorted_freq_bin_nsc = np.concatenate(
     (freq_bin_vec[-(my_mod.n_sub_carr // 2):], freq_bin_vec[1:(my_mod.n_sub_carr // 2) + 1]), axis=0)
 # shifted_precoding_mat = np.concatenate(

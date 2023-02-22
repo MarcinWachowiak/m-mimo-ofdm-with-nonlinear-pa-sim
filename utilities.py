@@ -208,6 +208,7 @@ def pts_on_circum(r, n=100):
 def pts_on_semicircum(r, n=100):
     return [(np.cos(np.pi / n * x) * r, np.sin(np.pi / n * x) * r) for x in range(0, n + 1)]
 
+
 def pts_on_semisphere(r, n=100, center_x=0, center_y=0, center_z=0):
     azimuth_angle_vec = np.deg2rad(np.linspace(0, 180, int(np.sqrt(n)), endpoint=True))
     elevation_angle_vec = np.deg2rad(np.linspace(0, 180, int(np.sqrt(n)), endpoint=True))
@@ -338,16 +339,17 @@ def to_time_domain(in_sig_mat_fd):
 
 
 def save_to_csv(data_lst, filename):
-    with open("figs/csv_results/%s.csv" % filename, 'w', newline='') as csv_file:
+    with open("../figs/csv_results/%s.csv" % filename, 'w', newline='') as csv_file:
         writer = csv.writer(csv_file)
         writer.writerows(data_lst)
 
 
 def read_from_csv(filename):
-    with open("figs/csv_results/%s.csv" % filename, 'r', newline='') as csv_file:
+    with open("../figs/csv_results/%s.csv" % filename, 'r', newline='') as csv_file:
         reader = csv.reader(csv_file, quoting=csv.QUOTE_NONNUMERIC)
         data_lst = list(reader)
     return data_lst
+
 
 # Print iterations progress
 def print_progress_bar(iteration, total, prefix='', suffix='', decimals=1, bar_length=100):

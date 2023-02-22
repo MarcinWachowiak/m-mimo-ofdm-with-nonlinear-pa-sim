@@ -13,7 +13,6 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 import numpy as np
 
-import antenna_arrray
 import channel
 import corrector
 import distortion
@@ -71,7 +70,7 @@ for n_ant_val in n_ant_arr:
     my_miso_two_path_chan = channel.MisoTwoPathFd()
     my_miso_two_path_chan.calc_channel_mat(tx_transceivers=my_array.array_elements, rx_transceiver=my_standard_rx,
                                            skip_attenuation=False)
-    
+
     my_miso_rayleigh_chan = channel.MisoRayleighFd(tx_transceivers=my_array.array_elements,
                                                    rx_transceiver=my_standard_rx,
                                                    seed=1234)
@@ -253,10 +252,10 @@ for n_ant_val in n_ant_arr:
                         ax1.plot(ebn0_arr, ber_per_dist[idx + 1], label="Standard RX")
                     else:
                         ax1.plot(ebn0_arr, ber_per_dist[idx + 1], label="MCNC NI = %d" % (cnc_iter_val))
-    
+
                 # fix log scaling
                 ax1.set_title("BER vs Eb/N0, %s, MCNC, QAM %d, N ANT = %d, IBO = %d [dB]" % (
-                my_miso_chan, my_mod.constellation_size, n_ant_val, ibo_val_db))
+                    my_miso_chan, my_mod.constellation_size, n_ant_val, ibo_val_db))
                 ax1.set_xlabel("Eb/N0 [dB]")
                 ax1.set_ylabel("BER")
                 ax1.grid()
@@ -281,5 +280,5 @@ for n_ant_val in n_ant_arr:
                 utilities.save_to_csv(data_lst=data_lst, filename=filename_str)
 
                 # read_data = utilities.read_from_csv(filename=filename_str)
-    
+
 print("Finished execution!")

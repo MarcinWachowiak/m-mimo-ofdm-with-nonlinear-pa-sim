@@ -40,7 +40,10 @@ MIMO simulation in python
 6. Login to the VM
 7. Conda/Miniconda set up
     1. Download installation file from: https://docs.conda.io/en/latest/miniconda.html#linux-installers
-    2. Run the file: ```bash Miniconda3-latest-Linux-x86_64.sh```
+    2. Run the file: 
+       ```
+       bash Miniconda3-latest-Linux-x86_64.sh
+       ```
     3. Create and activate new environment:
        ```
        conda create -n mimo_sim python=3.9
@@ -50,17 +53,22 @@ MIMO simulation in python
        ```
        conda config --add channels conda-forge
        ```
-    6. Install packages:
+    5. Install packages:
        ```
        conda install matplotlib, numpy, scipy, numba
        conda install pytorch cudatoolkit=11.6 -c pytorch -c conda-forge
+       ```
+
+       or 
+       ```
+       conda env update --file requirements.yml
        ```
 8. Install VS Code via snap:
    ```
    sudo apt install snapd
    sudo snap install code --classic
    ```
-9. Create and add SSH key to GitHub:
+9.  Create and add SSH key to GitHub:
    ```
    ssh-keygen -t ed25519 -C "your_email@example.com"
    clip < ~/.ssh/id_ed25519.pub or nano ~/.ssh/id_ed25519.pub

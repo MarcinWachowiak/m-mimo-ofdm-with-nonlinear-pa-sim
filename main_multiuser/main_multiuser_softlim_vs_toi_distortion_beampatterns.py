@@ -16,7 +16,6 @@ import numpy as np
 from matplotlib.ticker import MaxNLocator
 from scipy.signal import welch
 
-import antenna_arrray
 import channel
 import distortion
 import modulation
@@ -464,7 +463,8 @@ if __name__ == '__main__':
 
     # plot reference angles/directions
     (y_min, y_max) = ax1.get_ylim()
-    ax1.vlines(np.deg2rad(usr_angles_deg), y_min, y_max, colors='k', linewidth=1.0, linestyles='--', zorder=10)  # label="Users")
+    ax1.vlines(np.deg2rad(usr_angles_deg), y_min, y_max, colors='k', linewidth=1.0, linestyles='--',
+               zorder=10)  # label="Users")
 
     dist_angles = []
     arcsin_arg_periodize = lambda val_a: val_a - 2.0 if val_a > 1.0 else (
@@ -484,7 +484,8 @@ if __name__ == '__main__':
     #             for idx_3 in range(n_users):
     #                 if not idx
 
-    ax1.vlines(dist_angles, y_min, y_max, colors='k', linewidth=1.0, linestyles=':', zorder=10)  # label="Expected distortion")
+    ax1.vlines(dist_angles, y_min, y_max, colors='k', linewidth=1.0, linestyles=':',
+               zorder=10)  # label="Expected distortion")
     ax1.margins(0.0, 0.0)
     ax1.set_title("Signal power at angle [dB]", pad=-15)
     ax1.legend(title="Signal:", ncol=2, loc='lower center', borderaxespad=-2)
@@ -506,7 +507,7 @@ if __name__ == '__main__':
     ax1.set_xlim(-np.pi / 2, np.pi / 2)
     ax1.set_ylim([-85, -15])
     ax1.set_xticks(np.linspace(-90, 90, 13, endpoint=True))
-    #ax1.yaxis.set_major_locator(MaxNLocator(5))
+    # ax1.yaxis.set_major_locator(MaxNLocator(5))
 
     dist_lines_lst = []
     for dist_idx, my_distortion in enumerate(my_distortion_obj_lst):

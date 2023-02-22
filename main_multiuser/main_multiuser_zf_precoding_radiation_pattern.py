@@ -16,7 +16,6 @@ import numpy as np
 from matplotlib.ticker import MaxNLocator
 from scipy.signal import welch
 
-import antenna_arrray
 import channel
 import distortion
 import modulation
@@ -314,8 +313,11 @@ if __name__ == '__main__':
                         for snap_idx in range(beampattern_n_snapshots):
                             tx_bits = np.squeeze(bit_rng.choice((0, 1), (n_users, my_tx.modem.n_bits_per_ofdm_sym)))
 
-                            arr_tx_sig_fd = my_array.transmit(in_bits=tx_bits, out_domain_fd=True, return_both=False, sum_usr_signals=True)
-                            per_usr_clean_sig_fd_lst = my_array.transmit(in_bits=tx_bits, out_domain_fd=True, return_both=False, skip_dist=True, sum_usr_signals=False)
+                            arr_tx_sig_fd = my_array.transmit(in_bits=tx_bits, out_domain_fd=True, return_both=False,
+                                                              sum_usr_signals=True)
+                            per_usr_clean_sig_fd_lst = my_array.transmit(in_bits=tx_bits, out_domain_fd=True,
+                                                                         return_both=False, skip_dist=True,
+                                                                         sum_usr_signals=False)
 
                             rx_sig_fd = my_miso_chan.propagate(in_sig_mat=arr_tx_sig_fd, sum=False)
 
@@ -323,7 +325,8 @@ if __name__ == '__main__':
 
                             combined_clean_sig_mat_fd = None
                             for usr_idx in range(n_users):
-                                per_usr_clean_sig_fd = my_miso_chan.propagate(in_sig_mat=per_usr_clean_sig_fd_lst[usr_idx], sum=False)
+                                per_usr_clean_sig_fd = my_miso_chan.propagate(
+                                    in_sig_mat=per_usr_clean_sig_fd_lst[usr_idx], sum=False)
                                 per_usr_clean_rx_sig_fd_lst.append(per_usr_clean_sig_fd)
 
                                 if combined_clean_sig_mat_fd is None:
@@ -353,7 +356,8 @@ if __name__ == '__main__':
                                     (per_usr_clean_rx_sig_fd_lst[usr_idx][:, -my_mod.n_sub_carr // 2:],
                                      per_usr_clean_rx_sig_fd_lst[usr_idx][:, 1:(my_mod.n_sub_carr // 2) + 1]),
                                     axis=1)
-                                desired_sig_per_usr_pow_arr[usr_idx, snap_idx] = np.sum(np.power(np.abs(np.sum(ak_vect * clean_sc_per_usr, axis=0)), 2))
+                                desired_sig_per_usr_pow_arr[usr_idx, snap_idx] = np.sum(
+                                    np.power(np.abs(np.sum(ak_vect * clean_sc_per_usr, axis=0)), 2))
 
                             desired_sig_pow_arr[snap_idx] = np.sum(
                                 np.power(np.abs(np.sum(ak_vect * clean_sc_ofdm_symb_fd, axis=0)), 2))
@@ -365,7 +369,8 @@ if __name__ == '__main__':
                             if plot_psd and pt_idx == sel_ptx_idx:
                                 # for PSD plotting take into consideration full BW not only SC
                                 desired_sig = np.sum(ak_vect * combined_clean_sig_mat_fd, axis=0)
-                                distortion_sig = np.sum(np.subtract(rx_sig_fd, (ak_vect * combined_clean_sig_mat_fd)), axis=0)
+                                distortion_sig = np.sum(np.subtract(rx_sig_fd, (ak_vect * combined_clean_sig_mat_fd)),
+                                                        axis=0)
                                 rx_sig_at_sel_point_cln.append(utilities.to_time_domain(combined_clean_sig_mat_fd))
                                 rx_sig_at_sel_point_des.append(utilities.to_time_domain(desired_sig))
                                 rx_sig_at_sel_point_dist.append(utilities.to_time_domain(distortion_sig))
@@ -444,7 +449,8 @@ if __name__ == '__main__':
 
                     dist_lines_lst = []
                     for usr_idx in range(n_users):
-                        ax1.plot(radian_vals, utilities.to_db(desired_sig_pow_per_usr_per_pt[usr_idx]), label="Desired usr: %d" % usr_idx,
+                        ax1.plot(radian_vals, utilities.to_db(desired_sig_pow_per_usr_per_pt[usr_idx]),
+                                 label="Desired usr: %d" % usr_idx,
                                  linewidth=1.0)
                     # ax1.plot(radian_vals, utilities.to_db(desired_sig_pow_per_pt), label="Desired combined",
                     #          linewidth=1.0)
@@ -472,14 +478,12 @@ if __name__ == '__main__':
                         arcsin_val = arcsin_arg_periodize(phase_val)
                         dist_angles.append(np.arcsin(arcsin_val))
 
-
                     # # generate usr angle idx tuples to calculate the distortion angle
                     # def dist_get_usr_angle_idx():
                     #     for idx_1 in range(n_users):
                     #         for idx_2 in range(n_users):
                     #             for idx_3 in range(n_users):
                     #                 pass
-
 
                     ax1.vlines(dist_angles, y_min, y_max, colors='k', linewidth=1.0, linestyles=':',
                                zorder=10)  # label="Expected distortion")

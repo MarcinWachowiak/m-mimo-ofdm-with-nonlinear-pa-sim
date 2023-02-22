@@ -15,7 +15,6 @@ import multiprocessing as mp
 import matplotlib.pyplot as plt
 import numpy as np
 
-import antenna_arrray
 import channel
 import distortion
 import modulation
@@ -29,7 +28,7 @@ import mp_model
 if __name__ == '__main__':
 
     set_latex_plot_style()
-    num_cores = 9 # mp.cpu_count() // 2
+    num_cores = 9  # mp.cpu_count() // 2
 
     # parameters
     n_ant_arr = [64]
@@ -77,15 +76,18 @@ if __name__ == '__main__':
     seed_rng = np.random.default_rng(2137)
     for n_ant_val in n_ant_arr:
 
-        my_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(center_freq),
+        my_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx,
+                                              center_freq=int(center_freq),
                                               wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
         # channel type
         my_miso_quadriga_chan_los = channel.MisoQuadrigaFd(tx_transceivers=my_array.array_elements,
-                                                       rx_transceiver=my_standard_rx,
-                                                       channel_model_str=channel_model_str_los, start_matlab_eng=False)
+                                                           rx_transceiver=my_standard_rx,
+                                                           channel_model_str=channel_model_str_los,
+                                                           start_matlab_eng=False)
         my_miso_quadriga_chan_nlos = channel.MisoQuadrigaFd(tx_transceivers=my_array.array_elements,
-                                                       rx_transceiver=my_standard_rx,
-                                                       channel_model_str=channel_model_str_nlos, start_matlab_eng=False)
+                                                            rx_transceiver=my_standard_rx,
+                                                            channel_model_str=channel_model_str_nlos,
+                                                            start_matlab_eng=False)
 
         chan_lst = [my_miso_quadriga_chan_los, my_miso_quadriga_chan_nlos]
         my_noise = noise.Awgn(snr_db=10, seed=1234)
@@ -159,7 +161,8 @@ if __name__ == '__main__':
                     plt.tight_layout()
 
                     filename_str = "ber_vs_ebn0_mcnc_%s_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s" % (
-                        my_miso_chan.channel_model_str, n_ant_val, ibo_val_db, min(ebn0_arr), max(ebn0_arr), ebn0_arr[1] - ebn0_arr[0],
+                        my_miso_chan.channel_model_str, n_ant_val, ibo_val_db, min(ebn0_arr), max(ebn0_arr),
+                        ebn0_arr[1] - ebn0_arr[0],
                         '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
                     # timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
                     # filename_str += "_" + timestamp

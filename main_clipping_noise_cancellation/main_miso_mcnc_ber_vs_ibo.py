@@ -12,7 +12,6 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 import numpy as np
 
-import antenna_arrray
 import channel
 import corrector
 import distortion
@@ -62,7 +61,6 @@ my_standard_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment
                                          cord_x=rx_loc_x,
                                          cord_y=rx_loc_y, cord_z=1.5,
                                          center_freq=int(3.5e9), carrier_spacing=int(15e3))
-
 
 for n_ant_val in n_ant_arr:
     my_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(3.5e9),
@@ -198,7 +196,7 @@ for n_ant_val in n_ant_arr:
                     ax1.plot(ibo_arr, bers_per_ibo[ite_idx, :], label=ite_val)
 
                 ax1.set_title("BER vs IBO, %s, MCNC, QAM %d, N ANT = %d, Eb/n0 = %d [dB], " % (
-                my_miso_chan, my_mod.constellation_size, n_ant_val, ebn0_db))
+                    my_miso_chan, my_mod.constellation_size, n_ant_val, ebn0_db))
                 ax1.set_xlabel("IBO [dB]")
                 ax1.set_ylabel("BER")
                 ax1.grid()
@@ -223,5 +221,5 @@ for n_ant_val in n_ant_arr:
                 utilities.save_to_csv(data_lst=data_lst, filename=filename_str)
 
                 read_data = utilities.read_from_csv(filename=filename_str)
-    
+
 print("Finished execution!")

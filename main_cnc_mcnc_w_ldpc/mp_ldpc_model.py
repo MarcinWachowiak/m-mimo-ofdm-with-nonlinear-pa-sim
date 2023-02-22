@@ -1,11 +1,11 @@
 import copy
 
+import matlab.engine
 import numpy as np
 
 import channel
 import corrector
 import utilities
-import matlab.engine
 
 
 class Link_LDPC():
@@ -24,7 +24,6 @@ class Link_LDPC():
         self.my_csi_noise.snr_db = self.csi_noise_db
         self.code_rate = code_rate
         self.max_ldpc_ite = max_ldpc_ite
-
 
         if isinstance(chan_obj, channel.MisoQuadrigaFd):
             self.is_quadriga = True
@@ -71,9 +70,13 @@ class Link_LDPC():
 
         # matlab engine is not serializable and has to be started inside the process function
         if self.is_quadriga:
-            self.my_miso_chan = channel.MisoQuadrigaFd(tx_transceivers=self.my_array.array_elements, rx_transceiver=self.my_standard_rx, channel_model_str=self.channel_model_str)
+            self.my_miso_chan = channel.MisoQuadrigaFd(tx_transceivers=self.my_array.array_elements,
+                                                       rx_transceiver=self.my_standard_rx,
+                                                       channel_model_str=self.channel_model_str)
             if self.csi_noise_db is not None:
-                self.my_miso_chan_csi_err = channel.MisoQuadrigaFd(tx_transceivers=self.my_array.array_elements, rx_transceiver=self.my_standard_rx, channel_model_str=self.channel_model_str)
+                self.my_miso_chan_csi_err = channel.MisoQuadrigaFd(tx_transceivers=self.my_array.array_elements,
+                                                                   rx_transceiver=self.my_standard_rx,
+                                                                   channel_model_str=self.channel_model_str)
         # update MCNC channel
         if isinstance(self.my_cnc_rx, corrector.McncReceiver):
             if self.csi_noise_db is None:
@@ -142,7 +145,9 @@ class Link_LDPC():
                     crc_encoded_bits = meng.nrCRCEncode(meng.int8(meng.transpose(tx_bits)), self.cbs_info_dict['CRC'])
                     code_block_segment_in = meng.nrCodeBlockSegmentLDPC(crc_encoded_bits, self.cbs_info_dict['BGN'])
                     ldpc_encoded_bits = meng.nrLDPCEncode(code_block_segment_in, self.cbs_info_dict['BGN'])
-                    rm_ldpc_bits = np.squeeze(np.array(meng.nrRateMatchLDPC(ldpc_encoded_bits, self.out_len, self.rv, self.modulation_format_str, self.n_layers)))
+                    rm_ldpc_bits = np.squeeze(np.array(
+                        meng.nrRateMatchLDPC(ldpc_encoded_bits, self.out_len, self.rv, self.modulation_format_str,
+                                             self.n_layers)))
 
                     clean_ofdm_symbol = self.my_array.transmit(rm_ldpc_bits, out_domain_fd=True, return_both=False,
                                                                skip_dist=True)
@@ -152,17 +157,22 @@ class Link_LDPC():
                                                                  disp_data=False)
                     clean_rx_ofdm_symbol = np.divide(clean_rx_ofdm_symbol, self.hk_vk_agc_nfft)
                     clean_rx_ofdm_symbol = utilities.to_time_domain(clean_rx_ofdm_symbol)
-                    clean_rx_ofdm_symbol = np.concatenate((clean_rx_ofdm_symbol[-self.my_mod.cp_len:], clean_rx_ofdm_symbol))
+                    clean_rx_ofdm_symbol = np.concatenate(
+                        (clean_rx_ofdm_symbol[-self.my_mod.cp_len:], clean_rx_ofdm_symbol))
 
                     rx_symbols = self.my_standard_rx.modem.demodulate(clean_rx_ofdm_symbol, get_symbols_only=True)
-                    rx_llr_soft_bits = -self.my_standard_rx.modem.soft_detection_llr(rx_symbols, noise_var=noise_var_snr_based)
+                    rx_llr_soft_bits = -self.my_standard_rx.modem.soft_detection_llr(rx_symbols,
+                                                                                     noise_var=noise_var_snr_based)
                     rate_recovered_bits = meng.nrRateRecoverLDPC(meng.transpose(meng.double(rx_llr_soft_bits)),
-                                                                 self.n_info_bits, self.code_rate, self.rv, self.modulation_format_str,
+                                                                 self.n_info_bits, self.code_rate, self.rv,
+                                                                 self.modulation_format_str,
                                                                  self.n_layers)
-                    ldpc_decoded_bits = meng.nrLDPCDecode(rate_recovered_bits, self.cbs_info_dict['BGN'], self.max_ldpc_ite)
+                    ldpc_decoded_bits = meng.nrLDPCDecode(rate_recovered_bits, self.cbs_info_dict['BGN'],
+                                                          self.max_ldpc_ite)
                     desegmented_bits = meng.nrCodeBlockDesegmentLDPC(ldpc_decoded_bits, self.cbs_info_dict['BGN'],
                                                                      self.n_info_bits + self.cbs_info_dict['L'])
-                    rx_bits = np.squeeze(np.array(meng.transpose(meng.nrCRCDecode(desegmented_bits, self.cbs_info_dict['CRC']))))
+                    rx_bits = np.squeeze(
+                        np.array(meng.transpose(meng.nrCRCDecode(desegmented_bits, self.cbs_info_dict['CRC']))))
 
                     n_bit_err = utilities.count_mismatched_bits(tx_bits, rx_bits)
                     n_err_shared_arr[0] += n_bit_err
@@ -215,7 +225,8 @@ class Link_LDPC():
                                                    avg_sample_pow=self.my_mod.avg_symbol_power * self.ak_hk_vk_noise_scaler)
 
             rx_ofdm_symbol = np.divide(rx_ofdm_symbol, self.ak_hk_vk_agc_nfft)
-            rx_sybmols_per_iter_lst = self.my_cnc_rx.receive(n_iters_lst=curr_ite_lst, in_sig_fd=rx_ofdm_symbol, return_bits=False)
+            rx_sybmols_per_iter_lst = self.my_cnc_rx.receive(n_iters_lst=curr_ite_lst, in_sig_fd=rx_ofdm_symbol,
+                                                             return_bits=False)
 
             ber_idx = np.array(list(range(len(cnc_n_iter_lst))))
             act_ber_idx = ber_idx[ite_use_flags] + res_idx
@@ -263,15 +274,20 @@ class Link_LDPC():
             # antenna wise noise addition
             for row_idx, chan_per_ant in enumerate(noisy_channel_mat_fd):
                 sc_chan_per_ant = np.concatenate((chan_per_ant[-self.my_mod.n_sub_carr // 2:],
-                                     chan_per_ant[1:(self.my_mod.n_sub_carr // 2) + 1]))
+                                                  chan_per_ant[1:(self.my_mod.n_sub_carr // 2) + 1]))
                 channel_power_per_fd_sample = np.sum(np.abs(sc_chan_per_ant) ** 2) / len(sc_chan_per_ant)
-                noisy_sc_chan_row = self.my_csi_noise.process(in_sig=sc_chan_per_ant, avg_sample_pow=channel_power_per_fd_sample, disp_data=False)
-                noisy_channel_mat_fd[row_idx, -(self.my_mod.n_sub_carr // 2):] = noisy_sc_chan_row[0:self.my_mod.n_sub_carr // 2]
-                noisy_channel_mat_fd[row_idx, 1:(self.my_mod.n_sub_carr // 2) + 1] = noisy_sc_chan_row[self.my_mod.n_sub_carr // 2:]
+                noisy_sc_chan_row = self.my_csi_noise.process(in_sig=sc_chan_per_ant,
+                                                              avg_sample_pow=channel_power_per_fd_sample,
+                                                              disp_data=False)
+                noisy_channel_mat_fd[row_idx, -(self.my_mod.n_sub_carr // 2):] = noisy_sc_chan_row[
+                                                                                 0:self.my_mod.n_sub_carr // 2]
+                noisy_channel_mat_fd[row_idx, 1:(self.my_mod.n_sub_carr // 2) + 1] = noisy_sc_chan_row[
+                                                                                     self.my_mod.n_sub_carr // 2:]
 
             self.my_miso_chan_csi_err.channel_mat_fd = noisy_channel_mat_fd
 
-            self.my_array.set_precoding_matrix(channel_mat_fd=self.my_miso_chan_csi_err.channel_mat_fd, mr_precoding=True)
+            self.my_array.set_precoding_matrix(channel_mat_fd=self.my_miso_chan_csi_err.channel_mat_fd,
+                                               mr_precoding=True)
             self.recalculate_agc(channel_mat_fd=self.my_miso_chan_csi_err.channel_mat_fd)
 
     def recalculate_agc(self, channel_mat_fd=None, ak_part_only=False):
