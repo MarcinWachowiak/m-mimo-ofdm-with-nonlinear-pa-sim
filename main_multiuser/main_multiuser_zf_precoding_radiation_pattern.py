@@ -20,6 +20,7 @@ import channel
 import distortion
 import modulation
 import transceiver
+import antenna_array
 import utilities
 from plot_settings import set_latex_plot_style
 
@@ -92,7 +93,7 @@ if __name__ == '__main__':
                                              center_freq=int(3.5e9), carrier_spacing=int(15e3))
 
     for n_ant_val in n_ant_arr:
-        my_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(3.5e9),
+        my_array = antenna_array.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(3.5e9),
                                               wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
         # channel type
         my_miso_los_chan = channel.MisoLosFd()
@@ -126,7 +127,7 @@ if __name__ == '__main__':
                     my_tmp_tx = transceiver.Transceiver(modem=copy.deepcopy(my_tmp_mod),
                                                         impairment=copy.deepcopy(my_distortion))
 
-                    my_tmp_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tmp_tx,
+                    my_tmp_array = antenna_array.LinearArray(n_elements=n_ant_val, base_transceiver=my_tmp_tx,
                                                               center_freq=int(3.5e9),
                                                               wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
                     my_tmp_miso_los_chan = channel.MisoLosFd()
@@ -148,8 +149,8 @@ if __name__ == '__main__':
                         tx_ofdm_symbol_fd, clean_ofdm_symbol_fd = my_tmp_array.transmit(tx_bits, out_domain_fd=True,
                                                                                         return_both=True)
 
-                        rx_sig_fd = my_tmp_miso_los_chan.propagate(in_sig_mat=tx_ofdm_symbol_fd, sum=False)
-                        rx_sig_clean_fd = my_tmp_miso_los_chan.propagate(in_sig_mat=clean_ofdm_symbol_fd, sum=False)
+                        rx_sig_fd = my_tmp_miso_los_chan.propagate(in_sig_mat=tx_ofdm_symbol_fd, sum_signals=False)
+                        rx_sig_clean_fd = my_tmp_miso_los_chan.propagate(in_sig_mat=clean_ofdm_symbol_fd, sum_signals=False)
 
                         clean_nsc_ofdm_symb_fd = np.concatenate((rx_sig_clean_fd[:, -my_mod.n_sub_carr // 2:],
                                                                  rx_sig_clean_fd[:, 1:(my_mod.n_sub_carr // 2) + 1]),
@@ -319,14 +320,14 @@ if __name__ == '__main__':
                                                                          return_both=False, skip_dist=True,
                                                                          sum_usr_signals=False)
 
-                            rx_sig_fd = my_miso_chan.propagate(in_sig_mat=arr_tx_sig_fd, sum=False)
+                            rx_sig_fd = my_miso_chan.propagate(in_sig_mat=arr_tx_sig_fd, sum_signals=False)
 
                             per_usr_clean_rx_sig_fd_lst = []
 
                             combined_clean_sig_mat_fd = None
                             for usr_idx in range(n_users):
                                 per_usr_clean_sig_fd = my_miso_chan.propagate(
-                                    in_sig_mat=per_usr_clean_sig_fd_lst[usr_idx], sum=False)
+                                    in_sig_mat=per_usr_clean_sig_fd_lst[usr_idx], sum_signals=False)
                                 per_usr_clean_rx_sig_fd_lst.append(per_usr_clean_sig_fd)
 
                                 if combined_clean_sig_mat_fd is None:

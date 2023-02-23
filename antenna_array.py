@@ -10,7 +10,6 @@ import distortion
 import utilities
 from transceiver import Transceiver
 
-
 class AntennaArray(ABC):
     """
     Base class of the antenna array objects.
@@ -45,12 +44,12 @@ class AntennaArray(ABC):
         [Unused] Set transmit power in dBm.
 
         :param tx_power_dbm: transmit power in dBm
-        :param total: is the power value a cumulative sum of all elements TX power
+        :param total: is the power value a cumulative sum_signals of all elements TX power
         :return: None
         """
 
         for tx in self.array_elements:
-            # is the power value a sum of all TX powers or per individual TX
+            # is the power value a sum_signals of all TX powers or per individual TX
             if total:
                 tx.set_tx_power_dbm(10 * (np.log10(10 ** (tx_power_dbm / 10) / len(self.array_elements))))
             else:
@@ -140,7 +139,7 @@ class AntennaArray(ABC):
                         out_sig_mat[usr_idx, tx_idx, :] = usr_signal_lst[usr_idx]
                 return out_sig_mat
 
-    def set_precoding_matrix(self, channel_mat_fd: list[ndarray] = None, mr_precoding: bool = False,
+    def set_precoding_matrix(self, channel_mat_fd = None, mr_precoding: bool = False,
                              zf_precoding: bool = False, update_distortion: bool = False,
                              sep_carr_per_usr: bool = False) -> None:
         """
@@ -151,7 +150,7 @@ class AntennaArray(ABC):
             of channel matrices
         :param mr_precoding: flag for Maximum Ratio Transmission (MRT) precoding
         :param zf_precoding: flag for Zero Forcing (ZF) precoding
-        :param update_distortion: flat if distortion maximum power should be updated after the precoding changes
+        :param update_distortion: flag if distortion maximum power should be updated after the precoding changes
             the average power to maintain constant IBO
         :param sep_carr_per_usr: flag if the users are allocated on separate sets of subcarriers, precoding is
             then applied only to selected sets of subcarriers
@@ -167,11 +166,11 @@ class AntennaArray(ABC):
 
             if mr_precoding is True:
                 # normalize the precoding vector in regard to number of antennas and power
-                # equal sum of TX power MR precoding
+                # equal sum_signals of TX power MR precoding
                 precoding_mat_fd = np.divide(sc_channel_mat_fd_conjugate,
                                              np.sqrt(np.sum(np.power(np.abs(sc_channel_mat_fd), 2), axis=0)))
-                # equal sum of RX power MR precoding
-                # precoding_mat_fd = np.divide(sc_channel_mat_fd_conjugate, np.sum(np.power(np.abs(sc_channel_mat_fd), 2), axis=0))
+                # equal sum_signals of RX power MR precoding
+                # precoding_mat_fd = np.divide(sc_channel_mat_fd_conjugate, np.sum_signals(np.power(np.abs(sc_channel_mat_fd), 2), axis=0))
 
             else:
                 # take only phases into consideration
@@ -196,8 +195,8 @@ class AntennaArray(ABC):
                 # for usr_idx, usr_chan_mat_fd in enumerate(channel_mat_fd):
                 #     sc_channel_mat_fd = np.concatenate(
                 #         (usr_chan_mat_fd[:, 1:(tx_n_sc // 2) + 1], usr_chan_mat_fd[:, -tx_n_sc // 2:]), axis=1)
-                #     ant_norm_mat[usr_idx, :] = np.sum(np.power(np.abs(sc_channel_mat_fd), 2), axis=1)
-                # ant_norm_coeff_vec = 1/np.sqrt(np.sum(ant_norm_mat, axis=0))
+                #     ant_norm_mat[usr_idx, :] = np.sum_signals(np.power(np.abs(sc_channel_mat_fd), 2), axis=1)
+                # ant_norm_coeff_vec = 1/np.sqrt(np.sum_signals(ant_norm_mat, axis=0))
 
                 # calculate the normalizing factor
                 usrs_vects = np.empty((self.n_users, tx_n_sc))
@@ -214,10 +213,10 @@ class AntennaArray(ABC):
                         sc_channel_mat_fd_conjugate = np.conjugate(sc_channel_mat_fd)
 
                         # normalize the precoding vector in regard to number of antennas and power
-                        # equal sum of TX power MR precoding
+                        # equal sum_signals of TX power MR precoding
                         usr_precoding_mat_fd = np.divide(sc_channel_mat_fd_conjugate, nsc_power_normalzing_vec)
-                        # equal sum of RX power MR precoding
-                        # precoding_mat_fd = np.divide(sc_channel_mat_fd_conjugate, np.sum(np.power(np.abs(sc_channel_mat_fd), 2), axis=0))
+                        # equal sum_signals of RX power MR precoding
+                        # precoding_mat_fd = np.divide(sc_channel_mat_fd_conjugate, np.sum_signals(np.power(np.abs(sc_channel_mat_fd), 2), axis=0))
                         precoding_mat_fd[usr_idx, :, :] = usr_precoding_mat_fd
 
                 elif zf_precoding:
@@ -287,11 +286,11 @@ class AntennaArray(ABC):
                 composed_chan_mat_conjugate = np.conjugate(composed_chan_mat)
                 if mr_precoding is True:
                     # normalize the precoding vector in regard to number of antennas and power
-                    # equal sum of TX power MR precoding
+                    # equal sum_signals of TX power MR precoding
                     precoding_mat_fd = np.divide(composed_chan_mat_conjugate,
                                                  np.sqrt(np.sum(np.power(np.abs(composed_chan_mat), 2), axis=0)))
-                    # equal sum of RX power MR precoding
-                    # precoding_mat_fd = np.divide(sc_channel_mat_fd_conjugate, np.sum(np.power(np.abs(sc_channel_mat_fd), 2), axis=0))
+                    # equal sum_signals of RX power MR precoding
+                    # precoding_mat_fd = np.divide(sc_channel_mat_fd_conjugate, np.sum_signals(np.power(np.abs(sc_channel_mat_fd), 2), axis=0))
 
                 else:
                     # take only phases into consideration
@@ -313,10 +312,10 @@ class AntennaArray(ABC):
 
     def update_distortion(self, ibo_db: float, avg_sample_pow: float, alpha_val: float = None) -> None:
         """
-        Update the average and maximum power expected by distortion: soft-limiter to maintain constant Input Backoff
+        Update the average and maximum power expected by distortion: soft-limiter to maintain constant Input back-off
         (IBO) after applied precoding.
 
-        :param ibo_db: input backoff (IBO) value in [dB]
+        :param ibo_db: input back-off (IBO) value in [dB]
         :param avg_sample_pow: average power of the signal sample
         :param alpha_val: value of the alpha - shrinking coefficient
         :return: None
@@ -345,7 +344,7 @@ class AntennaArray(ABC):
         # sc_channel_mat = np.concatenate((channel_mat_fd[:, 1:(tx_n_sc // 2) + 1], channel_mat_fd[:, -tx_n_sc // 2:]), axis=1)
         #
         # avg_precoding_gain = np.average(np.divide(np.power(np.abs(sc_channel_mat), 2),
-        #                                           np.power(np.sum(np.power(np.abs(sc_channel_mat), 2), axis=0), 2)))
+        #                                           np.power(np.sum_signals(np.power(np.abs(sc_channel_mat), 2), axis=0), 2)))
         # print("AVG precoding gain: ", avg_precoding_gain)
 
         # update the ibo

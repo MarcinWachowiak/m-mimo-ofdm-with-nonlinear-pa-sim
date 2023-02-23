@@ -15,6 +15,7 @@ import channel
 import distortion
 import modulation
 import transceiver
+import antenna_array
 import utilities
 from plot_settings import set_latex_plot_style
 
@@ -54,7 +55,7 @@ if __name__ == '__main__':
     corr_per_n_ant = []
     for ant_idx, n_ant_val in enumerate(n_ant_arr):
 
-        my_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(3.5e9),
+        my_array = antenna_array.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(3.5e9),
                                               wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
         # channel type
         my_miso_los_chan = channel.MisoLosFd()

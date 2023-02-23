@@ -15,7 +15,7 @@ import multiprocessing as mp
 import matplotlib.pyplot as plt
 import numpy as np
 
-import antenna_arrray
+import antenna_array
 import channel
 import distortion
 import modulation
@@ -76,7 +76,7 @@ if __name__ == '__main__':
 
     for csi_epsylon in csi_epsylon_lst:
         for n_ant_val in n_ant_arr:
-            my_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(3.5e9),
+            my_array = antenna_array.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(3.5e9),
                                                   wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
             # channel type
             my_miso_los_chan = channel.MisoLosFd()

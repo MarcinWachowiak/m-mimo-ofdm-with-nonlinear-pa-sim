@@ -46,7 +46,7 @@ my_standard_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment
                                          cord_y=rx_loc_y, cord_z=1.5, center_freq=int(3.5e9),
                                          carrier_spacing=int(15e3))
 
-my_array = antenna_arrray.LinearArray(n_elements=np.min(n_ant_arr), base_transceiver=my_tx, center_freq=int(3.5e9),
+my_array = antenna_array.LinearArray(n_elements=np.min(n_ant_arr), base_transceiver=my_tx, center_freq=int(3.5e9),
                                       wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
 my_standard_rx.set_position(cord_x=rx_loc_x, cord_y=rx_loc_y, cord_z=1.5)
 
@@ -60,7 +60,7 @@ for n_ant_idx, n_ant_val in enumerate(n_ant_arr):
     start_time = time.time()
     print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
     sdr_at_ibo_per_chan = []
-    my_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(3.5e9),
+    my_array = antenna_array.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(3.5e9),
                                           wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
 
     my_miso_los_chan = channel.MisoLosFd()
@@ -117,13 +117,13 @@ for n_ant_idx, n_ant_val in enumerate(n_ant_arr):
                 arr_tx_sig_fd, clean_sig_mat_fd = my_array.transmit(in_bits=tx_bits, out_domain_fd=True,
                                                                     return_both=True)
 
-                rx_sig_fd = my_miso_chan.propagate(in_sig_mat=arr_tx_sig_fd, sum=False)
+                rx_sig_fd = my_miso_chan.propagate(in_sig_mat=arr_tx_sig_fd, sum_signals=False)
                 rx_sig_td = utilities.to_time_domain(rx_sig_fd)
                 rx_sc_ofdm_symb_fd = np.concatenate(
                     (rx_sig_fd[:, -my_mod.n_sub_carr // 2:], rx_sig_fd[:, 1:(my_mod.n_sub_carr // 2) + 1]), axis=1)
                 # rx_sc_ofdm_symb_td = utilities.to_time_domain(rx_sc_ofdm_symb_fd)
 
-                clean_rx_sig_fd = my_miso_chan.propagate(in_sig_mat=clean_sig_mat_fd, sum=False)
+                clean_rx_sig_fd = my_miso_chan.propagate(in_sig_mat=clean_sig_mat_fd, sum_signals=False)
                 clean_rx_sig_td = utilities.to_time_domain(clean_rx_sig_fd)
                 clean_sc_ofdm_symb_fd = np.concatenate(
                     (clean_rx_sig_fd[:, -my_mod.n_sub_carr // 2:], clean_rx_sig_fd[:, 1:(my_mod.n_sub_carr // 2) + 1]),
@@ -145,10 +145,10 @@ for n_ant_idx, n_ant_val in enumerate(n_ant_arr):
             #                                                         nperseg=n_samp_per_seg, return_onesided=False)
             # clean_ofdm_symb_freq_arr, clean_ofdm_symb_psd_arr = welch(clean_rx_sig_accum_arr, fs=psd_nfft, nfft=psd_nfft,
             #                                                           nperseg=n_samp_per_seg, return_onesided=False)
-            # sdr_at_ibo[ibo_idx] = to_db(np.sum(clean_ofdm_symb_psd_arr)/np.sum(dist_ofdm_symb_psd_arr))
+            # sdr_at_ibo[ibo_idx] = to_db(np.sum_signals(clean_ofdm_symb_psd_arr)/np.sum_signals(dist_ofdm_symb_psd_arr))
             sdr_at_ibo[ibo_idx] = np.average(sdr_at_ibo_per_symb)
             # sdr_at_ibo[ibo_idx] = to_db(
-            #     np.sum(np.power(np.abs(clean_rx_sig_accum_arr), 2)) / np.sum(
+            #     np.sum_signals(np.power(np.abs(clean_rx_sig_accum_arr), 2)) / np.sum_signals(
             #         np.power(np.abs(sc_ofdm_distortion_sig), 2)))
 
         sdr_at_ibo_per_chan.append(sdr_at_ibo)

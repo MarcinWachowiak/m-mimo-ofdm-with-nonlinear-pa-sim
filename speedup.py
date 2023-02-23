@@ -6,6 +6,10 @@ except ImportError as error:
 
 
     def jit(pyfunc=None, **kwargs):
+        """
+        Wrapper/Decorator to use Numba JIT compiler to speed up the computations.
+
+        """
         def wrap(func):
             return func
 

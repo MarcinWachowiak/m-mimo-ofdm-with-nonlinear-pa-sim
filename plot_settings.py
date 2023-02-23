@@ -5,7 +5,16 @@ import matplotlib.pyplot as plt
 from matplotlib import rcParams, cycler, rc
 
 
-def set_latex_plot_style(use_tex=False, fig_width_in=7.0, fig_height_in=None):
+def set_latex_plot_style(use_tex: bool = False, fig_width_in: float = 7.0, fig_height_in: float = None) -> None:
+    """
+    Sets the scientific style of plots.
+    Makes matplotlib use LaTex typesetting and custom color palette.
+
+    :param use_tex: flag if to use LaTex for typesetting
+    :param fig_width_in: width of the figures in inches
+    :param fig_height_in: height of the figures in inches, if not specified calculated from golden ratio based on width
+    :return: None
+    """
     CB_color_cycle = ['#006BA4', '#FF800E', '#ABABAB', '#595959', '#5F9ED1', '#C85200', '#898989', '#A2C8EC', '#FFBC79',
                       '#CFCFCF']
     rcParams['axes.prop_cycle'] = cycler(color=CB_color_cycle)
@@ -39,6 +48,11 @@ def set_latex_plot_style(use_tex=False, fig_width_in=7.0, fig_height_in=None):
 
 
 def reset_color_cycle():
+    """
+    Resets the matplotlib color cycle to the default.
+
+    :return: None
+    """
     plt.gca().set_prop_cycle(None)
     CB_color_cycle = ['#377eb8', '#ff7f00', '#4daf4a',
                       '#f781bf', '#a65628', '#984ea3',

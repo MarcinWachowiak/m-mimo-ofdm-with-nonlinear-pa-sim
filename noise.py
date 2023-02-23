@@ -1,13 +1,23 @@
-import abc
+from abc import ABC
 
 import numpy as np
-
-#
+from numpy import ndarray
 from utilities import to_db, fd_signal_power
 
 
-class Noise(metaclass=abc.ABCMeta):
-    def __init__(self, snr_db, noise_p_dbm, seed):
+class Noise(ABC):
+    """
+    Noise base class.
+
+    :param snr_db: signal-to-noise ratio expressed in [dB]
+    :param noise_p_dbm: noise power expressed in [W]
+    :param seed: seed for the random number generator
+    """
+
+    def __init__(self, snr_db: float, noise_p_dbm: float, seed: int):
+        """
+        Create a Noise base object.
+        """
         self.snr_db = snr_db
         self.noise_p_dbm = noise_p_dbm
         if seed is not None:
@@ -18,10 +28,31 @@ class Noise(metaclass=abc.ABCMeta):
 
 
 class Awgn(Noise):
+    """
+    Additive white Gaussian noise class.
+
+    :param snr_db: signal-to-noise ratio expressed in [dB]
+    :param noise_p_dbm: power of the noise expressed in [W]
+    :param seed: seed for the random number generator
+    """
+
     def __init__(self, snr_db=None, noise_p_dbm=None, seed=None):
+        """
+        Create an additive white Gaussian noise object.
+        """
         super().__init__(snr_db, noise_p_dbm, seed)
 
-    def process(self, in_sig, avg_sample_pow=1, fixed_noise_power=False, disp_data=False):
+    def process(self, in_sig: ndarray, avg_sample_pow: float = 1, fixed_noise_power: bool = False,
+                disp_data: bool = False) -> ndarray:
+        """
+        Add the noise to the input signal.
+
+        :param in_sig: input signal vector
+        :param avg_sample_pow: average sample power of the signal
+        :param fixed_noise_power: flag if the noise power should be calculated based on fixed power value.
+        :param disp_data: flag if to display the instantaneous SNR within the vector or frame
+        :return:
+        """
         n_sampl = len(in_sig)
 
         # use noise_p_dbm to generate noise - limited and constant noise power

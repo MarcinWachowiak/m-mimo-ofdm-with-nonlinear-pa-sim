@@ -19,6 +19,7 @@ import distortion
 import modulation
 import noise
 import transceiver
+import antenna_array
 from plot_settings import set_latex_plot_style
 from utilities import count_mismatched_bits
 
@@ -30,7 +31,7 @@ my_mod = modulation.OfdmQamModem(constel_size=64, n_fft=4096, n_sub_carr=2048, c
 my_distortion = distortion.SoftLimiter(0, my_mod.avg_sample_power)
 # my_mod.plot_constellation()
 my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion))
-my_array = antenna_arrray.LinearArray(n_elements=1, base_transceiver=my_tx, center_freq=int(3.5e9),
+my_array = antenna_array.LinearArray(n_elements=1, base_transceiver=my_tx, center_freq=int(3.5e9),
                                       wav_len_spacing=0.5,
                                       cord_x=0, cord_y=0, cord_z=15)
 my_standard_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),

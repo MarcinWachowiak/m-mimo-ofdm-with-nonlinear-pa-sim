@@ -46,7 +46,7 @@ my_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.dee
 
 my_miso_chan = channel.MisoLosFd()
 
-my_array = antenna_arrray.LinearArray(n_elements=128, base_transceiver=my_tx, center_freq=int(3.5e9),
+my_array = antenna_array.LinearArray(n_elements=128, base_transceiver=my_tx, center_freq=int(3.5e9),
                                       wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
 
 utilities.plot_spatial_config(ant_array=my_array, rx_transceiver=my_rx, plot_3d=True)

@@ -21,9 +21,9 @@ ibo_val_db = 0
 
 ebn0_min = 5
 ebn0_max = 20
-ebn0_step = 1
+ebn0_step = 0.5
 
-csi_eps_lst = [0.0, 0.01, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
+csi_eps_lst = [0.0, 0.1, 0.2, 0.3, 0.4]
 sel_eps_lst = [0.0, 0.2, 0.4]
 
 sel_cnc_ite_lst = [2, 5, 8]
@@ -53,32 +53,32 @@ for eps_idx, eps_val in enumerate(csi_eps_lst):
     mcnc_los_bers_per_eps.append(mcnc_ber_per_dist)
     ebno_lst.append(mcnc_ebn0_arr)
 
-my_miso_chan_quadriga = "quadriga"
-cnc_quadriga_bers_per_eps = []
-mcnc_quadriga_bers_per_eps = []
-ebno_quadriga_lst = []
-quadriga_csi_eps_lst = [0.01, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
-
-for eps_idx, eps_val in enumerate(quadriga_csi_eps_lst):
-    cnc_quadriga_filename_str = "ber_vs_ebn0_cnc_%s_csi_eps%1.3f_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s" % (
-        my_miso_chan_quadriga, eps_val, n_ant_val, ibo_val_db, ebn0_min, ebn0_max, ebn0_step,
-        '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
-    cnc_quadriga_data_lst = utilities.read_from_csv(filename=cnc_quadriga_filename_str)
-    cnc_quadriga_ebn0_arr = cnc_quadriga_data_lst[0]
-    cnc_quadriga_ber_per_dist = cnc_quadriga_data_lst[1:]
-
-    cnc_quadriga_bers_per_eps.append(cnc_quadriga_ber_per_dist)
-    ebno_quadriga_lst.append(cnc_quadriga_ebn0_arr)
-
-    mcnc_quadriga_filename_str = "ber_vs_ebn0_mcnc_%s_csi_eps%1.3f_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s" % (
-        my_miso_chan_quadriga, eps_val, n_ant_val, ibo_val_db, ebn0_min, ebn0_max, ebn0_step,
-        '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
-    mcnc_quadriga_data_lst = utilities.read_from_csv(filename=mcnc_quadriga_filename_str)
-    mcnc_quadriga_ebn0_arr = mcnc_quadriga_data_lst[0]
-    mcnc_quadriga_ber_per_dist = mcnc_quadriga_data_lst[1:]
-
-    mcnc_quadriga_bers_per_eps.append(mcnc_quadriga_ber_per_dist)
-    ebno_quadriga_lst.append(mcnc_quadriga_ebn0_arr)
+# my_miso_chan_quadriga = "quadriga"
+# cnc_quadriga_bers_per_eps = []
+# mcnc_quadriga_bers_per_eps = []
+# ebno_quadriga_lst = []
+# quadriga_csi_eps_lst = [0.01, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
+#
+# for eps_idx, eps_val in enumerate(quadriga_csi_eps_lst):
+#     cnc_quadriga_filename_str = "ber_vs_ebn0_cnc_%s_csi_eps%1.3f_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s" % (
+#         my_miso_chan_quadriga, eps_val, n_ant_val, ibo_val_db, ebn0_min, ebn0_max, ebn0_step,
+#         '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
+#     cnc_quadriga_data_lst = utilities.read_from_csv(filename=cnc_quadriga_filename_str)
+#     cnc_quadriga_ebn0_arr = cnc_quadriga_data_lst[0]
+#     cnc_quadriga_ber_per_dist = cnc_quadriga_data_lst[1:]
+#
+#     cnc_quadriga_bers_per_eps.append(cnc_quadriga_ber_per_dist)
+#     ebno_quadriga_lst.append(cnc_quadriga_ebn0_arr)
+#
+#     mcnc_quadriga_filename_str = "ber_vs_ebn0_mcnc_%s_csi_eps%1.3f_nant%d_ibo%d_ebn0_min%d_max%d_step%1.2f_niter%s" % (
+#         my_miso_chan_quadriga, eps_val, n_ant_val, ibo_val_db, ebn0_min, ebn0_max, ebn0_step,
+#         '_'.join([str(val) for val in cnc_n_iter_lst[1:]]))
+#     mcnc_quadriga_data_lst = utilities.read_from_csv(filename=mcnc_quadriga_filename_str)
+#     mcnc_quadriga_ebn0_arr = mcnc_quadriga_data_lst[0]
+#     mcnc_quadriga_ber_per_dist = mcnc_quadriga_data_lst[1:]
+#
+#     mcnc_quadriga_bers_per_eps.append(mcnc_quadriga_ber_per_dist)
+#     ebno_quadriga_lst.append(mcnc_quadriga_ebn0_arr)
 
 # %%
 # BER VS Eb/N0

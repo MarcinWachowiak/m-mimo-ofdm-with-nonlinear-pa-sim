@@ -20,6 +20,7 @@ import channel
 import distortion
 import modulation
 import transceiver
+import antenna_array
 import utilities
 from plot_settings import set_latex_plot_style
 
@@ -97,7 +98,7 @@ if __name__ == '__main__':
                                              center_freq=int(3.5e9), carrier_spacing=int(15e3))
 
     for n_ant_val in n_ant_arr:
-        my_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(3.5e9),
+        my_array = antenna_array.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(3.5e9),
                                               wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
         # channel type
         my_miso_los_chan = channel.MisoLosFd()
@@ -131,7 +132,7 @@ if __name__ == '__main__':
                     my_tmp_tx = transceiver.Transceiver(modem=copy.deepcopy(my_tmp_mod),
                                                         impairment=copy.deepcopy(my_distortion))
 
-                    my_tmp_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tmp_tx,
+                    my_tmp_array = antenna_array.LinearArray(n_elements=n_ant_val, base_transceiver=my_tmp_tx,
                                                               center_freq=int(3.5e9),
                                                               wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
                     my_tmp_miso_los_chan = channel.MisoLosFd()
@@ -153,8 +154,8 @@ if __name__ == '__main__':
                         tx_ofdm_symbol_fd, clean_ofdm_symbol_fd = my_tmp_array.transmit(tx_bits, out_domain_fd=True,
                                                                                         return_both=True)
 
-                        rx_sig_fd = my_tmp_miso_los_chan.propagate(in_sig_mat=tx_ofdm_symbol_fd, sum=False)
-                        rx_sig_clean_fd = my_tmp_miso_los_chan.propagate(in_sig_mat=clean_ofdm_symbol_fd, sum=False)
+                        rx_sig_fd = my_tmp_miso_los_chan.propagate(in_sig_mat=tx_ofdm_symbol_fd, sum_signals=False)
+                        rx_sig_clean_fd = my_tmp_miso_los_chan.propagate(in_sig_mat=clean_ofdm_symbol_fd, sum_signals=False)
 
                         clean_nsc_ofdm_symb_fd = np.concatenate((rx_sig_clean_fd[:, -my_mod.n_sub_carr // 2:],
                                                                  rx_sig_clean_fd[:, 1:(my_mod.n_sub_carr // 2) + 1]),
@@ -318,8 +319,8 @@ if __name__ == '__main__':
                                                                                 out_domain_fd=True,
                                                                                 return_both=True)
 
-                            rx_sig_fd = my_miso_chan.propagate(in_sig_mat=arr_tx_sig_fd, sum=False)
-                            clean_rx_sig_fd = my_miso_chan.propagate(in_sig_mat=clean_sig_mat_fd, sum=False)
+                            rx_sig_fd = my_miso_chan.propagate(in_sig_mat=arr_tx_sig_fd, sum_signals=False)
+                            clean_rx_sig_fd = my_miso_chan.propagate(in_sig_mat=clean_sig_mat_fd, sum_signals=False)
                             distortion_sig_fd = np.subtract(rx_sig_fd, (ak_vect * clean_rx_sig_fd))
 
                             clean_sc_ofdm_symb_fd = np.concatenate(
@@ -513,7 +514,7 @@ if __name__ == '__main__':
             #             my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
             #
             #             vk_mat = my_array.get_precoding_mat()
-            #             vk_pow_vec = np.sum(np.sum(np.power(np.abs(vk_mat), 2), axis=2), axis=1)
+            #             vk_pow_vec = np.sum_signals(np.sum_signals(np.power(np.abs(vk_mat), 2), axis=2), axis=1)
             #
             #             ak_hk_vk_noise_scaler_lst = []
             #             hk_vk_noise_scaler_lst = []
@@ -525,10 +526,10 @@ if __name__ == '__main__':
             #                 hk_mat = np.concatenate((chan_mat_at_point[:, -my_mod.n_sub_carr // 2:],
             #                                          chan_mat_at_point[:, 1:(my_mod.n_sub_carr // 2) + 1]), axis=1)
             #                 vk_mat = my_array.get_precoding_mat()
-            #                 vk_pow_vec = np.sum(np.sum(np.power(np.abs(vk_mat), 2), axis=2), axis=1)
+            #                 vk_pow_vec = np.sum_signals(np.sum_signals(np.power(np.abs(vk_mat), 2), axis=2), axis=1)
             #
             #                 hk_vk_agc = np.multiply(hk_mat, vk_mat[:, usr_idx, :])
-            #                 hk_vk_agc_avg_vec = np.sum(hk_vk_agc, axis=0)
+            #                 hk_vk_agc_avg_vec = np.sum_signals(hk_vk_agc, axis=0)
             #                 hk_vk_noise_scaler = np.mean(np.power(np.abs(hk_vk_agc_avg_vec), 2))
             #                 hk_vk_noise_scaler_lst.append(hk_vk_noise_scaler)
             #
@@ -543,7 +544,7 @@ if __name__ == '__main__':
             #                 ak_vect = np.expand_dims(ak_vect, axis=1)
             #
             #                 ak_hk_vk_agc = ak_vect * hk_vk_agc
-            #                 ak_hk_vk_agc_avg_vec = np.sum(ak_hk_vk_agc, axis=0)
+            #                 ak_hk_vk_agc_avg_vec = np.sum_signals(ak_hk_vk_agc, axis=0)
             #                 ak_hk_vk_noise_scaler = np.mean(np.power(np.abs(ak_hk_vk_agc_avg_vec), 2))
             #                 ak_hk_vk_noise_scaler_lst.append(ak_hk_vk_noise_scaler)
             #
@@ -560,7 +561,7 @@ if __name__ == '__main__':
             #                                                       skip_dist=True)
             #
             #                 # clean_rx_ofdm_symbol = my_miso_chan.propagate(in_sig_mat=clean_ofdm_symbol)
-            #                 clean_rx_ofdm_symbol = np.sum(
+            #                 clean_rx_ofdm_symbol = np.sum_signals(
             #                     np.multiply(clean_ofdm_symbol, usr_chan_mat_lst[sel_usr_idx]), axis=0)
             #
             #                 clean_rx_ofdm_symbol = my_noise.process(clean_rx_ofdm_symbol,
@@ -620,7 +621,7 @@ if __name__ == '__main__':
             #             my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=my_mod.avg_sample_power)
             #
             #             vk_mat = my_array.get_precoding_mat()
-            #             vk_pow_vec = np.sum(np.sum(np.power(np.abs(vk_mat), 2), axis=2), axis=1)
+            #             vk_pow_vec = np.sum_signals(np.sum_signals(np.power(np.abs(vk_mat), 2), axis=2), axis=1)
             #
             #             ak_hk_vk_noise_scaler_lst = []
             #             hk_vk_noise_scaler_lst = []
@@ -632,10 +633,10 @@ if __name__ == '__main__':
             #                 hk_mat = np.concatenate((chan_mat_at_point[:, -my_mod.n_sub_carr // 2:],
             #                                          chan_mat_at_point[:, 1:(my_mod.n_sub_carr // 2) + 1]), axis=1)
             #                 vk_mat = my_array.get_precoding_mat()
-            #                 vk_pow_vec = np.sum(np.sum(np.power(np.abs(vk_mat), 2), axis=2), axis=1)
+            #                 vk_pow_vec = np.sum_signals(np.sum_signals(np.power(np.abs(vk_mat), 2), axis=2), axis=1)
             #
             #                 hk_vk_agc = np.multiply(hk_mat, vk_mat[:, usr_idx, :])
-            #                 hk_vk_agc_avg_vec = np.sum(hk_vk_agc, axis=0)
+            #                 hk_vk_agc_avg_vec = np.sum_signals(hk_vk_agc, axis=0)
             #                 hk_vk_noise_scaler = np.mean(np.power(np.abs(hk_vk_agc_avg_vec), 2))
             #                 hk_vk_noise_scaler_lst.append(hk_vk_noise_scaler)
             #
@@ -650,7 +651,7 @@ if __name__ == '__main__':
             #                 ak_vect = np.expand_dims(ak_vect, axis=1)
             #
             #                 ak_hk_vk_agc = ak_vect * hk_vk_agc
-            #                 ak_hk_vk_agc_avg_vec = np.sum(ak_hk_vk_agc, axis=0)
+            #                 ak_hk_vk_agc_avg_vec = np.sum_signals(ak_hk_vk_agc, axis=0)
             #                 ak_hk_vk_noise_scaler = np.mean(np.power(np.abs(ak_hk_vk_agc_avg_vec), 2))
             #                 ak_hk_vk_noise_scaler_lst.append(ak_hk_vk_noise_scaler)
             #
@@ -663,7 +664,7 @@ if __name__ == '__main__':
             #             tx_ofdm_symbol = my_array.transmit(tx_bits, out_domain_fd=True, skip_dist=False)
             #
             #             # rx_ofdm_symbol = my_miso_chan.propagate(in_sig_mat=tx_ofdm_symbol)
-            #             rx_ofdm_symbol = np.sum(np.multiply(tx_ofdm_symbol, usr_chan_mat_lst[sel_usr_idx]),
+            #             rx_ofdm_symbol = np.sum_signals(np.multiply(tx_ofdm_symbol, usr_chan_mat_lst[sel_usr_idx]),
             #                                     axis=0)
             #
             #             rx_ofdm_symbol = my_noise.process(rx_ofdm_symbol,

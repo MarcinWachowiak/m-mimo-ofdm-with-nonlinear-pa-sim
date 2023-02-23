@@ -2,14 +2,29 @@ import numpy as np
 import torch
 
 import distortion
-from antenna_array import LinearArray
+from antenna_array import AntennaArray
 from distortion import SoftLimiter
 from modulation import OfdmQamModem
+from numpy import ndarray
 
 
 # Nonlinear distortion recovery technique based on Ochiai, Clipping noise cancellation
 class CncReceiver():
+    """
+    Clipping noise cancellation (CNC) receiver class.
+    Based on: https://ieeexplore.ieee.org/document/1214054
+    better depiction in: https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=9445597
+
+    :param modem: OFDM modem object to be used in the CNC loop should be identical as in the primary transmitter
+    :param impairment: nonlinear distortion model to be used in the CNC loop should be identical as in
+        the primary transmitter
+    """
+
     def __init__(self, modem: OfdmQamModem, impairment: SoftLimiter):
+        """
+        Create a CNC receiver object.
+        CNC loop objects are not copied - kept by reference.
+        """
         self.modem = modem
         self.impairment = impairment
         if isinstance(self.impairment, distortion.SoftLimiter):
@@ -19,7 +34,14 @@ class CncReceiver():
         self.upsample_factor = self.modem.n_fft / self.modem.n_sub_carr
         self.impairment.set_avg_sample_power(avg_samp_pow=self.modem.avg_symbol_power * (1 / self.upsample_factor))
 
-    def update_distortion(self, ibo_db, alpha_val=None):
+    def update_distortion(self, ibo_db: float, alpha_val: float = 1.0) -> None:
+        """
+        Update the parameters of nonlinear distortion model in the CNC receiver
+
+        :param ibo_db: input back-off value in [dB]
+        :param alpha_val: alpha shrinking coefficient value
+        :return: None
+        """
         if isinstance(self.impairment, distortion.ThirdOrderNonLin):
             self.impairment.set_toi(ibo_db)
             self.modem.alpha = alpha_val
@@ -27,7 +49,18 @@ class CncReceiver():
             self.impairment.set_ibo(ibo_db)
             self.modem.alpha = self.modem.calc_alpha(ibo_db)
 
-    def receive(self, n_iters_lst, in_sig_fd, alpha_estimation=None, return_bits=True):
+    def receive(self, n_iters_lst: list, in_sig_fd: ndarray, alpha_estimate: float = None,
+                return_bits: bool = True) -> list[ndarray]:
+        """
+        Run the clipping noise cancellation algorithm on the received signal vector.
+
+        :param n_iters_lst: list of the number of CNC iterations to perform
+        :param in_sig_fd: input signal array
+        :param alpha_estimate: value of the alpha shrinking coefficient, if 'None' calculated analytically
+        :param return_bits: flag if to return demodulated bits or complex symbols
+        :return: list of vectors containing the demodulated data based on the selected number of iterations
+        """
+
         # strip input fd signal of the OOB - include only the symbol data
         n_sub_carr = self.modem.n_sub_carr
         rx_ofdm_nsc_fd = np.concatenate((in_sig_fd[-n_sub_carr // 2:], in_sig_fd[1:(n_sub_carr // 2) + 1]))
@@ -67,8 +100,9 @@ class CncReceiver():
             rx_symbols_estimate = np.concatenate(
                 (clipped_ofdm_sym_fd[-n_sub_carr // 2:], clipped_ofdm_sym_fd[1:(n_sub_carr // 2) + 1]))
 
-            if alpha_estimation is not None:
-                rx_symbols_estimate = np.divide(rx_symbols_estimate, alpha_estimation)
+            # if not provided use analytical alpha value based on IBO value
+            if alpha_estimate is not None:
+                rx_symbols_estimate = np.divide(rx_symbols_estimate, alpha_estimate)
             else:
                 rx_symbols_estimate = np.divide(rx_symbols_estimate, self.modem.alpha)
 
@@ -79,7 +113,22 @@ class CncReceiver():
 
 
 class McncReceiver():
-    def __init__(self, antenna_array: LinearArray, channel, alpha_estimate=None):
+    """
+    Multi-antenna Clipping noise cancellation (MCNC) receiver class.
+    Extended CNC that includes the antenna element-wise effects of each individual front-end, precoding and channel
+    propagation effects in the clipping noise cancellation loop.
+
+    :param antenna_array: primary transmitting antenna array object with all the parameters
+    :param channel: primary chanel object used in the link simulation
+    :param alpha_estimate: value of the alpha shrinking coefficient, if 'None' calculated analytically
+    """
+
+    def __init__(self, antenna_array: AntennaArray, channel, alpha_estimate: float = None):
+        """
+        Create a MCNC receiver object.
+        MCNC loop objects are not copied - kept by reference.
+        """
+
         self.antenna_array = antenna_array
         self.channel = channel
         channel_mat_at_point = self.channel.get_channel_mat_fd()
@@ -113,7 +162,16 @@ class McncReceiver():
 
         self.agc_corr_vec = ak_hk_vk_agc_nfft
 
-    def receive(self, n_iters_lst, in_sig_fd, return_bits=True):
+    def receive(self, n_iters_lst: list, in_sig_fd: ndarray, return_bits: bool = True) -> list[ndarray]:
+        """
+        Run the multi-antenna clipping noise cancellation algorithm on the received signal vector.
+
+        :param n_iters_lst: list of the number of CNC iterations to perform
+        :param in_sig_fd: input signal array
+        :param return_bits: flag if to return demodulated bits or complex symbols
+        :return: list of vectors containing the demodulated data based on the selected number of iterations
+        """
+
         # strip input fd signal of the OOB - include only the symbol data
         rx_ofdm_nsc_fd = np.concatenate((in_sig_fd[-self.n_sub_carr // 2:], in_sig_fd[1:(self.n_sub_carr // 2) + 1]))
 
@@ -148,7 +206,14 @@ class McncReceiver():
 
         return data_per_iter_lst
 
-    def update_agc(self, alpha_estimate=None):
+    def update_agc(self, alpha_estimate: float = None) -> None:
+        """
+        Update the equalization vector used in the MCNC loop.
+
+        :param alpha_estimate: value of the alpha shrinking coefficient, if 'None' calculated analytically
+        :return: None
+        """
+
         # channel_mat_at_point = self.channel.get_channel_mat_fd()
         # self.antenna_array.set_precoding_matrix(channel_mat_fd=channel_mat_at_point, mr_precoding=True)
         # self.n_sub_carr = self.antenna_array.array_elements[0].modem.n_sub_carr
@@ -181,7 +246,21 @@ class McncReceiver():
 
 
 class CncMuReceiver():
+    """
+    Multi-user clipping noise cancellation receiver class. (Prototype for 2 users only)
+    Assumes the user has a knowledge about other user baseband symbols.
+    Does not take into consideration precoding and channel effects - assumes equal power allocation between the users.
+
+    :param modem: OFDM modem object to be used in the CNC loop should be identical as in the primary transmitter
+    :param impairment: nonlinear distortion model to be used in the CNC loop should be identical as in
+        the primary transmitter
+    """
+
     def __init__(self, modem: OfdmQamModem, impairment: SoftLimiter):
+        """
+        Create a Multi-user CNC receiver object.
+        CNC loop objects are not copied - kept by reference.
+        """
         self.modem = modem
         self.impairment = impairment
         if isinstance(self.impairment, distortion.SoftLimiter):
@@ -191,7 +270,14 @@ class CncMuReceiver():
         self.upsample_factor = self.modem.n_fft / self.modem.n_sub_carr
         self.impairment.set_avg_sample_power(avg_samp_pow=self.modem.avg_symbol_power * (1 / self.upsample_factor))
 
-    def update_distortion(self, ibo_db, alpha_val=None):
+    def update_distortion(self, ibo_db: float, alpha_val: float = 1.0) -> None:
+        """
+        Update the parameters of nonlinear distortion model in the CNC receiver
+
+        :param ibo_db: input back-off value in [dB]
+        :param alpha_val: alpha shrinking coefficient value
+        :return: None
+        """
         if isinstance(self.impairment, distortion.ThirdOrderNonLin):
             self.impairment.set_toi(ibo_db)
             self.modem.alpha = alpha_val
@@ -199,7 +285,18 @@ class CncMuReceiver():
             self.impairment.set_ibo(ibo_db)
             self.modem.alpha = self.modem.calc_alpha(ibo_db)
 
-    def receive(self, n_iters_lst, in_sig_fd, other_usr_symbols=None, alpha_estimation=None):
+    def receive(self, n_iters_lst: list, in_sig_fd: ndarray, other_usr_symbols: ndarray,
+                alpha_estimate: float = None) -> list[ndarray]:
+        """
+        Run the multi-user (two-user) clipping noise cancellation algorithm on the received signal vector.
+
+        :param n_iters_lst: list of the number of CNC iterations to perform
+        :param in_sig_fd: input signal array
+        :param other_usr_symbols: vector of the other user transmitted complex baseband symbols
+        :param alpha_estimate: value of the alpha shrinking coefficient, if 'None' calculated analytically
+        :return: list of vectors containing the demodulated data based on the selected number of iterations
+        """
+
         # strip input fd signal of the OOB - include only the symbol data
         n_sub_carr = self.modem.n_sub_carr
         rx_ofdm_nsc_fd = np.concatenate((in_sig_fd[-n_sub_carr // 2:], in_sig_fd[1:(n_sub_carr // 2) + 1]))
@@ -237,8 +334,8 @@ class CncMuReceiver():
             rx_symbols_estimate = np.concatenate(
                 (clipped_ofdm_sym_fd[-n_sub_carr // 2:], clipped_ofdm_sym_fd[1:(n_sub_carr // 2) + 1]))
 
-            if alpha_estimation is not None:
-                rx_symbols_estimate = np.divide(rx_symbols_estimate, alpha_estimation)
+            if alpha_estimate is not None:
+                rx_symbols_estimate = np.divide(rx_symbols_estimate, alpha_estimate)
             else:
                 rx_symbols_estimate = np.divide(rx_symbols_estimate, self.modem.alpha)
 
@@ -249,7 +346,22 @@ class CncMuReceiver():
 
 
 class McncMuReceiver():
-    def __init__(self, antenna_array: LinearArray, channel, usr_idx=None, alpha_estimate=None):
+    """
+    Multi-user multi-antenna clipping noise cancellation receiver class. (Prototype for 2 users only)
+    Assumes the user has a knowledge about other user baseband symbols and precoding coefficients.
+
+    :param antenna_array: primary transmitting antenna array object with all the parameters
+    :param channel: primary chanel object used in the link simulation
+    :param usr_idx: index of the user to apply the MCNC algorithm to, determines the selection of the proper
+        precoding vectors
+    :param alpha_estimate: value of the alpha shrinking coefficient, if 'None' calculated analytically
+    """
+
+    def __init__(self, antenna_array: AntennaArray, channel, usr_idx: int, alpha_estimate: float = None):
+        """
+        Create a Multi-user MCNC receiver object.
+        MCNC oop objects are not copied - kept by reference.
+        """
         self.antenna_array = antenna_array
         self.channel = channel
         self.usr_idx = usr_idx
@@ -290,7 +402,16 @@ class McncMuReceiver():
 
         self.agc_corr_vec = ak_hk_vk_agc_nfft
 
-    def receive(self, n_iters_lst, in_sig_fd, other_usr_bits=None):
+    def receive(self, n_iters_lst: list, in_sig_fd: ndarray, other_usr_bits: ndarray) -> list[ndarray]:
+        """
+        Run the multi-user multi-antenna clipping noise cancellation algorithm on the received signal vector.
+
+        :param n_iters_lst: list of the number of CNC iterations to perform
+        :param in_sig_fd: input signal array
+        :param other_usr_bits: vector of bits transmitted by the other user
+        :return: list of vectors containing the demodulated data based on the selected number of iterations
+        """
+
         # strip input fd signal of the OOB - include only the symbol data
         rx_ofdm_nsc_fd = np.concatenate((in_sig_fd[-self.n_sub_carr // 2:], in_sig_fd[1:(self.n_sub_carr // 2) + 1]))
 
@@ -329,7 +450,14 @@ class McncMuReceiver():
 
         return data_per_iter_lst
 
-    def update_agc(self, alpha_estimate=None):
+    def update_agc(self, alpha_estimate:float=None) -> None:
+        """
+        Update the equalization vector used in the MCNC loop.
+
+        :param alpha_estimate: value of the alpha shrinking coefficient, if 'None' calculated analytically
+        :return: None
+        """
+
         # channel_mat_at_point = self.channel.get_channel_mat_fd()
         # self.antenna_array.set_precoding_matrix(channel_mat_fd=channel_mat_at_point, mr_precoding=True)
         # self.n_sub_carr = self.antenna_array.array_elements[0].modem.n_sub_carr

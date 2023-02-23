@@ -123,12 +123,12 @@ for pt_idx, point in enumerate(rx_points):
         arr_tx_sig_fd, clean_sig_mat_fd = my_array.transmit(in_bits=tx_bits, out_domain_fd=True,
                                                             return_both=True)
 
-        rx_sig_fd = my_miso_chan.propagate(in_sig_mat=arr_tx_sig_fd, sum=False)
+        rx_sig_fd = my_miso_chan.propagate(in_sig_mat=arr_tx_sig_fd, sum_signals=False)
         rx_sc_ofdm_symb_fd = np.concatenate(
             (rx_sig_fd[:, -my_mod.n_sub_carr // 2:], rx_sig_fd[:, 1:(my_mod.n_sub_carr // 2) + 1]), axis=1)
         # rx_sc_ofdm_symb_td = utilities.to_time_domain(rx_sc_ofdm_symb_fd)
 
-        clean_rx_sig_fd = my_miso_chan.propagate(in_sig_mat=clean_sig_mat_fd, sum=False)
+        clean_rx_sig_fd = my_miso_chan.propagate(in_sig_mat=clean_sig_mat_fd, sum_signals=False)
 
         clean_sc_ofdm_symb_fd = np.concatenate(
             (clean_rx_sig_fd[:, -my_mod.n_sub_carr // 2:], clean_rx_sig_fd[:, 1:(my_mod.n_sub_carr // 2) + 1]),

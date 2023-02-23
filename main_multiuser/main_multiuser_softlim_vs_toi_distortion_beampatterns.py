@@ -20,6 +20,7 @@ import channel
 import distortion
 import modulation
 import transceiver
+import antenna_array
 import utilities
 from plot_settings import set_latex_plot_style
 
@@ -100,7 +101,7 @@ if __name__ == '__main__':
                                                  center_freq=int(3.5e9), carrier_spacing=int(15e3))
 
         for n_ant_val in n_ant_arr:
-            my_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(3.5e9),
+            my_array = antenna_array.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(3.5e9),
                                                   wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
             # channel type
             my_miso_los_chan = channel.MisoLosFd()
@@ -339,8 +340,8 @@ if __name__ == '__main__':
                                                                                     out_domain_fd=True,
                                                                                     return_both=True)
 
-                                rx_sig_fd = my_miso_chan.propagate(in_sig_mat=arr_tx_sig_fd, sum=False)
-                                clean_rx_sig_fd = my_miso_chan.propagate(in_sig_mat=clean_sig_mat_fd, sum=False)
+                                rx_sig_fd = my_miso_chan.propagate(in_sig_mat=arr_tx_sig_fd, sum_signals=False)
+                                clean_rx_sig_fd = my_miso_chan.propagate(in_sig_mat=clean_sig_mat_fd, sum_signals=False)
                                 distortion_sig_fd = np.subtract(rx_sig_fd, (ak_vect * clean_rx_sig_fd))
 
                                 clean_sc_ofdm_symb_fd = np.concatenate(

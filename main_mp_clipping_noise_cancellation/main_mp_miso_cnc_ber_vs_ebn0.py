@@ -21,6 +21,7 @@ import modulation
 import noise
 import transceiver
 import utilities
+import antenna_array
 from plot_settings import set_latex_plot_style
 from utilities import ebn0_to_snr
 import mp_model
@@ -68,7 +69,7 @@ if __name__ == '__main__':
                                              center_freq=int(3.5e9), carrier_spacing=int(15e3))
     seed_rng = np.random.default_rng(2137)
     for n_ant_val in n_ant_arr:
-        my_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(3.5e9),
+        my_array = antenna_array.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(3.5e9),
                                               wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
         # channel type
         my_miso_los_chan = channel.MisoLosFd()

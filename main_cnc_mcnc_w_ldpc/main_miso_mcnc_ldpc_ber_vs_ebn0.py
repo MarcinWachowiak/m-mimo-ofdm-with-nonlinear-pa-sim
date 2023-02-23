@@ -20,6 +20,7 @@ import distortion
 import modulation
 import noise
 import transceiver
+import antenna_array
 import utilities
 from plot_settings import set_latex_plot_style
 from utilities import count_mismatched_bits, ebn0_to_snr
@@ -96,7 +97,7 @@ for n_ant_val in n_ant_arr:
                               meng.double(subcarr_spacing), meng.double(center_freq),
                               meng.double(distance), channel_model_str, nargout=0)
 
-    my_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(center_freq),
+    my_array = antenna_array.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(center_freq),
                                           wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
     # channel type
     my_miso_los_chan = channel.MisoLosFd()

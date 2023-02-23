@@ -73,7 +73,7 @@ for n_ant in n_ant_vec:
     start_time = time.time()
     print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
-    my_array = antenna_arrray.LinearArray(n_elements=n_ant, base_transceiver=my_tx, center_freq=int(3.5e9),
+    my_array = antenna_array.LinearArray(n_elements=n_ant, base_transceiver=my_tx, center_freq=int(3.5e9),
                                           wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
     my_rx.set_position(cord_x=212, cord_y=212, cord_z=1.5)
 
@@ -138,7 +138,7 @@ for n_ant in n_ant_vec:
     start_time = time.time()
     print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
-    my_array = antenna_arrray.LinearArray(n_elements=n_ant, base_transceiver=my_tx, center_freq=int(3.5e9),
+    my_array = antenna_array.LinearArray(n_elements=n_ant, base_transceiver=my_tx, center_freq=int(3.5e9),
                                           wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
     my_miso_chan = channel.MisoTwoPathFd()
 
@@ -218,7 +218,7 @@ for n_ant in n_ant_vec:
     start_time = time.time()
     print("--- Start time: %s ---" % datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
-    my_array = antenna_arrray.LinearArray(n_elements=n_ant, base_transceiver=my_tx, center_freq=int(3.5e9),
+    my_array = antenna_array.LinearArray(n_elements=n_ant, base_transceiver=my_tx, center_freq=int(3.5e9),
                                           wav_len_spacing=0.5,
                                           cord_x=0, cord_y=0, cord_z=15)
     my_rx.set_position(cord_x=212, cord_y=212, cord_z=1.5)

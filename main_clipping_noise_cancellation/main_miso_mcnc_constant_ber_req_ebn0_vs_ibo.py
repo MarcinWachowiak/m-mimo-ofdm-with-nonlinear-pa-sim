@@ -19,6 +19,7 @@ import distortion
 import modulation
 import noise
 import transceiver
+import antenna_array
 import utilities
 from plot_settings import set_latex_plot_style
 from utilities import count_mismatched_bits, ebn0_to_snr
@@ -59,7 +60,7 @@ my_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.dee
                                 center_freq=int(3.5e9), carrier_spacing=int(15e3))
 
 for n_ant_val in n_ant_arr:
-    my_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(3.5e9),
+    my_array = antenna_array.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(3.5e9),
                                           wav_len_spacing=0.5,
                                           cord_x=0, cord_y=0, cord_z=15)
     # channel type

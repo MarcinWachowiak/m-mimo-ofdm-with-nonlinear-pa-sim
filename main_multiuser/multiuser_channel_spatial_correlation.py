@@ -15,6 +15,7 @@ import channel
 import distortion
 import modulation
 import transceiver
+import antenna_array
 import utilities
 from plot_settings import set_latex_plot_style
 
@@ -59,7 +60,7 @@ if __name__ == '__main__':
     corr_per_n_ant_full = []
     for ant_idx, n_ant_val in enumerate(n_ant_arr):
 
-        my_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(3.5e9),
+        my_array = antenna_array.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(3.5e9),
                                               wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
         # channel type
         my_miso_los_chan = channel.MisoLosFd()
@@ -121,11 +122,11 @@ if __name__ == '__main__':
                     arr_tx_sig_fd, clean_sig_mat_fd = my_array.transmit(in_bits=tx_bits, out_domain_fd=True,
                                                                         return_both=True)
 
-                    rx_sig_fd = my_miso_chan.propagate(in_sig_mat=arr_tx_sig_fd, sum=True)
+                    rx_sig_fd = my_miso_chan.propagate(in_sig_mat=arr_tx_sig_fd, sum_signals=True)
                     rx_sc_ofdm_symb_fd = np.concatenate(
                         (rx_sig_fd[-my_mod.n_sub_carr // 2:], rx_sig_fd[1:(my_mod.n_sub_carr // 2) + 1]))
 
-                    clean_rx_sig_fd = my_miso_chan.propagate(in_sig_mat=clean_sig_mat_fd, sum=True)
+                    clean_rx_sig_fd = my_miso_chan.propagate(in_sig_mat=clean_sig_mat_fd, sum_signals=True)
                     clean_sc_ofdm_symb_fd = np.concatenate(
                         (clean_rx_sig_fd[-my_mod.n_sub_carr // 2:],
                          clean_rx_sig_fd[1:(my_mod.n_sub_carr // 2) + 1]))
@@ -180,12 +181,12 @@ if __name__ == '__main__':
                         arr_tx_sig_fd, clean_sig_mat_fd = my_array.transmit(in_bits=tx_bits, out_domain_fd=True,
                                                                             return_both=True)
 
-                        rx_sig_fd = my_miso_chan.propagate(in_sig_mat=arr_tx_sig_fd, sum=True)
+                        rx_sig_fd = my_miso_chan.propagate(in_sig_mat=arr_tx_sig_fd, sum_signals=True)
                         rx_sc_ofdm_symb_fd = np.concatenate(
                             (rx_sig_fd[-my_mod.n_sub_carr // 2:],
                              rx_sig_fd[1:(my_mod.n_sub_carr // 2) + 1]))
 
-                        clean_rx_sig_fd = my_miso_chan.propagate(in_sig_mat=clean_sig_mat_fd, sum=True)
+                        clean_rx_sig_fd = my_miso_chan.propagate(in_sig_mat=clean_sig_mat_fd, sum_signals=True)
                         clean_sc_ofdm_symb_fd = np.concatenate(
                             (clean_rx_sig_fd[-my_mod.n_sub_carr // 2:],
                              clean_rx_sig_fd[1:(my_mod.n_sub_carr // 2) + 1]))
@@ -208,8 +209,8 @@ if __name__ == '__main__':
                                              / np.sqrt(np.sum(np.power(np.abs(main_usr_clean_beampattern), 2)) * np.sum(
                     np.power(np.abs(test_usr_clean_beampattern_lst[corr_pt_idx]), 2)))
                 # corr_vect_full[corr_pt_idx] = np.abs( np.matmul(main_usr_full_beampattern, np.transpose(
-                # test_usr_full_beampattern_lst[corr_pt_idx]))) \ / np.sqrt(np.sum(np.power(np.abs(
-                # main_usr_full_beampattern), 2)) * np.sum( np.power(np.abs(test_usr_full_beampattern_lst[
+                # test_usr_full_beampattern_lst[corr_pt_idx]))) \ / np.sqrt(np.sum_signals(np.power(np.abs(
+                # main_usr_full_beampattern), 2)) * np.sum_signals( np.power(np.abs(test_usr_full_beampattern_lst[
                 # corr_pt_idx]), 2)))
 
             corr_per_chan_cln.append(corr_vect_cln)

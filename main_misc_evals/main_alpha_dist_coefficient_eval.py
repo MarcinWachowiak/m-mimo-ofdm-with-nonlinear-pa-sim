@@ -16,6 +16,7 @@ import channel
 import distortion
 import modulation
 import transceiver
+import antenna_array
 from plot_settings import set_latex_plot_style
 
 # TODO: consider logger
@@ -48,7 +49,7 @@ lambda_per_ibo_analytical = []
 for ibo_idx, ibo_val_db in enumerate(ibo_arr):
     lambda_per_ibo_analytical.append(my_mod.calc_alpha(ibo_val_db))
 # %%
-my_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(3.5e9),
+my_array = antenna_array.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx, center_freq=int(3.5e9),
                                       wav_len_spacing=0.5,
                                       cord_x=0, cord_y=0, cord_z=15)
 my_miso_rayleigh_chan = channel.MisoRayleighFd(tx_transceivers=my_array.array_elements, rx_transceiver=my_rx, seed=1234)

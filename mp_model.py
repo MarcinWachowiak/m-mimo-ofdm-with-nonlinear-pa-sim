@@ -6,10 +6,35 @@ import channel
 import corrector
 import utilities
 
+from modulation import OfdmQamModem
+from antenna_array import AntennaArray
+from transceiver import Transceiver
+from multiprocessing import Array
+from numpy import ndarray
+
 
 class Link():
-    def __init__(self, mod_obj, array_obj, std_rx_obj, chan_obj, noise_obj, rx_loc_var, n_err_min,
-                 bits_sent_max, is_mcnc=False, csi_epsylon=None):
+    """
+    Wireless link class used in parallel simulation of the wireless system.
+
+    :param mod_obj: OFDM modem object used in the system
+    :param array_obj: antenna array object used in the system
+    :param std_rx_obj: transceiver serving as a receiver
+    :param chan_obj: channel object used in the system
+    :param noise_obj: noise object simulating the noise in the receiver
+    :param rx_loc_var: variance of the receiver position - used to average the channel effects
+    :param n_err_min: minimum number of bit errors in the BER simulation
+    :param bits_sent_max: maximum number of sent bits in the BER simulation
+    :param is_mcnc: flag if the receiver is the MCNC or CNC version
+    :param csi_epsylon: value of the channel state information (CSI) error, if 'None' or 0 CSI error is not present
+    """
+
+    def __init__(self, mod_obj: OfdmQamModem, array_obj: AntennaArray, std_rx_obj: Transceiver, chan_obj, noise_obj,
+                 rx_loc_var: float, n_err_min: int, bits_sent_max: int, is_mcnc: bool = False,
+                 csi_epsylon: float = None):
+        """
+        Create a wireless link object.
+        """
         self.my_mod = copy.deepcopy(mod_obj)
         self.my_array = copy.deepcopy(array_obj)
         self.my_standard_rx = copy.deepcopy(std_rx_obj)
@@ -61,8 +86,20 @@ class Link():
 
         self.set_precoding_and_recalculate_agc()
 
-    def simulate(self, incl_clean_run, reroll_chan, cnc_n_iter_lst, seed_arr, n_err_shared_arr,
-                 n_bits_sent_shared_arr):
+    def simulate(self, incl_clean_run: bool, reroll_chan: bool, cnc_n_iter_lst: list, seed_arr: list,
+                 n_err_shared_arr: Array, n_bits_sent_shared_arr: Array) -> None:
+        """
+        Run the wireless link simulation.
+
+        :param incl_clean_run: flag it to include the run with no distortion
+        :param reroll_chan: flag if to relocate the receiver to average the channel effects
+        :param cnc_n_iter_lst: list of the number of CNC/MCNC iterations to perform
+        :param seed_arr: list of the seeds for the random number generators in the simulation
+        :param n_err_shared_arr: array containing the number of bit errors per iteration - shared across link objects
+        :param n_bits_sent_shared_arr: array containing the number of bits sent per iteration - shared across
+            link objects
+        :return: None
+        """
 
         # matlab engine is not serializable and has to be started inside the process function
         if self.is_quadriga:
@@ -190,17 +227,36 @@ class Link():
         #     if self.csi_epsylon is not None:
         #         self.my_miso_chan_csi_err.meng.quit()
 
-    def update_distortion(self, ibo_val_db):
+    def update_distortion(self, ibo_val_db: float) -> None:
+        """
+        Update the parameters of distortion in the link object, update the alpha and equalization vector.
+
+        :param ibo_val_db: input back-off value in [dB]
+        :return: None
+        """
         self.my_array.update_distortion(ibo_db=ibo_val_db, avg_sample_pow=self.my_mod.avg_sample_power)
         if isinstance(self.my_cnc_rx, corrector.CncReceiver):
             self.my_cnc_rx.update_distortion(ibo_db=ibo_val_db)
         self.ibo_val_db = self.my_array.array_elements[0].impairment.ibo_db
         self.recalculate_agc(ak_part_only=True)
 
-    def set_snr(self, snr_db_val):
+    def set_snr(self, snr_db_val: float) -> None:
+        """
+        Set the signal-to-noise ratio of the Noise object in the link.
+
+        :param snr_db_val: signal-to-noise ratio expressed in [dB]
+        :return: None
+        """
+
         self.my_noise.snr_db = snr_db_val
 
-    def set_precoding_and_recalculate_agc(self):
+    def set_precoding_and_recalculate_agc(self) -> None:
+        """
+        Set the precoding matrix based on the channel object and update the equalization vector inside the link.
+
+        :return: None
+        """
+
         if self.csi_epsylon is None:
             self.my_array.set_precoding_matrix(channel_mat_fd=self.my_miso_chan.channel_mat_fd, mr_precoding=True)
             self.recalculate_agc(channel_mat_fd=self.my_miso_chan.channel_mat_fd)
@@ -231,7 +287,14 @@ class Link():
                                                mr_precoding=True)
             self.recalculate_agc(channel_mat_fd=self.my_miso_chan_csi_err.channel_mat_fd)
 
-    def recalculate_agc(self, channel_mat_fd=None, ak_part_only=False):
+    def recalculate_agc(self, channel_mat_fd: ndarray = None, ak_part_only: bool = False) -> None:
+        """
+        Recalculate the equalization vector once the precoding has been changed.
+
+        :param channel_mat_fd: matrix containing channel coefficients
+        :param ak_part_only: flag if only the alpha shrinking coefficient was changed
+        :return: None
+        """
         if not ak_part_only:
             hk_mat = np.concatenate((channel_mat_fd[:, -self.my_mod.n_sub_carr // 2:],
                                      channel_mat_fd[:, 1:(self.my_mod.n_sub_carr // 2) + 1]), axis=1)

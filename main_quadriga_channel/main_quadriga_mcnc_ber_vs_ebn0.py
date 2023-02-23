@@ -20,6 +20,7 @@ import distortion
 import modulation
 import noise
 import transceiver
+import antenna_array
 import utilities
 from plot_settings import set_latex_plot_style
 from utilities import ebn0_to_snr
@@ -72,7 +73,7 @@ if __name__ == '__main__':
                                              center_freq=int(center_freq), carrier_spacing=int(subcarr_spacing))
     seed_rng = np.random.default_rng(2137)
     for n_ant_val in n_ant_arr:
-        my_array = antenna_arrray.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx,
+        my_array = antenna_array.LinearArray(n_elements=n_ant_val, base_transceiver=my_tx,
                                               center_freq=int(center_freq),
                                               wav_len_spacing=0.5, cord_x=0, cord_y=0, cord_z=15)
         # channel type
