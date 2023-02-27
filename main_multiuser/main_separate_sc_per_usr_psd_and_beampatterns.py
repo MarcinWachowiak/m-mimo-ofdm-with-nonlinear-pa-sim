@@ -1,4 +1,9 @@
-# antenna array evaluation
+"""
+Measure the effective radiation pattern of the antenna array with nonlinear front-end amplifiers, with MRT precoding
+and multiple users allocated at separate subcarrier sets. (disjoint frequency resources)
+Additionally  the signal power spectral density (PSD) at selected angle.
+"""
+
 # %%
 import itertools
 import os
@@ -75,7 +80,7 @@ if __name__ == '__main__':
     beampattern_n_snapshots = 100
     n_points = 180 * 1
     radial_distance = 300
-    rx_points = utilities.pts_on_semicircum(r=radial_distance, n=n_points)
+    rx_points = utilities.pts_on_semicircum(radius=radial_distance, n_points=n_points)
     radian_vals = np.radians(np.linspace(-90, 90, n_points + 1))
 
     # PSD at angle
@@ -92,7 +97,8 @@ if __name__ == '__main__':
     my_distortion = distortion.ThirdOrderNonLin(toi_db=ibo_arr[0], avg_samp_pow=my_mod.avg_sample_power)
     # my_distortion = distortion.SoftLimiter(ibo_db=ibo_arr[0], avg_samp_pow=my_mod.avg_sample_power)
 
-    my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion))
+    my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
+                                    center_freq=int(3.5e9), carrier_spacing=int(15e3))
     my_standard_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
                                              cord_x=rx_loc_x, cord_y=rx_loc_y, cord_z=1.5,
                                              center_freq=int(3.5e9), carrier_spacing=int(15e3))
@@ -130,7 +136,8 @@ if __name__ == '__main__':
                                                          cp_len=cp_len,
                                                          n_users=1)
                     my_tmp_tx = transceiver.Transceiver(modem=copy.deepcopy(my_tmp_mod),
-                                                        impairment=copy.deepcopy(my_distortion))
+                                                        impairment=copy.deepcopy(my_distortion),
+                                                        center_freq=int(3.5e9), carrier_spacing=int(15e3))
 
                     my_tmp_array = antenna_array.LinearArray(n_elements=n_ant_val, base_transceiver=my_tmp_tx,
                                                               center_freq=int(3.5e9),
@@ -753,4 +760,4 @@ if __name__ == '__main__':
 
             # read_data = utilities.read_from_csv(filename=filename_str)
 
-print("Finished processing!")
+    print("Finished processing!")

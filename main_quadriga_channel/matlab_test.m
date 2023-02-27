@@ -1,3 +1,5 @@
+% test the wrapper Quadriga functions.
+
 clear all;
 close all;
 

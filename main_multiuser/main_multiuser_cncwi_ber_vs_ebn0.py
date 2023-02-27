@@ -1,4 +1,10 @@
-# antenna array evaluation
+"""
+Simulate the clipping noise cancellation with the other user signal insertion (CNCWI)
+receiver in a multi-user, multi-antenna scenario.
+Measure the BER as a function of Eb/N0 for each user, selected number of iterations and channels.
+Users allocated at the same subcarrier sets (shared frequency resources)
+"""
+
 # %%
 import os
 import sys
@@ -76,7 +82,7 @@ if __name__ == '__main__':
     beampattern_n_snapshots = 100
     n_points = 180 * 1
     radial_distance = usr_distances[0]
-    rx_points = utilities.pts_on_semicircum(r=radial_distance, n=n_points)
+    rx_points = utilities.pts_on_semicircum(radius=radial_distance, n_points=n_points)
     radian_vals = np.radians(np.linspace(-90, 90, n_points + 1))
 
     my_mod = modulation.OfdmQamModem(constel_size=constel_size, n_fft=n_fft, n_sub_carr=n_sub_carr, cp_len=cp_len,
@@ -653,4 +659,4 @@ if __name__ == '__main__':
 
                     # read_data = utilities.read_from_csv(filename=filename_str)
 
-print("Finished processing!")
+    print("Finished processing!")

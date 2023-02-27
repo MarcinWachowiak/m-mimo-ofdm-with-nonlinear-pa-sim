@@ -105,7 +105,7 @@ def count_mismatched_bits(tx_bits_arr: ndarray, rx_bits_arr: ndarray) -> int:
 
 
 @jit(nopython=True)
-def ebn0_to_snr(eb_per_n0: float, n_fft: int, n_sub_carr: int, constel_size: int) -> float:
+def ebn0_to_snr(eb_per_n0, n_fft: int, n_sub_carr: int, constel_size: int):
     """
     Convert the Eb/N0 to SNR.
 
@@ -119,7 +119,7 @@ def ebn0_to_snr(eb_per_n0: float, n_fft: int, n_sub_carr: int, constel_size: int
 
 
 @jit(nopython=True)
-def snr_to_ebn0(snr: float, n_fft: int, n_sub_carr: int, constel_size: int) -> float:
+def snr_to_ebn0(snr, n_fft: int, n_sub_carr: int, constel_size: int):
     """
     Convert the SNR to Eb/N0.
 
@@ -133,7 +133,7 @@ def snr_to_ebn0(snr: float, n_fft: int, n_sub_carr: int, constel_size: int) -> f
     return 10 * np.log10(10 ** (snr / 10) * (n_fft / (n_sub_carr * np.log2(constel_size))))
 
 
-def to_db(samples: ndarray) -> ndarray:
+def to_db(samples):
     """
     Convert the values to the decibel scale [dB]
     :param samples: input data vector

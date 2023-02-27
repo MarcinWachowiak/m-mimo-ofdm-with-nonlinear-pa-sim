@@ -1,5 +1,10 @@
-# MISO OFDM simulation with nonlinearity
-# Clipping noise cancellation eval
+"""
+Multiprocessing/parallel version of:
+Simulate the clipping noise cancellation (CNC) receiver with LDPC channel coding in a multi-antenna scenario.
+Measure the BER as a function of Eb/N0 for selected number of iterations and channels.
+"""
+
+
 # %%
 import ctypes
 import os
@@ -103,11 +108,11 @@ if __name__ == '__main__':
 
             for my_miso_chan in chan_lst:
 
-                mp_link_obj = mp_ldpc_model.Link_LDPC(mod_obj=my_mod, array_obj=my_array, std_rx_obj=my_standard_rx,
-                                                      chan_obj=my_miso_chan, noise_obj=my_noise,
-                                                      rx_loc_var=rx_loc_var, n_err_min=n_err_min,
-                                                      bits_sent_max=bits_sent_max, is_mcnc=False, code_rate=code_rate,
-                                                      max_ldpc_ite=12)
+                mp_link_obj = mp_ldpc_model.LinkLdpc(mod_obj=my_mod, array_obj=my_array, std_rx_obj=my_standard_rx,
+                                                     chan_obj=my_miso_chan, noise_obj=my_noise,
+                                                     rx_loc_var=rx_loc_var, n_err_min=n_err_min,
+                                                     bits_sent_max=bits_sent_max, is_mcnc=False, code_rate=code_rate,
+                                                     max_ldpc_ite=12)
 
                 for ibo_val_db in ibo_arr:
                     mp_link_obj.update_distortion(ibo_val_db=ibo_val_db)

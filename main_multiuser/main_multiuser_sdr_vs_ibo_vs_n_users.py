@@ -1,4 +1,8 @@
-# antenna array evaluation
+"""
+Measure the signal-to-distortion (SDR) as a function of the IBO in a multi-user scenario
+for MRT precoding and selected number of users allocated simultaneously in the system.
+"""
+
 # %%
 import os
 import sys

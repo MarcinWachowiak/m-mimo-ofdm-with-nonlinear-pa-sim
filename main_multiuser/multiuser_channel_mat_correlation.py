@@ -1,4 +1,8 @@
-# antenna array evaluation
+"""
+Calculate the correlation coefficient of the channel as a function of the precoding angle
+for selected number of antennas and channel models.
+"""
+
 # %%
 import os
 import sys
@@ -41,7 +45,7 @@ if __name__ == '__main__':
     # Beampattern sweeping params
     n_points = 180 * 1
     radial_distance = main_user_dist
-    rx_points = utilities.pts_on_semicircum(r=radial_distance, n=n_points)
+    rx_points = utilities.pts_on_semicircum(radius=radial_distance, n_points=n_points)
     radian_vals = np.radians(np.linspace(0, 180, n_points + 1))
 
     my_mod = modulation.OfdmQamModem(constel_size=constel_size, n_fft=n_fft, n_sub_carr=n_sub_carr, cp_len=cp_len,

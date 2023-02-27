@@ -1,4 +1,7 @@
-# antenna array evaluation
+"""
+Multiprocess launcher of the multiuser_mp_prototype.multiuser_mcnc_parallel.
+"""
+
 # %%
 import os
 import sys

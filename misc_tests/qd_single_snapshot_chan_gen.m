@@ -1,3 +1,5 @@
+% Generate and plot the channel frequency characteristic.
+
 close all
 clear all
 addpath('C:\Program Files\QuaDriGa_2021.07.12_v2.6.1-0\quadriga_src')

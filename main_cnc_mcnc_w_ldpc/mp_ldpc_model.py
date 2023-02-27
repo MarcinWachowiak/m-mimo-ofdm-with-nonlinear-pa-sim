@@ -1,3 +1,7 @@
+"""
+Copy of the mp_model that includes the LDPC channel coding.
+"""
+
 import copy
 
 import matlab.engine
@@ -8,9 +12,9 @@ import corrector
 import utilities
 
 
-class Link_LDPC():
+class LinkLdpc():
     def __init__(self, mod_obj, array_obj, std_rx_obj, chan_obj, noise_obj, rx_loc_var, n_err_min,
-                 bits_sent_max, code_rate, max_ldpc_ite, is_mcnc=False, csi_noise_db=None, ):
+                 bits_sent_max, code_rate, max_ldpc_ite, is_mcnc=False, csi_noise_db=None):
         self.my_mod = copy.deepcopy(mod_obj)
         self.my_array = copy.deepcopy(array_obj)
         self.my_standard_rx = copy.deepcopy(std_rx_obj)

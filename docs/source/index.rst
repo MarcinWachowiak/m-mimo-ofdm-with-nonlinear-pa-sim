@@ -12,6 +12,7 @@ Welcome to mMIMO OFDM with NL PA documentation!
 
    usage
    api
+   scripts
 
 Indices and tables
 ==================

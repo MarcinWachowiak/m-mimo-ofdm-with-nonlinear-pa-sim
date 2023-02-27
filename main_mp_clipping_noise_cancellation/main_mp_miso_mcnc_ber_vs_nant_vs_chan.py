@@ -1,4 +1,10 @@
-# antenna array evaluation
+"""
+Multiprocessing/parallel version of:
+Simulate the multi-antenna clipping noise cancellation (MCNC) receiver.
+Measure the BER as a function of number of antennas for a fixed Eb/N0, selected number of iterations
+and channel models.
+"""
+
 # %%
 import os
 import sys

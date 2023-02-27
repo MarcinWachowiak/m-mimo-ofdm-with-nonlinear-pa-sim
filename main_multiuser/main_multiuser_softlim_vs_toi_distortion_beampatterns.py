@@ -1,4 +1,8 @@
-# antenna array evaluation
+"""
+Measure and compare the effective radiation pattern of the antenna array in multi-user scenario with MRT precoding for
+two types of nonlinear distortion: soft limiter and third order memoryless polynomial.
+"""
+
 # %%
 import os
 import sys
@@ -69,7 +73,7 @@ if __name__ == '__main__':
     beampattern_n_snapshots = 10
     n_points = 180 * 2
     radial_distance = 300
-    rx_points = utilities.pts_on_semicircum(r=radial_distance, n=n_points)
+    rx_points = utilities.pts_on_semicircum(radius=radial_distance, n_points=n_points)
     radian_vals = np.radians(np.linspace(-90, 90, n_points + 1))
 
     # PSD at angle
@@ -560,4 +564,4 @@ if __name__ == '__main__':
     # plt.cla()
     # plt.close()
 
-print("Finished processing!")
+    print("Finished processing!")

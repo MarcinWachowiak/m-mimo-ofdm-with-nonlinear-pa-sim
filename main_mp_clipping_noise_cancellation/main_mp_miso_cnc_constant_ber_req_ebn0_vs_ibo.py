@@ -1,4 +1,10 @@
-# antenna array evaluation
+"""
+Multiprocessing/parallel version of:
+Simulate the clipping noise cancellation (CNC) receiver in a multi-antenna scenario.
+Sweep the IBO and Eb/N0 values while measuring the BER performance
+to generate a plot of required Eb/N0 as a function of IBO to obtain a specified constant BER performance.
+"""
+
 # %%
 import os
 import sys

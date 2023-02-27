@@ -1,4 +1,8 @@
-# antenna array evaluation
+"""
+Calculate the correlation coefficient of the channel as a function of the precoding angle
+for selected number of antennas and channel models.
+"""
+
 # %%
 import os
 import sys
@@ -46,13 +50,14 @@ if __name__ == '__main__':
     # Beampattern sweeping params
     n_points = 36 * 1
     radial_distance = main_user_dist
-    rx_points = utilities.pts_on_semicircum(r=radial_distance, n=n_points)
+    rx_points = utilities.pts_on_semicircum(radius=radial_distance, n_points=n_points)
     radian_vals = np.radians(np.linspace(0, 180, n_points + 1))
     my_mod = modulation.OfdmQamModem(constel_size=constel_size, n_fft=n_fft, n_sub_carr=n_sub_carr, cp_len=cp_len,
                                      n_users=1)
 
     my_distortion = distortion.SoftLimiter(ibo_val_db, my_mod.avg_sample_power)
-    my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion))
+    my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
+                                    center_freq=int(3.5e9), carrier_spacing=int(15e3))
     my_standard_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
                                              cord_x=rx_loc_x, cord_y=rx_loc_y, cord_z=1.5,
                                              center_freq=int(3.5e9), carrier_spacing=int(15e3))
@@ -257,4 +262,4 @@ if __name__ == '__main__':
 
 # read_data = utilities.read_from_csv(filename=filename_str)
 
-print("Finished processing!")
+    print("Finished processing!")

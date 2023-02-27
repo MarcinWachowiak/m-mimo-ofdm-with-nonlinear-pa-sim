@@ -1,5 +1,9 @@
-# MISO OFDM simulation with nonlinearity
-# Clipping noise cancellation eval
+"""
+Multiprocessing/parallel version of:
+Simulate the multi-antenna clipping noise cancellation (MCNC) receiver with the Quadriga channel model.
+Measure the BER as a function of Eb/N0 for selected number of iterations.
+"""
+
 # %%
 import ctypes
 import os

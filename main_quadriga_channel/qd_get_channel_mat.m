@@ -1,3 +1,5 @@
+% return the channel matrix in frequency domain.
+
 function [channel_mat] = qd_get_channel_mat(rx_loc_x, rx_loc_y, rx_loc_z)
     global layout;
     global bandwidth;

@@ -1,4 +1,9 @@
-# antenna array evaluation
+"""
+Measure the effective radiation pattern of the antenna array with nonlinear front-end amplifiers, with MRT precoding
+and multiple users allocated at the same subcarriers. (shared frequency resources)
+Mark the predicted distortion beamforming directions.
+"""
+
 # %%
 import os
 import sys
@@ -75,7 +80,7 @@ if __name__ == '__main__':
     beampattern_n_snapshots = 100
     n_points = 180 * 1
     radial_distance = 300
-    rx_points = utilities.pts_on_semicircum(r=radial_distance, n=n_points)
+    rx_points = utilities.pts_on_semicircum(radius=radial_distance, n_points=n_points)
     radian_vals = np.radians(np.linspace(-90, 90, n_points + 1))
 
     # PSD at angle

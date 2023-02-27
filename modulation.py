@@ -175,7 +175,7 @@ class Modem:
         self.alpha = self.calc_alpha(ibo_db)
         self._constellation = self.alpha * self._constellation
 
-    def calc_alpha(self, ibo_db: float) -> float:
+    def calc_alpha(self, ibo_db):
         """
         Calculate the value of the alpha shrinking coefficient.
 

@@ -1,5 +1,10 @@
-# antenna array evaluation
-# %%
+"""
+Multiprocessing/parallel version of:
+Simulate the clipping noise cancellation (CNC) receiver in a multi-antenna scenario.
+Measure the BER as a function of number of antennas for a fixed Eb/N0, selected number of iterations
+and channel models.
+"""
+
 import os
 import sys
 

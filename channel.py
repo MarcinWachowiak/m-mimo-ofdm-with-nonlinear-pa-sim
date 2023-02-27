@@ -430,8 +430,8 @@ class MisoQuadrigaFd:
 
         if start_matlab_eng:
             self.meng = matlab.engine.start_matlab()
-            # Quadriga source code path - replace with your own
-            self.meng.addpath(r"C:\Users\rkotrys\Documents\GitHub\mimo-simulation-py\main_quadriga_channel")
+            # add directory containing quadriga channel wrappers to the path
+            self.meng.addpath(r"../main_quadriga_channel")
 
             self.meng.rng(5)
 

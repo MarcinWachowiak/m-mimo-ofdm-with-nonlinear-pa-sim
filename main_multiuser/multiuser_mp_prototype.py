@@ -1,4 +1,7 @@
-# %%
+"""
+Multiprocess/parallel version of the simulation of the MCNC algorithm in a two-user scenario.
+"""
+
 import os
 import sys
 
@@ -85,13 +88,14 @@ def multiuser_mcnc_parallel(proc_idx, precoding_str, bits_sent_max, n_err_min, s
     beampattern_n_snapshots = 100
     n_points = 180 * 1
     radial_distance = usr_distances[0]
-    rx_points = utilities.pts_on_semicircum(r=radial_distance, n=n_points)
+    rx_points = utilities.pts_on_semicircum(radius=radial_distance, n_points=n_points)
     radian_vals = np.radians(np.linspace(-90, 90, n_points + 1))
 
     my_mod = modulation.OfdmQamModem(constel_size=constel_size, n_fft=n_fft, n_sub_carr=n_sub_carr, cp_len=cp_len,
                                      n_users=len(usr_angles))
     my_distortion = distortion.SoftLimiter(0, my_mod.avg_sample_power)
-    my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion))
+    my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
+                                    center_freq=int(3.5e9), carrier_spacing=int(15e3))
     my_standard_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
                                              cord_x=212, cord_y=212, cord_z=1.5,
                                              center_freq=int(3.5e9), carrier_spacing=int(15e3))

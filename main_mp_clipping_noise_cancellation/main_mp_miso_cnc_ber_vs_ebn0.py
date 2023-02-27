@@ -1,5 +1,9 @@
-# MISO OFDM simulation with nonlinearity
-# Clipping noise cancellation eval
+"""
+Multiprocessing/parallel version of:
+Simulate the clipping noise cancellation (CNC) receiver in a multi-antenna scenario.
+Measure the BER as a function of Eb/N0 for selected number of iterations and channels.
+"""
+
 # %%
 import ctypes
 import os

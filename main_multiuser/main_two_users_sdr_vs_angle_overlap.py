@@ -1,4 +1,7 @@
-# antenna array evaluation
+"""
+Evaluate the signal-to-distortion ratio (SDR) as a function of the precoding angle of the two users in the system.
+"""
+
 # %%
 import os
 import sys
@@ -16,6 +19,7 @@ import distortion
 import modulation
 import transceiver
 import utilities
+import antenna_array
 from plot_settings import set_latex_plot_style
 
 if __name__ == '__main__':
@@ -44,14 +48,15 @@ if __name__ == '__main__':
     sdr_n_snapshots = 2
     n_points = 180 * 1
     radial_distance = main_user_dist
-    rx_points = utilities.pts_on_semicircum(r=radial_distance, n=n_points)
+    rx_points = utilities.pts_on_semicircum(radius=radial_distance, n_points=n_points)
     radian_vals = np.radians(np.linspace(0, 180, n_points + 1))
 
     my_mod = modulation.OfdmQamModem(constel_size=constel_size, n_fft=n_fft, n_sub_carr=n_sub_carr, cp_len=cp_len,
                                      n_users=n_users)
 
     my_distortion = distortion.SoftLimiter(ibo_val_db, my_mod.avg_sample_power)
-    my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion))
+    my_tx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
+                                    center_freq=int(3.5e9), carrier_spacing=int(15e3))
     my_standard_rx = transceiver.Transceiver(modem=copy.deepcopy(my_mod), impairment=copy.deepcopy(my_distortion),
                                              cord_x=rx_loc_x, cord_y=rx_loc_y, cord_z=1.5,
                                              center_freq=int(3.5e9), carrier_spacing=int(15e3))
