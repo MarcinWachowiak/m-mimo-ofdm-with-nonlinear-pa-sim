@@ -1,85 +1,47 @@
-# mimo_simulation_py
+# m-mimo-ofdm-with-nonlinear-pa-sim 
 
-MIMO simulation in python
-
+Simulation of the mMIMO OFDM system with nonlinear power amplifiers 
 ---
 
-# VM setup - Chrome Remote Desktop:
+Installation
+------------
 
-1. Create VM in Google cloud
-    1. Enable display device
-2. Connect to it via SSH
-3. VM remote desktop setup:
-    1. ```
-       sudo apt update 
-       sudo apt install --assume-yes wget tasksel
-       ```
-    2. ``` 
-       wget https://dl.google.com/linux/direct/chrome-remote-desktop_current_amd64.deb
-       sudo apt-get install --assume-yes ./chrome-remote-desktop_current_amd64.deb
-       ```
-    3. ``` 
-       sudo tasksel install ubuntu-desktop
-       ```
-    4. ```
-       sudo DEBIAN_FRONTEND=noninteractive \
-       apt install --assume-yes  task-gnome-desktop
-       ```
-    5. ```
-       sudo bash -c 'echo "exec /etc/X11/Xsession /usr/bin/gnome-session" > /etc/chrome-remote-desktop-session'
-       ```
-    6. ```
-       sudo systemctl disable lightdm.service
-       ```
+To run the framework several python modules are required, the easiest way to do it is with the anaconda/miniconda software.
 
-4. Go to the Chrome Desktop: Set up via SSH: Set up another computer. Follow the instructions on the site.
-5. Check if Remote desktop is online:
-   ```
-   sudo systemctl status chrome-remote-desktop@$USER
-   ```
-6. Login to the VM
-7. Conda/Miniconda set up
-    1. Download installation file from: https://docs.conda.io/en/latest/miniconda.html#linux-installers
-    2. Run the file: 
-       ```
-       bash Miniconda3-latest-Linux-x86_64.sh
-       ```
-    3. Create and activate new environment:
-       ```
-       conda create -n mimo_sim python=3.9
-       conda activate mimo_sim
-       ```
-    4. Add conda-forge channels:
-       ```
-       conda config --add channels conda-forge
-       ```
-    5. Install packages:
-       ```
-       conda install matplotlib, numpy, scipy, numba
-       conda install pytorch cudatoolkit=11.6 -c pytorch -c conda-forge
-       ```
+1. Install Anaconda or Miniconda from: https://www.anaconda.com/
 
-       or 
-       ```
-       conda env update --file requirements.yml
-       ```
-8. Install VS Code via snap:
-   ```
-   sudo apt install snapd
-   sudo snap install code --classic
-   ```
-9.  Create and add SSH key to GitHub:
-   ```
-   ssh-keygen -t ed25519 -C "your_email@example.com"
-   clip < ~/.ssh/id_ed25519.pub or nano ~/.ssh/id_ed25519.pub
-   ```
-10. Fetch the project:
+2. Create and activate a new environment:
     ```
-    git clone git@github.com:MarcinWachowiak/mimo-simulation-py.git
+    conda create -n mimo_sim python=3.9
+    conda activate mimo_sim
     ```
-11. Open in code and test:
-    ```
-    code 
-    ```
+ 
 
----
+3. Add conda-forge channels:
+    ```
+    conda config --add channels conda-forge
+    ```
+4. Install packages:
+    ```
+    conda env update --file requirements.yml
+    ```
+5. Install VS Code or any other development framework and select created environment ``mimo_sim`` as the interpreter.
+
+Documentation
+-----------------
+1. In terminal go to the docs directory:
+    ```
+    cd .\docs\
+    ```
+2. Build the docs:
+    ```
+    .\make.bat html make
+    ```
+   
+Once built, the documentation can be viewed by opening the ``\docs\build\html\index.html`` with any web browser.
+
+
+Usage
+-----
+Select and run one of the  ``main_...`` scripts or create a custom one from the building blocks and functions in the
+parent directory.
