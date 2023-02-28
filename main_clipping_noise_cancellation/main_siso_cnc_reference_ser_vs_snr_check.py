@@ -2,8 +2,8 @@
 Simulate the clipping noise cancellation (CNC) receiver in single antenna scenario and AWGN channel
 to compare the results to the reference plots in:
 https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=9445597
-Measure the symbol error rate (SER) as a function of the SNR.
-[Script needs to be updated to use new CNC class methods - current version might not work]
+Measure the symbol error rate (SER) as a function of the SNR,
+[Script needs to be updated to use new CNC class methods - current version might not work].
 """
 
 # %%

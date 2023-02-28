@@ -1,6 +1,5 @@
 """
-Final plotting script.
-Bit error rate (BER) at the output as a function of BER at the input of the CNC and MCNC receiver
+Final plotting script: bit error rate (BER) at the output as a function of BER at the input of the CNC and MCNC receiver
 in the presence of channel estimation errors for a selected RX iteration and a few values of epsilon CSI error.
 """
 

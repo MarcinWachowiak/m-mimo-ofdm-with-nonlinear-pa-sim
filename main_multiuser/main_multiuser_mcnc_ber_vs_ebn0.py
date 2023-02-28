@@ -1,7 +1,7 @@
 """
-Simulate the multi-antenna clipping noise cancellation (MCNC) receiver in a multi-user scenario.
-Measure the BER as a function of Eb/N0 for each user, selected number of iterations and channels.
-Both users allocated at the same subcarrier set. (same frequency resources)
+Simulate the multi-antenna clipping noise cancellation (MCNC) receiver in a multi-user scenario,
+measure the BER as a function of Eb/N0 for each user, selected number of iterations and channels,
+both users allocated at the same subcarrier set (same frequency resources).
 """
 
 # %%

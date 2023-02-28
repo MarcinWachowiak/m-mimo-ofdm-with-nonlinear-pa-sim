@@ -1,6 +1,5 @@
 """
-Final plotting script.
-Bit error rate (BER) as a function of Eb/n0 for a CNC and MCNC receivers
+Final plotting script: bit error rate (BER) as a function of Eb/n0 for a CNC and MCNC receivers
 with LDPC coding and two code rates of: 1/2, 2/3.
 """
 

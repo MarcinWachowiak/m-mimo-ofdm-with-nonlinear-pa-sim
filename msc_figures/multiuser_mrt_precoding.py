@@ -1,6 +1,6 @@
 """
-Master's thesis plotting script.
-Plot the signal-to-distortion ratio as a function of the azimuth angle in a multi-antenna system with nonlinear
+Master's thesis plotting script,
+plot the signal-to-distortion ratio as a function of the azimuth angle in a multi-antenna system with nonlinear
 front-end amplifiers for two cases: single-user and multi-user.
 """
 

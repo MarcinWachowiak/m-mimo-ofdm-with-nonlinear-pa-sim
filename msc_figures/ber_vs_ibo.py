@@ -1,6 +1,6 @@
 """
-Master's thesis plotting script.
-Bit error rate (BER) as a function of the IBO for a selected number of CNC/MCNC iterations.
+Master's thesis plotting script,
+bit error rate (BER) as a function of the IBO for a selected number of CNC/MCNC iterations.
 """
 
 # %%

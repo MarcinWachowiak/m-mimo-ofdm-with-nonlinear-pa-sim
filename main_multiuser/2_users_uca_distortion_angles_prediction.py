@@ -1,7 +1,6 @@
 """
 Test script to predict the beamforming directions of the distortions signal in the presence of multiple users
-for uniform circular antenna array.
-[Unused and requires investigation]
+for uniform circular antenna array [Unused and requires investigation].
 """
 
 import numpy as np

@@ -1,7 +1,7 @@
 """
 Multiprocessing/parallel version of:
-Simulate the multi-antenna clipping noise cancellation (MCNC) receiver with LDPC channel coding.
-Measure the BER as a function of Eb/N0 for selected number of iterations and channels.
+Simulate the multi-antenna clipping noise cancellation (MCNC) receiver with LDPC channel coding,
+measure the BER as a function of Eb/N0 for selected number of iterations and channels.
 """
 
 # %%

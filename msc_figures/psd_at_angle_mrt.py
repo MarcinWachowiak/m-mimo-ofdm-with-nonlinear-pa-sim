@@ -1,6 +1,6 @@
 """
-Master's thesis plotting script.
-Plot the power spectral density (PSD) of the received signal at selected azimuth angle in a multi-antenna system
+Master's thesis plotting script,
+plot the power spectral density (PSD) of the received signal at selected azimuth angle in a multi-antenna system
 with nonlinear front-end amplifiers.
 """
 

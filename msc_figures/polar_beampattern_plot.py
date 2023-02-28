@@ -1,6 +1,6 @@
 """
-Master's thesis plotting script.
-Plot the effective radiation pattern of the desired and distortion signal of the antenna array with nonlinear
+Master's thesis plotting script,
+plot the effective radiation pattern of the desired and distortion signal of the antenna array with nonlinear
 front-end amplifiers for selected number of antennas and channel models.
 """
 

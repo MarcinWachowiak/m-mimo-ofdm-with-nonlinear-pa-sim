@@ -1,6 +1,6 @@
 """
-Final plotting script.
-Signal-to-distortion (SDR) ratio as a function of the IBO for selected number antennas and channel models.
+Final plotting script: signal-to-distortion (SDR) ratio as a function of the IBO for selected number antennas and
+channel models.
 """
 
 # %%

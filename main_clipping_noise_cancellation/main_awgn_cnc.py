@@ -1,7 +1,6 @@
 """
-Simulate the clipping noise cancellation (CNC) algorithm in AWGN channel.
-Measure the BER as a function of Eb/N0.
-[Script needs to be updated to use new CNC class methods - current version might not work]
+Simulate the clipping noise cancellation (CNC) algorithm in AWGN channel: measure the BER as a function of Eb/N0
+[Script needs to be updated to use new CNC class methods - current version might not work].
 """
 
 # %%

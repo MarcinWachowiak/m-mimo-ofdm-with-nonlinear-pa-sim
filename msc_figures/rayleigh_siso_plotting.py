@@ -1,6 +1,6 @@
 """
-Master's thesis plotting script.
-Single antenna analysis of CNC and MCNC algorithms in Rayleigh channel for selected numbers of iterations:
+Master's thesis plotting script,
+single antenna analysis of CNC and MCNC algorithms in Rayleigh channel for selected numbers of iterations:
 BER vs Eb/N0, BER vs IBO and Eb/N0 vs IBO for fixed BER.
 """
 

@@ -1,6 +1,6 @@
 """
-Measure the alpha coefficient in regard to the transmitted power per each antenna in the array.
-Plot the spread of the alpha coefficient as a function of the transmitted power.
+Measure the alpha coefficient in regard to the transmitted power per each antenna in the array,
+plot the spread of the alpha coefficient as a function of the transmitted power.
 """
 
 # %%

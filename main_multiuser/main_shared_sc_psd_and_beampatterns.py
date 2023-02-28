@@ -1,7 +1,7 @@
 """
 Measure the effective radiation pattern of the antenna array with nonlinear front-end amplifiers, with MRT precoding
-and multiple users allocated at the same subcarrier sets. (shared frequency resources)
-Additionally  the signal power spectral density (PSD) at selected angle.
+and multiple users allocated at the same subcarrier sets (shared frequency resources),
+additionally measure the signal power spectral density (PSD) at selected angle.
 """
 
 # %%

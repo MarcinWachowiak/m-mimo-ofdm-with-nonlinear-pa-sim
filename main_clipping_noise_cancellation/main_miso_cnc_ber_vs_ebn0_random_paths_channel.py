@@ -1,6 +1,6 @@
 """
-Simulate the clipping noise cancellation (CNC) receiver in a multi-antenna scenario.
-Measure the BER as a function of Eb/N0 the random paths channel and selected number iterations.
+Simulate the clipping noise cancellation (CNC) receiver in a multi-antenna scenario,
+measure the BER as a function of Eb/N0 the random paths channel and selected number iterations.
 """
 
 # %%

@@ -1,7 +1,7 @@
 """
 Multiprocessing/parallel version of:
-Simulate the clipping noise cancellation (CNC) receiver in a multi-antenna scenario with the Quadriga channel model.
-Measure the BER as a function of Eb/N0 for selected number of iterations.
+simulate the clipping noise cancellation (CNC) receiver in a multi-antenna scenario with the Quadriga channel model,
+measure the BER as a function of Eb/N0 for selected number of iterations.
 """
 
 # %%

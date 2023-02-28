@@ -1,6 +1,6 @@
 """
-Simulate the multi-antenna clipping noise cancellation (MCNC) receiver.
-Measure the BER as a function of Eb/N0 the random paths channel and selected number iterations.
+Simulate the multi-antenna clipping noise cancellation (MCNC) receiver,
+measure the BER as a function of Eb/N0 the random paths channel and selected number iterations.
 """
 
 # %%

@@ -1,6 +1,6 @@
 """
-Simulate the multi-antenna clipping noise cancellation (MCNC) receiver with the Quadriga channel model.
-Measure the BER as a function of Eb/N0 for selected number of iterations.
+Simulate the multi-antenna clipping noise cancellation (MCNC) receiver with the Quadriga channel model,
+measure the BER as a function of Eb/N0 for selected number of iterations.
 """
 
 # %%

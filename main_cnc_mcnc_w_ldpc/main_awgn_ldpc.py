@@ -1,6 +1,6 @@
 """
-Simulate the performance of a SISO OFDM system with the LDPC coding in an AWGN channel.
-Measure the BER as a function of EB/N0.
+Simulate the performance of a SISO OFDM system with the LDPC coding in an AWGN channel,
+measure the BER as a function of EB/N0.
 """
 
 # %%

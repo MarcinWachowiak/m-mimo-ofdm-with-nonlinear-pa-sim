@@ -1,7 +1,6 @@
 """
-Final plotting script.
-Bit error rate (BER) as a function of Eb/N0 for a selected number of CNC/MCNC iterations,
-for two users allocated at the same subcarrier set,
+Final plotting script: bit error rate (BER) as a function of Eb/N0 for a selected number of CNC/MCNC iterations,
+for two users allocated at the same subcarrier set.
 """
 
 # %%

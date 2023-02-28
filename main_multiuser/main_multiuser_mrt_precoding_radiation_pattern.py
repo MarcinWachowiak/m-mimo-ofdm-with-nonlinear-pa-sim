@@ -1,7 +1,7 @@
 """
 Measure the effective radiation pattern of the antenna array with nonlinear front-end amplifiers, with MRT precoding
-and multiple users allocated at the same subcarriers. (shared frequency resources)
-Mark the predicted distortion beamforming directions.
+and multiple users allocated at the same subcarriers (shared frequency resources),
+mark the predicted distortion beamforming directions.
 """
 
 # %%

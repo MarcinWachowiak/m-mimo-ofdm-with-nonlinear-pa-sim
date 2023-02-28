@@ -1,7 +1,6 @@
 """
-Final plotting script.
-Bit error rate (BER) at the output of the CNC/MCNC receiver as a function of the BER at the input of the receiver,
-obtained by sweeping the IBO values.
+Final plotting script: bit error rate (BER) at the output of the CNC/MCNC receiver as a function of the BER at the input
+of the receiver, obtained by sweeping the IBO values.
 """
 
 # %%

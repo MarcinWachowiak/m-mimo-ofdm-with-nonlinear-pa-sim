@@ -1,6 +1,6 @@
 """
-Master's thesis plotting script.
-Bit error rate (BER) at the output of the CNC/MCNC algorithms as a function of the number
+Master's thesis plotting script,
+bit error rate (BER) at the output of the CNC/MCNC algorithms as a function of the number
 of antennas in the array for selected channel model.
 """
 

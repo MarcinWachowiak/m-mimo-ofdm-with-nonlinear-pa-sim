@@ -1,6 +1,6 @@
 """
 Measure the effective radiation pattern of the uniform rectangular array with nonlinear front-end amplifiers
-in a multi-user scenario. Calculate the predicted distortion beamforming directions.
+in a multi-user scenario, calculate the predicted distortion beamforming directions.
 """
 
 # %%

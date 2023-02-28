@@ -1,6 +1,6 @@
 """
-Simulate the multi-antenna clipping noise cancellation (MCNC) receiver.
-Sweep the IBO and Eb/N0 values while measuring the BER performance
+Simulate the multi-antenna clipping noise cancellation (MCNC) receiver,
+sweep the IBO and Eb/N0 values while measuring the BER performance
 to generate a plot of required Eb/N0 as a function of IBO to obtain a specified constant BER performance.
 """
 

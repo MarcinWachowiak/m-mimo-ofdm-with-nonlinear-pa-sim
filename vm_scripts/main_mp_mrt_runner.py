@@ -1,6 +1,6 @@
 """
 Multiprocessing/parallel version of the:
-Simulate tha antenna array radiation pattern in the presence of precoding.
+simulate tha antenna array radiation pattern in the presence of precoding.
 """
 
 import subprocess

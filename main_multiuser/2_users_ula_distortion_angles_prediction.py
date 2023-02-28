@@ -1,7 +1,6 @@
 """
 Test script to predict the beamforming directions of the distortions signal in the presence of multiple users
-for uniform linear antenna array.
-[Unused and requires investigation]
+for uniform linear antenna array [Unused and requires investigation].
 """
 
 import matplotlib.pyplot as plt

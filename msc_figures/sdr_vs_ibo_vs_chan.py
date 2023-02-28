@@ -1,6 +1,6 @@
 """
-Master's thesis plotting script.
-Signal-to-distortion (SDR) ratio as a function of the IBO for selected number antennas and channel models.
+Master's thesis plotting script,
+signal-to-distortion (SDR) ratio as a function of the IBO for selected number antennas and channel models.
 """
 
 # %%

@@ -1,6 +1,5 @@
 """
-Final plotting script.
-Bit error rate (BER) at the output of the CNC/MCNC algorithms as a function of the number
+Final plotting script: bit error rate (BER) at the output of the CNC/MCNC algorithms as a function of the number
 of antennas in the array for selected channel model.
 """
 

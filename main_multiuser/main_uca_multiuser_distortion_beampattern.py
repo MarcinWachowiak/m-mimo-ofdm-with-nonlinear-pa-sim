@@ -1,6 +1,6 @@
 """
 Measure the effective radiation pattern of uniform circular array with nonlinear front-end amplifiers
-in a multi-user scenario. Evaluate the distortion beamforming directions.
+in a multi-user scenario, evaluate the distortion beamforming directions.
 """
 
 # %%

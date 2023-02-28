@@ -1,6 +1,6 @@
 """
-Master's thesis plotting script.
-Alpha shrinking coefficient as a function of IBO for soft limiter and gaussian signals at the input.
+Master's thesis plotting script,
+alpha shrinking coefficient as a function of IBO for soft limiter and gaussian signals at the input.
 """
 
 # %%

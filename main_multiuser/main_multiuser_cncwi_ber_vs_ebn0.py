@@ -1,8 +1,8 @@
 """
 Simulate the clipping noise cancellation with the other user signal insertion (CNCWI)
-receiver in a multi-user, multi-antenna scenario.
-Measure the BER as a function of Eb/N0 for each user, selected number of iterations and channels.
-Users allocated at the same subcarrier sets (shared frequency resources)
+receiver in a multi-user, multi-antenna scenario,
+measure the BER as a function of Eb/N0 for each user, selected number of iterations and channels,
+users allocated at the same subcarrier sets (shared frequency resources).
 """
 
 # %%

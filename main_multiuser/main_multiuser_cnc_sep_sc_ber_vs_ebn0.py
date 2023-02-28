@@ -1,7 +1,7 @@
 """
-Simulate the clipping noise cancellation (CNC) receiver in a multi-user, multi-antenna scenario.
-Measure the BER as a function of Eb/N0 for each user, selected number of iterations and channels.
-Users allocated at separate subcarrier sets (separate frequency resources)
+Simulate the clipping noise cancellation (CNC) receiver in a multi-user, multi-antenna scenario,
+measure the BER as a function of Eb/N0 for each user, selected number of iterations and channels,
+users allocated at separate subcarrier sets (separate frequency resources)
 """
 
 # %%

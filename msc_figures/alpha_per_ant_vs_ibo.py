@@ -1,7 +1,7 @@
 """
-Master's thesis plotting script.
-Alpha shrinking coefficient as a function of IBO at individual antenna
-for a number of antenna elements and selected types of channel.
+Master's thesis plotting script,
+alpha shrinking coefficient as a function of IBO at individual antenna for a number of antenna elements and
+selected types of channel.
 """
 
 # %%

@@ -1,6 +1,6 @@
 """
-Master's thesis plotting script.
-Plot the power spectral density (PSD) of the transmitted signal decomposed into desired and distortion parts
+Master's thesis plotting script,
+plot the power spectral density (PSD) of the transmitted signal decomposed into desired and distortion parts
 for selected values of IBO.
 """
 

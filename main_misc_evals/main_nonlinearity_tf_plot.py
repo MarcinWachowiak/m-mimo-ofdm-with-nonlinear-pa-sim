@@ -1,6 +1,6 @@
 """
-Plot the nonlinear distortion model transfer characteristic.
-Output amplitude as a function of the input amplitude of the signal.
+Plot the nonlinear distortion model transfer characteristic,
+output amplitude as a function of the input amplitude of the signal.
 """
 
 # %%

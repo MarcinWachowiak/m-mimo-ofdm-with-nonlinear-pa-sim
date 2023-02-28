@@ -1,5 +1,5 @@
 """
-Master's thesis plotting script.
+Master's thesis plotting script,
 Eb/N0 required for a constant bit error rate (BER) as a function of the IBO,
 for selected number of the CNC/MCNC iterations.
 """

@@ -1,6 +1,6 @@
 """
-Master's thesis plotting script.
-Plot the transfer function of the soft limiter model of nonlinear distortion
+Master's thesis plotting script,
+plot the transfer function of the soft limiter model of nonlinear distortion
 """
 
 # %%

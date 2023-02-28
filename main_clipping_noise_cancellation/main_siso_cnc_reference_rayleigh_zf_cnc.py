@@ -2,7 +2,7 @@
 Simulate the clipping noise cancellation (CNC) receiver in single antenna scenario and rayleigh channel
 with zero-forcing equalization to compare the results to the reference plots in:
 https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=9445597
-[Script needs to be updated to use new CNC class methods - current version might not work]
+[Script needs to be updated to use new CNC class methods - current version might not work].
 """
 
 # %%

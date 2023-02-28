@@ -1,6 +1,6 @@
 """
-Master's thesis plotting script.
-Plot the evolution of the number of mobile subscribers and global mobile data traffic over the years according
+Master's thesis plotting script,
+plot the evolution of the number of mobile subscribers and global mobile data traffic over the years according
 to the Ericsson's reports
 """
 

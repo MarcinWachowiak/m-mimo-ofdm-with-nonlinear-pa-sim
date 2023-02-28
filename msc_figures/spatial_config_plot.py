@@ -1,6 +1,6 @@
 """
-Master's thesis plotting script.
-Plot the spatial configuration of the antenna array and the receiver.
+Master's thesis plotting script,
+plot the spatial configuration of the antenna array and the receiver.
 """
 
 # %%
