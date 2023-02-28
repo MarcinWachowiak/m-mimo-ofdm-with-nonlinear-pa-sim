@@ -1,7 +1,4 @@
-# m-mimo-ofdm-with-nonlinear-pa-sim 
-
-Simulation of the mMIMO OFDM system with nonlinear power amplifiers 
----
+# Simulation of the mMIMO OFDM system with nonlinear power amplifiers 
 
 Installation
 ------------
@@ -29,7 +26,7 @@ To run the framework several python modules are required, the easiest way to do 
 
 Documentation
 -----------------
-1. In terminal go to the docs directory:
+1. To build the documentation go to the docs directory:
     ```
     cd .\docs\
     ```
@@ -38,7 +35,7 @@ Documentation
     .\make.bat html make
     ```
    
-Once built, the documentation can be viewed by opening the ``\docs\build\html\index.html`` with any web browser.
+Once built, the documentation can be viewed by opening the ``.\docs\build\html\index.html`` with any web browser.
 
 
 Usage
