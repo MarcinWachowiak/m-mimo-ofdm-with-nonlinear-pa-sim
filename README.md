@@ -1,4 +1,4 @@
-# Simulation of the mMIMO OFDM system with nonlinear power amplifiers 
+# Simulation of the mMIMO OFDM system with nonlinear front-end power amplifiers 
 
 Installation
 ------------
