@@ -94,9 +94,8 @@ if __name__ == '__main__':
                                                             channel_model_str=channel_model_str_nlos,
                                                             start_matlab_eng=False)
 
-        chan_lst = [my_miso_los_chan, my_miso_two_path_chan, my_miso_rayleigh_chan, my_miso_quadriga_chan_los,
-                    my_miso_quadriga_chan_nlos]
-        num_cores_lst = [12, 12, 12, 10, 10]
+        chan_lst = [my_miso_quadriga_chan_los, my_miso_quadriga_chan_nlos]
+        num_cores_lst = [8, 8]
 
         for chan_idx, my_miso_chan in enumerate(chan_lst):
             sdr_at_ibo = np.zeros(len(ibo_arr))
@@ -215,6 +214,6 @@ if __name__ == '__main__':
         for arr2 in arr1:
             data_lst.append(arr2.tolist())
 
-    utilities.save_to_csv(data_lst=data_lst, filename="sdr_vs_ibo_per_channel_ibo%dto%d_%dnant_test" % (
+    utilities.save_to_csv(data_lst=data_lst, filename="sdr_vs_ibo_per_channel_ibo%dto%d_%dnant_quadriga" % (
         min(ibo_arr), max(ibo_arr), np.max(n_ant_arr)), )
     print("Finished execution!")

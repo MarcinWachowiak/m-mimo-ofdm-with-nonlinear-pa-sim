@@ -2,7 +2,7 @@
 
 function [] = qd_channel_env_setup(n_ant, n_sub_carr, subcarrier_spacing, center_freq, distance, scenario)
 % path to the Quadriga directory
-addpath('C:\Program Files\QuaDriGa_2021.07.12_v2.6.1-0\quadriga_src');
+addpath("C:\Program Files\QuaDriGa_2021.07.12_v2.6.1-0\quadriga_src");
 
 warning ('off','all');
 

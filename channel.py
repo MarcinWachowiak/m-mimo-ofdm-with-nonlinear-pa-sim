@@ -431,7 +431,7 @@ class MisoQuadrigaFd:
         if start_matlab_eng:
             self.meng = matlab.engine.start_matlab()
             # add directory containing quadriga channel wrappers to the path
-            self.meng.addpath(r"../main_quadriga_channel")
+            self.meng.addpath(r"main_quadriga_channel")
 
             self.meng.rng(5)
 

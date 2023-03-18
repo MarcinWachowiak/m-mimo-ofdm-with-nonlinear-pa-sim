@@ -347,7 +347,7 @@ def save_to_csv(data_lst: list, filename: str) -> None:
     :param filename: filename of the CSV file
     :return: None
     """
-    with open("../figs/csv_results/%s.csv" % filename, 'w', newline='') as csv_file:
+    with open("figs/csv_results/%s.csv" % filename, 'w', newline='') as csv_file:
         writer = csv.writer(csv_file)
         writer.writerows(data_lst)
 
