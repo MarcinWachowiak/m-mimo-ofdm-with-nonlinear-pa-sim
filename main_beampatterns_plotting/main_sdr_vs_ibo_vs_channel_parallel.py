@@ -35,7 +35,7 @@ if __name__ == '__main__':
     set_latex_plot_style()
     print("Multi-antenna processing init!")
 
-    ibo_arr = np.arange(0, 8.01, 0.5)
+    ibo_arr = np.arange(0, 8.01, 0.25)
     print("IBO values:", ibo_arr)
 
     n_ant_arr = [1, 4, 16, 32, 64]
@@ -94,7 +94,7 @@ if __name__ == '__main__':
                                                             channel_model_str=channel_model_str_nlos,
                                                             start_matlab_eng=False)
 
-        chan_lst = [my_miso_quadriga_chan_nlos]
+        chan_lst = [my_miso_quadriga_chan_los, my_miso_quadriga_chan_nlos]
         num_cores_lst = [9, 9]
 
         for chan_idx, my_miso_chan in enumerate(chan_lst):
@@ -214,6 +214,6 @@ if __name__ == '__main__':
         for arr2 in arr1:
             data_lst.append(arr2.tolist())
 
-    utilities.save_to_csv(data_lst=data_lst, filename="sdr_vs_ibo_per_channel_ibo%dto%d_%dnant_quadriga_nlos" % (
+    utilities.save_to_csv(data_lst=data_lst, filename="sdr_vs_ibo_per_channel_ibo%dto%d_%dnant_quadriga" % (
         min(ibo_arr), max(ibo_arr), np.max(n_ant_arr)), )
     print("Finished execution!")
