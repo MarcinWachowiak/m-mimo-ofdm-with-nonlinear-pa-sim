@@ -35,7 +35,7 @@ Documentation
     .\make.bat html make
     ```
    
-Once built, the documentation can be viewed by opening the ``.\docs\build\html\index.html`` with any web browser.
+Once built, the documentation can be viewed by opening the ``\docs\build\html\index.html`` with any web browser.
 
 
 Usage
